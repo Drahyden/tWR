@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4e8062d97b30ee4690fd770f8ba4332, type: 3}
+  m_Name: PlayerTuning_Default
+  m_EditorClassIdentifier: Assembly-CSharp::TWR.Player.PlayerTuning
+  walkSpeed: 3.5
+  sprintSpeed: 6
+  crouchSpeed: 1.8
+  groundAcceleration: 40
+  airAcceleration: 8
+  jumpHeight: 1.1
+  maxJumps: 1
+  gravity: -20
+  coyoteTime: 0.1
+  impulseDrag: 12
+  standingHeight: 1.8
+  crouchHeight: 1
+  standingEyeHeight: 1.65
+  crouchEyeHeight: 0.85
+  controllerRadius: 0.35
+  crouchTransitionSpeed: 8
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  mouseSensitivity: 0.1
+  minPitch: -85
+  maxPitch: 85
+  fieldOfView: 80
+  headBobEnabled: 0
+  headBobAmount: 0.035
+  headBobFrequency: 0.7
+  leanDistance: 0.45
+  leanAngle: 12
+  leanSpeed: 6
+  leanCollisionRadius: 0.2
+  interactDistance: 2.5
+  crouchStride: 0.6
+  walkStride: 0.8
+  sprintStride: 1.1
+  crouchStepVolume: 0.25
+  walkStepVolume: 0.6
+  sprintStepVolume: 1
+  crouchStepNoise: 1
+  walkStepNoise: 4
+  sprintStepNoise: 10
+  jumpNoise: 6
+  landNoiseBase: 2
+  landNoisePerSpeed: 0.8
+  landNoiseMax: 15
+  landMinSpeed: 3
+  interactNoise: 3

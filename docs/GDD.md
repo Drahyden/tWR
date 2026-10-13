@@ -3,7 +3,7 @@
 > Source of truth for every chat in the "tWR Game Development" project.
 > Each definition gets an ID (D-###). Links between definitions use `→ D-###`.
 > Status: 🟢 locked · 🟡 tentative · ⚪ open
-> Interview complete (Q1–102). New decisions continue from D-110.
+> Interview complete (Q1–102). New decisions continue from D-117.
 
 ## 0. Index of sections
 1. Core identity · 2. Story & world · 3. Player & controls · 4. Combat · 5. Puzzles · 6. Enemies & AI · 7. Level design · 8. Art direction · 9. Audio · 10. UI/UX · 11. Progression & systems · 12. Technical (Unity) · 13. Production & pipeline · 14. Open questions
@@ -48,6 +48,11 @@
 - **D-033** 🟢 Unlockable abilities via items found during the run: double jump, dash, phase (pass briefly through solid objects) → D-037, D-061; tech: collision/phase
 - **D-034** 🟢 Health: HP with a visible HP bar. Death = full restart of the current run; no checkpoints → D-015, D-039, D-079, D-086, D-030
 - **D-038** 🟢 Controls: mouse & keyboard only; no key rebinding → D-016, D-053, D-088, D-090
+- **D-110** 🟢 Default key map (fixed, no rebinding): WASD move · mouse look · Shift sprint · Ctrl crouch · Space jump · Q/E lean left/right (hold) · F interact · LMB shoot · R reload · 1–5 / wheel switch gun · Esc pause/inventory → D-032, D-038, D-087, D-088, D-115
+- **D-111** 🟢 Lean: camera-only offset + roll (no body/hands), collision-checked; sprint cancels lean; allowed while crouched → D-032, D-070
+- **D-112** 🟢 Interaction: centre-screen raycast (~2.5 m) to IInteractable; prompt text via localized string table; each interaction raises an event usable by voice triggers and emits an Interact noise → D-032, D-080, D-084, D-091, D-114
+- **D-113** 🟢 Player controller tech: Unity CharacterController for the vertical slice, isolated in its own motor component behind `IPlayerMotor` so it can be replaced by a custom kinematic motor when the first gravity-shift room is built; exposes Teleport() for portals and a central input-inversion flag for reversed-control rooms → D-053, D-097, D-033
+- **D-115** 🟢 Crouch and sprint are hold-to-use for now; a "toggle crouch/sprint" option is planned for Game settings (a setting, not rebinding) → D-038, D-090, D-110
 
 ## 4. Combat
 - **D-027** 🟢 The gun: a defensive tool that is also a puzzle element → D-019, D-035, D-036, D-049, D-105
@@ -150,6 +155,8 @@
 - **D-101** 🟢 Distribution: Steam (Steamworks integration later) → D-016
 - **D-102** 🟢 Development PC: Windows · Intel i7-9700KF · NVIDIA RTX 3060 12 GB · 16 GB RAM → D-007 (16 GB is workable; avoid running Unity + Blender + heavy tools at once)
 - **D-109** 🟢 Repository layout: Git repo at `C:\Dev\tWR` (root holds CLAUDE.md, docs/, .claude/, .gitignore, .gitattributes); Unity project in subfolder `TheWhiteRoom/`. Claude Code is always started from the repo root → D-096, D-094
+- **D-114** 🟢 Shared noise-event system (TWR.Core): global emit(position, radius, type, source) + listener registration. Player sources: crouch ≈ near-silent (small radius), walk = low, sprint = high, jump + landing (landing scaled by fall speed) = medium; later gunshots/impacts. Radius-only in step 1; wall muffling per D-116 → D-043, D-052, D-079
+- **D-116** 🟢 Noise and walls: walls muffle noise (reduce its effective radius) rather than fully blocking it. Implement when building the Seeker → D-043, D-052, D-114
 
 ## 13. Production & pipeline
 - **D-007** 🟢 Early phases in claude.ai browser; switch to desktop (Claude Code + local Unity project) for scripting → D-096, D-102
