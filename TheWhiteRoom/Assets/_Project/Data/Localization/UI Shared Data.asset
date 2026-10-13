@@ -31,6 +31,14 @@ MonoBehaviour:
     m_Key: item.ammo.name
     m_Metadata:
       m_Items: []
+  - m_Id: 16215371284480
+    m_Key: door.locked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16215438393344
+    m_Key: door.open
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

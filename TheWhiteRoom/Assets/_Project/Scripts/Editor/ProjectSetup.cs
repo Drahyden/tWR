@@ -33,6 +33,9 @@ namespace TWR.EditorTools
             ("gun.pistol.name", "Pistol"),
             ("hud.ammo", "{0} / {1}"),          // {0} = magazine, {1} = reserve. Plain pattern, not a Smart String.
             ("item.ammo.name", "Ammo"),         // inventory grid later (D-087)
+            // Step 3, switch puzzle exit door (D-127).
+            ("door.locked", "Locked"),
+            ("door.open", "Press F to open"),
         };
 
         [MenuItem("TWR/Setup Project", priority = 0)]

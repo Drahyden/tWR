@@ -34,6 +34,14 @@ MonoBehaviour:
     m_Localized: Ammo
     m_Metadata:
       m_Items: []
+  - m_Id: 16215371284480
+    m_Localized: Locked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16215438393344
+    m_Localized: Press F to open
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

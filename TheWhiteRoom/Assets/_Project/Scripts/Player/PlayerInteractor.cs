@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Localization;
 using TWR.Core;
 using TWR.Interaction;
 
@@ -25,6 +26,7 @@ namespace TWR.Player
         static readonly Vector3 ScreenCentre = new Vector3(0.5f, 0.5f, 0f);
 
         IInteractable focused;                  // what the prompt shows and F uses
+        LocalizedString focusedPrompt;          // its prompt when focus was last announced
         Collider lastCollider;                  // cache: GetComponent only runs for a NEW collider
         IInteractable lastColliderInteractable;
         Vector3 lastHitPoint;
@@ -94,8 +96,12 @@ namespace TWR.Player
 
         void SetFocus(IInteractable target)
         {
-            if (ReferenceEquals(target, focused)) return;
+            // Also re-announce when the SAME object swaps its prompt (e.g. a door going from
+            // "Locked" to "Press F to open" while you look at it, D-127). Reference compare: no garbage.
+            LocalizedString prompt = target != null ? target.Prompt : null;
+            if (ReferenceEquals(target, focused) && ReferenceEquals(prompt, focusedPrompt)) return;
             focused = target;
+            focusedPrompt = prompt;
             FocusChanged?.Invoke(focused);
         }
     }

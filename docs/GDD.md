@@ -3,7 +3,7 @@
 > Source of truth for every chat in the "tWR Game Development" project.
 > Each definition gets an ID (D-###). Links between definitions use `→ D-###`.
 > Status: 🟢 locked · 🟡 tentative · ⚪ open
-> Interview complete (Q1–102). New decisions continue from D-124.
+> Interview complete (Q1–102). New decisions continue from D-131.
 
 ## 0. Index of sections
 1. Core identity · 2. Story & world · 3. Player & controls · 4. Combat · 5. Puzzles · 6. Enemies & AI · 7. Level design · 8. Art direction · 9. Audio · 10. UI/UX · 11. Progression & systems · 12. Technical (Unity) · 13. Production & pipeline · 14. Open questions
@@ -81,6 +81,11 @@
 - **D-056** 🟢 Hints come from the inner voice (voice only); main-path puzzles cannot be skipped → D-024, D-080, D-104 (⚠️ randomized puzzles D-058 need hint lines per variant or generic hints)
 - **D-104** 🟢 Optional puzzles exist in sections; "puzzle completeness" = share of optional puzzles solved → D-029, D-056, D-061
 - **D-105** 🟢 Per-gun puzzle roles: Pistol → switches · Revolver → breaks glass · Shotgun → knocks over heavy objects · AK → breaks several targets quickly · Scoped rifle → distant switches → D-036, D-049
+- **D-124** 🟢 Puzzle framework: PuzzleData ScriptableObject (puzzle id, isOptional, solve mode AllActive/Sequence, switch behaviour Latch/Toggle, noise radii) + scene PuzzleController that owns all puzzle state and references its switches, start-area trigger and outputs (IPuzzleOutput, e.g. a door lock); in Sequence mode the order is the switch list order and a wrong switch resets all; reused by later puzzles and randomized variants → D-019, D-055, D-058, D-104
+- **D-125** 🟢 Shootable switch: IShootable, shoot-only by default (allowInteract flag off; if on, goes through D-112); latches on; state shown by light/emissive only (dark red off, green on); normal hit marker on an accepted hit. Per-switch GunRequirement: empty = normal any-gun switch; the slice puzzle's switches require the Pistol (gun-specific path, D-118). Out-of-reach switches use height or bars, never glass (glass is the revolver's role) → D-036, D-065, D-091, D-105, D-118
+- **D-126** 🟢 Puzzle events (static PuzzleEvents): Started (player enters the puzzle-area trigger, once per scene load; fired before any switch event), SwitchActivated, SwitchDeactivated (Toggle mode), Reset (wrong order in Sequence mode), Solved(puzzleId, isOptional). Hooks for voice triggers, the future run-stats tracker and music state; a "first seen" start condition is added once the shared is-observed check exists → D-029, D-045, D-053, D-075, D-080, D-104
+- **D-127** 🟢 Locked exit door: locked until its puzzle is solved; on solve it unlocks audibly with a red → green lock light and is opened by the player with F; while locked F shows a localized "Locked" prompt and raises an interaction event. Door settings in DoorData. Locking is separate from where the door leads (later D-053b / D-058) → D-053, D-058, D-084, D-112
+- **D-130** 🟢 Main-path puzzles must stay solvable with resources the run guarantees: the slice puzzle uses 3 switches and has an ammo pickup inside its room, so missed shots can't softlock it → D-056, D-120, D-121
 
 ## 6. Enemies & AI
 - **D-041** 🟢 Enemy fiction: aberration monsters and dimensional demons → D-022, D-013, D-067
@@ -148,6 +153,7 @@
 - **D-029** 🟢 Performance metric = optional-puzzle completeness (D-104) + enemies killed (avoided enemies don't count, D-052) → D-028, D-092
 - **D-037** 🟢 Inventory: up to 20 item types, max stack 99 each → D-033, D-050, D-087
 - **D-039** 🟢 No in-game meta-progression; only player knowledge carries over. Exception: endings seen are saved outside the run (D-099), so the inner voice can react on repeat playthroughs → D-015, D-034, D-058
+- **D-129** 🟢 Puzzle state lives only in the scene for the current run; a scene reload (death, D-122) or quit (D-093) resets it; nothing is saved (D-099). Variant selection will come from the run seed (D-058) → D-034, D-039, D-058, D-093
 
 ## 12. Technical (Unity)
 - **D-073** 🟢 Graphics target: standard (non-4K), mid-range PCs → D-016, D-100
@@ -164,6 +170,7 @@
 - **D-114** 🟢 Shared noise-event system (TWR.Core): global emit(position, radius, type, source) + listener registration. Player sources: crouch ≈ near-silent (small radius), walk = low, sprint = high, jump + landing (landing scaled by fall speed) = medium; later gunshots/impacts. Radius-only in step 1; wall muffling per D-116 → D-043, D-052, D-079
 - **D-116** 🟢 Noise and walls: walls muffle noise (reduce its effective radius) rather than fully blocking it. Implement when building the Seeker → D-043, D-052, D-114
 - **D-123** 🟢 First-person gun rendering: weapon holder parented to the player camera (inherits lean, D-111); gun on a "Weapon" layer drawn on top via URP Render Objects renderer features (no overlay camera); Weapon layer excluded from shoot/interact raycasts → D-070, D-074, D-100
+- **D-128** 🟢 Mechanism noise type (D-114): switch activation ≈ 4 m at the switch (source = shooter), door unlock ≈ 8 m and door open ≈ 10 m at the door (source = player for the open); values in PuzzleData / DoorData; walls muffle per D-116 → D-043, D-114, D-116
 
 ## 13. Production & pipeline
 - **D-007** 🟢 Early phases in claude.ai browser; switch to desktop (Claude Code + local Unity project) for scripting → D-096, D-102

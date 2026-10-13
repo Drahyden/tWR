@@ -22,6 +22,8 @@ namespace TWR.EditorTools
     /// Step 2 (pistol, D-107): also the Weapon layer, gun-on-top rendering, Ammo item + Pistol GunData assets,
     /// and it UPGRADES an existing Player prefab with health, inventory, weapons and the placeholder pistol
     /// (see TestSceneBuilder.Combat.cs). "TWR/Rebuild Player Prefab" overwrites the prefab from scratch.
+    /// Step 3 (switch puzzle, D-107): a puzzle room east of the white room with three pistol-only switches
+    /// and a locked exit door (see TestSceneBuilder.Puzzle.cs; D-124 to D-130).
     /// </summary>
     public static partial class TestSceneBuilder
     {
@@ -45,11 +47,19 @@ namespace TWR.EditorTools
 
         static void BuildTestSceneAfterSetup()
         {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+                return;
+
+            // New scene FIRST, assets SECOND. NewScene unloads every asset the old scene didn't use, so an
+            // asset loaded or created before it (e.g. a fresh PuzzleData) can come back as a dead reference
+            // and be saved into the scene as "None". Loading after NewScene keeps every reference valid.
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
             if (!PrepareSharedAssets(out int interactableLayer, out PlayerTuning tuning, out InputActionAsset input))
                 return;
             if (!PrepareCombatAssets(out CombatAssets combat))
                 return;
-            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            if (!PreparePuzzleAssets(out PuzzleAssets puzzle))
                 return;
 
             Material white = GetOrCreateMaterial("M_White", new Color(0.95f, 0.95f, 0.95f), Color.black);
@@ -58,8 +68,6 @@ namespace TWR.EditorTools
             Material buttonMat = GetOrCreateMaterial("M_TestButton", new Color(1f, 0.2f, 0.2f), new Color(0.5f, 0.1f, 0.1f));
             Material listenerMat = GetOrCreateMaterial("M_NoiseListener", new Color(0.6f, 0.6f, 0.6f), new Color(0.2f, 0.2f, 0.2f));
             VolumeProfile profile = GetOrCreateVolumeProfile();
-
-            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             // Lighting: flat bright ambient + one soft, shadowless light for shape readability (cheap, D-100).
             RenderSettings.ambientMode = AmbientMode.Flat;
@@ -98,6 +106,9 @@ namespace TWR.EditorTools
             // Shooting targets, ammo pickups, damage zone (step 2).
             BuildCombatTestProps(combat);
 
+            // Pistol switch puzzle room east of the white room (step 3).
+            BuildPuzzleTest(combat, puzzle, white, whiteEmissive, offWhite);
+
             // Player.
             GameObject player = GetOrCreatePlayerInstance(tuning, input, interactableLayer, combat, false);
             player.transform.SetPositionAndRotation(new Vector3(0f, 0.05f, -6f), Quaternion.identity);
@@ -108,7 +119,13 @@ namespace TWR.EditorTools
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddSceneToBuildSettings(ScenePath);
             Selection.activeGameObject = player;
-            Debug.Log("[TWR] Built " + ScenePath + ". Press Play to test.");
+
+            bool wiringOk = ValidatePuzzleWiring();
+            bool savedOk = ValidateSavedSceneReferences(TuningPath, PuzzleDataPath, DoorDataPath);
+            if (wiringOk && savedOk)
+                Debug.Log("[TWR] Built " + ScenePath + ". Press Play to test.");
+            else
+                Debug.LogError("[TWR] Built " + ScenePath + " but some references are missing (see errors above).");
         }
 
         [MenuItem("TWR/Rebuild Player Prefab")]
@@ -306,7 +323,7 @@ namespace TWR.EditorTools
             Block("Ceiling", new Vector3(0f, 4.1f, 0f), new Vector3(20f, 0.2f, 20f), wallMat, room);
             Block("Wall N", new Vector3(0f, 2f, 10.1f), new Vector3(20.4f, 4f, 0.2f), wallMat, room);
             Block("Wall S", new Vector3(0f, 2f, -10.1f), new Vector3(20.4f, 4f, 0.2f), wallMat, room);
-            Block("Wall E", new Vector3(10.1f, 2f, 0f), new Vector3(0.2f, 4f, 20f), wallMat, room);
+            BuildEastWallWithDoorway(wallMat, room); // doorway into the step-3 puzzle room (TestSceneBuilder.Puzzle.cs)
             Block("Wall W", new Vector3(-10.1f, 2f, 0f), new Vector3(0.2f, 4f, 20f), wallMat, room);
 
             // Crouch tunnel: ceiling at 1.3 m (standing needs 1.8 m) -> must crouch, can't stand up inside.
