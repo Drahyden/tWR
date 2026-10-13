@@ -154,7 +154,7 @@
 ## 13. Production & pipeline
 - **D-007** 🟢 Early phases in claude.ai browser; switch to desktop (Claude Code + local Unity project) for scripting → D-096, D-102
 - **D-103** 🟢 First playable milestone (vertical slice): hub lobby + one room + one enemy + pistol + one puzzle → D-057, D-049
-- **D-107** 🟡 Vertical slice contents (recommended): Seeker (D-043) + pistol switch puzzle (D-105) + one see-through portal door in the lobby to test the riskiest tech early (D-097) — pending confirmation
+- **D-107** 🟢 Vertical slice contents (confirmed): Seeker (D-043) + pistol switch puzzle (D-105) + one see-through portal door in the lobby to test the riskiest tech early (D-097). Build order: player controller + shared noise-event system (D-032, D-079) → pistol (D-049) → switch puzzle (D-105) → Seeker (D-043) → portal door (D-097) → D-103
 - **D-108** 🟢 Agents/skills: `twr-asset-prompts` skill (claude.ai); Claude Code subagents `unity-scripter` and `gdd-guardian` (in repo `.claude/agents/`)
 
 ---
@@ -165,7 +165,7 @@
 | 1 | The hook | Psychological puzzle FPS; impossible geometry; liminal space; back-of-box text | D-008, D-009, D-010 |
 | 2 | Meaning of title | The setting | D-010 |
 | 3 | Inspirations | Portal, Stanley Parable, Doom, Superliminal, F.E.A.R. | D-011 |
-| 4 | Pillar balance | Shooting 20 / Horror 40 / Atmosphere 40 | D-012 |
+| 4 | Pillar balance | Shooting 20 / Horror 40 / Atmosphere 40 (later refined in Q11/Q102 → D-012) | D-012 |
 | 5 | Horror type | Psychological dread, frustration, surreal, minimal gore, few jump scares | D-013 |
 | 6 | Emotional arc | Confused → anxious | D-014 |
 | 7 | Length | 15–30 min per run | D-015 |
@@ -273,4 +273,3 @@
 - Reload/interaction animations with no visible hands (D-070)
 - FOV / head bob / motion blur toggles; damage direction indicator (D-090, D-091)
 - Final SFX source selection (D-083)
-- Confirm vertical slice contents (D-107)
