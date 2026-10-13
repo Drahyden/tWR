@@ -136,6 +136,11 @@ namespace TWR.EditorTools
                 return;
             }
 
+            // Step 4: the player's capsule lives on the Player layer, so noise muffling and enemy sight never
+            // treat the player's own body as a wall (D-131). Only the root: children have no colliders.
+            int playerLayer = LayerMask.NameToLayer(PlayerLayerName);
+            if (playerLayer >= 0) root.layer = playerLayer;
+
             var inventory = GetOrAdd<Inventory>(root);
             var health = GetOrAdd<PlayerHealth>(root);
             var weapons = GetOrAdd<WeaponInventory>(root);

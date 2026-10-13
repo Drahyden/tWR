@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 029f6fcc45fa5134b86eb2d1cec4a566, type: 3}
+  m_Name: SeekerSounds_Placeholder
+  m_EditorClassIdentifier: Assembly-CSharp::TWR.Enemies.SeekerSoundSet
+  idleLoop: {fileID: 0}
+  footsteps: []
+  alert: {fileID: 0}
+  attackWindUp: {fileID: 0}
+  hurt: {fileID: 0}
+  death: {fileID: 0}
+  idleVolume: 0.35
+  footstepVolume: 0.5
+  effectsVolume: 1
+  usePlaceholdersWhenEmpty: 1

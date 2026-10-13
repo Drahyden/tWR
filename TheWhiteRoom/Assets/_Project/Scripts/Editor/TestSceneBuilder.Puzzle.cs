@@ -240,6 +240,17 @@ namespace TWR.EditorTools
             body.isKinematic = true;
             body.useGravity = false;
 
+            // Step 4: a closed door muffles noise like a door (0.6, D-131) and blocks Seeker paths.
+            // The panel's layer (Interactable) is left out of the NavMesh bake, so a CARVING obstacle cuts the
+            // doorway out while closed and moves away with the panel when it opens (D-135: Seekers can't open doors).
+            panel.AddComponent<TWR.Core.NoiseOccluder>().Kind = TWR.Core.NoiseOccluderKind.DoorPanel;
+            var obstacle = panel.AddComponent<UnityEngine.AI.NavMeshObstacle>();
+            obstacle.shape = UnityEngine.AI.NavMeshObstacleShape.Box;
+            obstacle.center = Vector3.zero;
+            obstacle.size = Vector3.one; // local units: the panel's scale makes it 1.6 x 2.6 x 0.12 m
+            obstacle.carving = true;
+            obstacle.carveOnlyStationary = false;
+
             // Lock light above the door on the puzzle side (red = locked, green = open; D-065).
             GameObject lockLight = Block("Door Lock Light", new Vector3(22.17f, 2.85f, -2.5f), new Vector3(0.06f, 0.14f, 0.4f), lockMat, group);
             GameObjectUtility.SetStaticEditorFlags(lockLight, 0);

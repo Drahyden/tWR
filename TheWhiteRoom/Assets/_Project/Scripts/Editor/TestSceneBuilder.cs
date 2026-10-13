@@ -24,6 +24,9 @@ namespace TWR.EditorTools
     /// (see TestSceneBuilder.Combat.cs). "TWR/Rebuild Player Prefab" overwrites the prefab from scratch.
     /// Step 3 (switch puzzle, D-107): a puzzle room east of the white room with three pistol-only switches
     /// and a locked exit door (see TestSceneBuilder.Puzzle.cs; D-124 to D-130).
+    /// Step 4 (Seeker, D-107; D-043): Player + Enemy layers, NoiseSettings (wall muffling), the Seeker prefab,
+    /// a patrolling Seeker spawn point in the puzzle room, RunStats and a baked + saved NavMesh
+    /// (see TestSceneBuilder.Seeker.cs; D-132 confirmed, D-131 and D-133 to D-138).
     /// </summary>
     public static partial class TestSceneBuilder
     {
@@ -60,6 +63,8 @@ namespace TWR.EditorTools
             if (!PrepareCombatAssets(out CombatAssets combat))
                 return;
             if (!PreparePuzzleAssets(out PuzzleAssets puzzle))
+                return;
+            if (!PrepareSeekerAssets(out SeekerAssets seeker)) // SeekerData, sound set, NoiseSettings, Seeker prefab
                 return;
 
             Material white = GetOrCreateMaterial("M_White", new Color(0.95f, 0.95f, 0.95f), Color.black);
@@ -109,6 +114,9 @@ namespace TWR.EditorTools
             // Pistol switch puzzle room east of the white room (step 3).
             BuildPuzzleTest(combat, puzzle, white, whiteEmissive, offWhite);
 
+            // Seeker spawn point + patrol route, muffling test listeners/marks, RunStats (step 4).
+            BuildSeekerTest(seeker);
+
             // Player.
             GameObject player = GetOrCreatePlayerInstance(tuning, input, interactableLayer, combat, false);
             player.transform.SetPositionAndRotation(new Vector3(0f, 0.05f, -6f), Quaternion.identity);
@@ -116,12 +124,17 @@ namespace TWR.EditorTools
             GameObject hud = BuildHud(player.GetComponent<PlayerInteractor>());
             BuildCombatHud(hud, player);
 
+            // Last, once all geometry exists: bake the NavMesh and save it as an asset next to the scene.
+            BakeAndSaveNavMesh();
+
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddSceneToBuildSettings(ScenePath);
             Selection.activeGameObject = player;
 
             bool wiringOk = ValidatePuzzleWiring();
-            bool savedOk = ValidateSavedSceneReferences(TuningPath, PuzzleDataPath, DoorDataPath);
+            wiringOk &= ValidateSeekerSetup();
+            bool savedOk = ValidateSavedSceneReferences(TuningPath, PuzzleDataPath, DoorDataPath,
+                SeekerPrefabPath, SeekerDataPath, SeekerSoundSetPath, NavMeshAssetPath);
             if (wiringOk && savedOk)
                 Debug.Log("[TWR] Built " + ScenePath + ". Press Play to test.");
             else
@@ -173,9 +186,11 @@ namespace TWR.EditorTools
 
             interactableLayer = EnsureLayer(InteractableLayerName);
             int weaponLayer = EnsureLayer(WeaponLayerName);
-            if (interactableLayer < 0 || weaponLayer < 0)
+            int playerLayer = EnsureLayer(PlayerLayerName); // player's capsule: never a wall for noise/sight (D-131)
+            int enemyLayer = EnsureLayer(EnemyLayerName);   // Seeker body: shootable, never a wall (D-134)
+            if (interactableLayer < 0 || weaponLayer < 0 || playerLayer < 0 || enemyLayer < 0)
             {
-                EditorUtility.DisplayDialog("No free layer", "Could not create the 'Interactable' / 'Weapon' layers: all user layers are used.", "OK");
+                EditorUtility.DisplayDialog("No free layer", "Could not create the 'Interactable' / 'Weapon' / 'Player' / 'Enemy' layers: all user layers are used.", "OK");
                 return false;
             }
 
@@ -194,6 +209,9 @@ namespace TWR.EditorTools
                 EditorUtility.DisplayDialog("PlayerTuning missing", "Could not create " + TuningPath, "OK");
                 return false;
             }
+
+            // Wall-muffling settings, found by NoiseSystem through Resources (D-131).
+            EnsureNoiseSettings();
             return true;
         }
 

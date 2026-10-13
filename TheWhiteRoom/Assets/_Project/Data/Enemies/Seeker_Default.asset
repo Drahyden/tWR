@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0529feb89b435b442b16dc791bd664ac, type: 3}
+  m_Name: Seeker_Default
+  m_EditorClassIdentifier: Assembly-CSharp::TWR.Enemies.SeekerData
+  maxHealth: 100
+  agentRadius: 0.4
+  agentHeight: 2
+  eyeHeight: 1.6
+  angularSpeed: 540
+  acceleration: 16
+  turnSpeed: 300
+  arriveDistance: 0.5
+  patrolSpeed: 1.6
+  waypointPauseMin: 1
+  waypointPauseMax: 2
+  suspiciousSeconds: 1
+  investigateSpeed: 2.5
+  lookAroundSeconds: 4
+  lookAroundAngle: 70
+  chaseSpeed: 4.5
+  chaseRepathsPerSecond: 4.5
+  chaseStopDistance: 1.1
+  closeNoiseChaseDistance: 3
+  loseSightSeconds: 5
+  chaseMemorySeconds: 0.75
+  searchSpeed: 2.5
+  searchRadius: 6
+  searchSeconds: 8
+  searchPointPause: 0.8
+  returnSpeed: 1.6
+  noiseRules:
+  - type: 0
+    sensitivity: 1
+    reaction: 1
+  - type: 1
+    sensitivity: 1
+    reaction: 1
+  - type: 2
+    sensitivity: 1
+    reaction: 1
+  - type: 5
+    sensitivity: 1
+    reaction: 1
+  - type: 6
+    sensitivity: 1
+    reaction: 1
+  - type: 3
+    sensitivity: 1
+    reaction: 2
+  - type: 4
+    sensitivity: 1
+    reaction: 2
+  - type: 7
+    sensitivity: 1
+    reaction: 2
+  useSight: 1
+  sightConeDegrees: 110
+  sightChecksPerSecond: 5
+  seeMovingDistance: 15
+  seeCrouchMovingDistance: 6
+  seeStillDistance: 2.5
+  movingSpeedThreshold: 0.4
+  awarenessBuildSeconds: 0.5
+  awarenessDecaySeconds: 1.5
+  sightBlockers:
+    serializedVersion: 2
+    m_Bits: 257
+  meleeDamage: 20
+  meleeRange: 1.8
+  attackStartDistance: 1.5
+  windUpSeconds: 0.4
+  attackCooldown: 1.2
+  meleeHalfAngle: 60
+  meleeMaxHeightDifference: 1.5
+  collapseSeconds: 0.6
+  fadeSeconds: 1
+  footstepStride: 0.9

@@ -3,7 +3,7 @@
 > Source of truth for every chat in the "tWR Game Development" project.
 > Each definition gets an ID (D-###). Links between definitions use `→ D-###`.
 > Status: 🟢 locked · 🟡 tentative · ⚪ open
-> Interview complete (Q1–102). New decisions continue from D-131.
+> Interview complete (Q1–102). New decisions continue from D-139.
 
 ## 0. Index of sections
 1. Core identity · 2. Story & world · 3. Player & controls · 4. Combat · 5. Puzzles · 6. Enemies & AI · 7. Level design · 8. Art direction · 9. Audio · 10. UI/UX · 11. Progression & systems · 12. Technical (Unity) · 13. Production & pipeline · 14. Open questions
@@ -97,6 +97,12 @@
 - **D-047** 🟢 Boss 1: teleports randomly around the arena; ranged attacks → D-068, D-106
 - **D-048** 🟢 Boss 2: very large; charges and tramples like a bull → D-069, D-106
 - **D-106** 🟢 Boss placement: one boss per path (Escape / Discover) → D-023, D-060 (which boss on which path ⚪)
+- **D-132** 🟢 Seeker senses: hearing via D-114/D-131 (ignores enemy-sourced noise) + motion-gated sight — "reacts to movement" (D-043) means sight (confirmed by developer): 110° cone + line of sight to head/chest at ~5 Hz; moving player seen ≤15 m, crouch-moving ≤6 m, still ≤2.5 m; awareness builds over ~0.5 s; toggle `useSight` in SeekerData. Cone/LOS geometry is the shared TWR.Core.Perception.ViewCone helper, reused later by the is-observed system → D-043, D-045, D-052, D-053
+- **D-133** 🟢 Seeker states: Patrol (waypoints, 1.6 m/s, 1–2 s pauses) → Suspicious (footstep/jump/land/interact/pickup: stop and turn 1 s) → Investigate (2.5 m/s; gunshot/impact/mechanism or a repeated small noise; 4 s look-around) → Chase (4.5 m/s, between player walk and sprint; on sight, noise ≤3 m, or being damaged) → Attack → Search (5 s without sight → last known position, random points within 6 m for 8 s) → Return (nearest waypoint). Per-noise-type sensitivity in SeekerData; state shown by a coloured band; raises EnemyEvents.AwarenessChanged for music/voice → D-040, D-043, D-075, D-080
+- **D-134** 🟢 Seeker combat (SeekerData SO): 100 HP (4 pistol hits); melee 20 dmg, 1.8 m range, 0.4 s telegraphed wind-up (lean + flash + sound; hit lands only if the player is still in range and in front), 1.2 s cooldown. Enemies live on a shootable "Enemy" layer; the player root is on a "Player" layer → D-034, D-118, D-119, D-120, D-130
+- **D-135** 🟢 Enemy navigation: Unity AI Navigation NavMeshSurface baked and saved as an asset by the scene builder (agent radius 0.4, height 2); door panels carve with a NavMeshObstacle, so closed doors block paths; enemies cannot open doors in the slice; enemies spawn from spawn points (SeekerSpawnPoint) for later D-058 randomization → D-058, D-100, D-127
+- **D-136** 🟢 Enemy death (slice placeholder): marked dead immediately (kill hit marker), Killed raised once with the attacker, AI/agent/colliders off at once; 0.6 s collapse with darker tint + 1.0 s shrink, then destroyed; nothing persists. The final gory animation (D-051) plugs into the DeathStarted hook → D-013, D-051, D-122
+- **D-138** 🟢 Enemy audio and noise: enemies ignore enemy-sourced noise; enemy footsteps are 3D audio only (never noise events); per-type sound set SO (idle loop, footsteps, alert, attack wind-up, hurt, death) with null-safe slots; generated placeholder tones until real clips exist (licence log per D-083) → D-078, D-083, D-114
 - All enemy types have their own sound set → D-078
 
 ## 7. Level design
@@ -154,6 +160,7 @@
 - **D-037** 🟢 Inventory: up to 20 item types, max stack 99 each → D-033, D-050, D-087
 - **D-039** 🟢 No in-game meta-progression; only player knowledge carries over. Exception: endings seen are saved outside the run (D-099), so the inner voice can react on repeat playthroughs → D-015, D-034, D-058
 - **D-129** 🟢 Puzzle state lives only in the scene for the current run; a scene reload (death, D-122) or quit (D-093) resets it; nothing is saved (D-099). Variant selection will come from the run seed (D-058) → D-034, D-039, D-058, D-093
+- **D-137** 🟢 RunStats (minimal, scene-scoped): counts player-credited kills of real enemies (CombatEvents.Killed, attacker = player), registered enemies, and puzzles solved/total incl. optional (PuzzleEvents.Solved); resets on reload; debug log only, no score formula yet → D-029, D-052, D-092, D-104, D-126, D-129
 
 ## 12. Technical (Unity)
 - **D-073** 🟢 Graphics target: standard (non-4K), mid-range PCs → D-016, D-100
@@ -171,6 +178,7 @@
 - **D-116** 🟢 Noise and walls: walls muffle noise (reduce its effective radius) rather than fully blocking it. Implement when building the Seeker → D-043, D-052, D-114
 - **D-123** 🟢 First-person gun rendering: weapon holder parented to the player camera (inherits lean, D-111); gun on a "Weapon" layer drawn on top via URP Render Objects renderer features (no overlay camera); Weapon layer excluded from shoot/interact raycasts → D-070, D-074, D-100
 - **D-128** 🟢 Mechanism noise type (D-114): switch activation ≈ 4 m at the switch (source = shooter), door unlock ≈ 8 m and door open ≈ 10 m at the door (source = player for the open); values in PuzzleData / DoorData; walls muffle per D-116 → D-043, D-114, D-116
+- **D-131** 🟢 Noise muffling (implements D-116): NoiseSystem checks only listeners inside the raw radius and casts one ray from the source (+0.3 m) to each listener on an occluder mask (Default + Interactable; not Player/Enemy/Weapon/Ignore Raycast; own colliders skipped); effective radius = radius × product of per-wall factors (default 0.5; NoiseOccluder override: thin 0.6, thick 0.3, door panel 0.6; minimum 0.1 per wall and in total; max 4 walls counted); open doors don't muffle because the panel is out of the ray path. Values in a NoiseSettings SO loaded from Resources → D-100, D-114, D-116, D-128
 
 ## 13. Production & pipeline
 - **D-007** 🟢 Early phases in claude.ai browser; switch to desktop (Claude Code + local Unity project) for scripting → D-096, D-102
@@ -294,3 +302,5 @@
 - Interaction animations with no visible hands (D-070)
 - FOV / head bob / motion blur toggles; damage direction indicator (D-090, D-091)
 - Final SFX source selection (D-083)
+- Performance formula: weighting of kills vs optional-puzzle completeness (D-029, D-137)
+- Can enemies follow through portals / location-changing doors, and can later enemy types open doors? (D-053b, D-097, D-135)
