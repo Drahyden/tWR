@@ -1,0 +1,276 @@
+# THE WHITE ROOM — Game Design Document (living)
+
+> Source of truth for every chat in the "tWR Game Development" project.
+> Each definition gets an ID (D-###). Links between definitions use `→ D-###`.
+> Status: 🟢 locked · 🟡 tentative · ⚪ open
+> Interview complete (Q1–102). New decisions continue from D-110.
+
+## 0. Index of sections
+1. Core identity · 2. Story & world · 3. Player & controls · 4. Combat · 5. Puzzles · 6. Enemies & AI · 7. Level design · 8. Art direction · 9. Audio · 10. UI/UX · 11. Progression & systems · 12. Technical (Unity) · 13. Production & pipeline · 14. Open questions
+
+---
+
+## 1. Core identity
+- **D-001** 🟢 Title: *The White Room* → D-010
+- **D-002** 🟢 Genre: 3D first-person psychological puzzle shooter with horror → D-012
+- **D-003** 🟢 Engine: Unity → D-094
+- **D-004** 🟢 Development method: vibecoding with Claude, phase by phase, across multiple chats in this Project
+- **D-008** 🟢 Hook: a psychological puzzle FPS about exploring impossible geometry inside a strange liminal space, "The White Room". Back-of-box: *"Daniel opened the black door. On the other side, the lobby of an annoyingly bright place that didn't look familiar. It was The White Room. Only fate knows the horrors that lie ahead."* → D-009, D-010
+- **D-011** 🟢 Inspirations and what to take from each:
+  - Portal: witty dialogue, creative puzzles → D-024, D-019
+  - The Stanley Parable: subverting expectations, surprises → D-030, D-099
+  - Doom: dynamic, high-energy combat → D-027, D-040
+  - Superliminal: creativity in level building → D-054, D-097
+  - F.E.A.R.: the dread of being pursued → D-040, D-043, D-045
+- **D-012** 🟢 Pillar balance: Shooting 20 / Horror 40 / Atmosphere 20 / Puzzles 20 → D-002, D-019
+- **D-013** 🟢 Horror type: psychological dread dominant; frustration and surrealism; minimal gore (only D-051); a couple of jump scares only → D-018, D-014, D-053, D-081, D-082
+- **D-014** 🟢 Emotional arc: start = confused → midpoint = the player has committed to a path (escape vs. discover, D-023, D-060) → end = anxious
+- **D-015** 🟢 Run = one complete playthrough, 20–30 min, designed to be replayed for multiple endings → D-025, D-034, D-039, D-059, D-093
+- **D-016** 🟢 Platform: PC only (Windows), released on Steam → D-003, D-101
+- **D-017** 🟢 Team: solo developer + Claude. No target date; steady progress → D-004, D-007
+- **D-018** 🟢 Rating: Mature. No content declared off-limits; gore limited per D-051
+
+## 2. Story & world
+- **D-009** 🟢 Protagonist: Daniel → D-008, D-020
+- **D-010** 🟢 Setting: "The White Room", an extra-dimensional liminal space with impossible geometry. Entry: a black door opening onto an overly bright, unfamiliar lobby → D-001, D-008, D-021, D-022, D-057, D-064
+- **D-020** 🟢 Daniel's character: starts as a blank slate; backstory revealed progressively. A millennial office drone in a low-paying job → D-009, D-026, D-062, D-076
+- **D-021** 🟢 The black door: a mystery. The game opens as Daniel is opening it. The White Room is a horror dimension on the other side of an office door → D-010, D-020, D-062, D-066
+- **D-022** 🟢 Nature of the White Room: a liminal, abstract dimension with rules; a puzzle box in itself → D-010, D-019, D-041, D-053
+- **D-023** 🟢 Goal & central dilemma: escape at any cost **vs.** discover what the White Room is → D-025, D-028, D-014, D-060
+- **D-024** 🟢 Narrator: a voice accompanying Daniel that is his inner monologue (Stanley Parable influence) → D-011, D-020, D-026, D-030, D-031, D-056, D-080, D-099
+- **D-025** 🟢 Endings: 4 at launch, determined by choice + performance → D-015, D-023, D-028, D-092, D-099
+- **D-026** 🟢 Storytelling: environmental details + dialogue exposition through the inner voice → D-024, D-020
+- **D-028** 🟢 Ending matrix (2×2): path {Escape, Discover} × performance {Good, Poor} → D-023, D-025, D-029, D-060
+- **D-030** 🟢 Inner-voice evolution: starts honest and confused; over the run becomes either clear and resolute, or contradictory and erratic. Drivers: current HP and chosen path → D-024, D-014, D-034, D-060, D-071 (exact mapping ⚪)
+
+## 3. Player & controls
+- **D-032** 🟢 Base moveset: walk, sprint, crouch, jump, lean, interact, shoot → D-052, D-079
+- **D-033** 🟢 Unlockable abilities via items found during the run: double jump, dash, phase (pass briefly through solid objects) → D-037, D-061; tech: collision/phase
+- **D-034** 🟢 Health: HP with a visible HP bar. Death = full restart of the current run; no checkpoints → D-015, D-039, D-079, D-086, D-030
+- **D-038** 🟢 Controls: mouse & keyboard only; no key rebinding → D-016, D-053, D-088, D-090
+
+## 4. Combat
+- **D-027** 🟢 The gun: a defensive tool that is also a puzzle element → D-019, D-035, D-036, D-049, D-105
+- **D-035** 🟢 Arsenal: start with a pistol; up to 5 guns acquirable during a run → D-049, D-088
+- **D-040** 🟢 Combat pacing: quiet exploration broken by short, intense bursts, AND escalating frenzy as the run progresses; mix varies by section. F.E.A.R.-style dread of pursuit → D-011, D-013, D-014, D-075
+- **D-049** 🟢 The 5 guns:
+  1. Pistol — baseline, starting weapon
+  2. Revolver — more damage, less ammo
+  3. Shotgun — more damage, slower fire rate
+  4. AK — high damage, high fire rate, low accuracy
+  5. Scoped rifle — high damage, high precision, slow
+  → D-035, D-050, D-070, D-086, D-105
+- **D-050** 🟢 Ammo: one shared ammo type for all guns; pickup item held in the inventory → D-037, D-086
+- **D-051** 🟢 Enemy death: brief gory animation, then dissolve/disappear. This is the only gore in the game → D-013, D-018
+- **D-052** 🟢 Stealth: in some rooms/sections the player may avoid combat through stealth. Avoided enemies do NOT count toward performance (stealth is a trade-off: safer, but lowers the score) → D-029, D-032, D-040, D-079
+
+## 5. Puzzles
+- **D-019** 🟢 Puzzles are embedded in gameplay and the space itself (not separate challenge rooms) → D-012, D-022, D-027, D-055
+- **D-036** 🟢 Gun puzzle interactions: trigger switches, break specific geometry (e.g. windows), knock or move specific objects → D-027, D-105
+- **D-055** 🟢 Puzzle types: gun puzzles + physics, pattern, and geometry puzzles → D-019, D-054
+- **D-056** 🟢 Hints come from the inner voice (voice only); main-path puzzles cannot be skipped → D-024, D-080, D-104 (⚠️ randomized puzzles D-058 need hint lines per variant or generic hints)
+- **D-104** 🟢 Optional puzzles exist in sections; "puzzle completeness" = share of optional puzzles solved → D-029, D-056, D-061
+- **D-105** 🟢 Per-gun puzzle roles: Pistol → switches · Revolver → breaks glass · Shotgun → knocks over heavy objects · AK → breaks several targets quickly · Scoped rifle → distant switches → D-036, D-049
+
+## 6. Enemies & AI
+- **D-041** 🟢 Enemy fiction: aberration monsters and dimensional demons → D-022, D-013, D-067
+- **D-042** 🟢 Roster: 4 common types + 2 bosses → D-043–D-048
+- **D-043** 🟢 Seeker: patrols; reacts to sound and movement; melee at close range → D-052, D-079; tech: hearing/noise system
+- **D-044** 🟢 Hunter: keeps its distance; if it sees the player for >3 s, attacks with ranged projectiles → tech: line-of-sight timer
+- **D-045** 🟢 Lurker: avoids the player's front view; sneaks around to the back; melee at close range → tech: view-cone check (shared with D-053)
+- **D-046** 🟢 Boomer: rushes the player and self-destructs for high damage
+- **D-047** 🟢 Boss 1: teleports randomly around the arena; ranged attacks → D-068, D-106
+- **D-048** 🟢 Boss 2: very large; charges and tramples like a bull → D-069, D-106
+- **D-106** 🟢 Boss placement: one boss per path (Escape / Discover) → D-023, D-060 (which boss on which path ⚪)
+- All enemy types have their own sound set → D-078
+
+## 7. Level design
+- **D-053** 🟢 Rules of the White Room: (a) elements change when not observed; (b) the same door can lead to different locations; (c) gravity shifts in specific rooms; (d) some rooms reverse the controls → D-022, D-038, D-045; tech: shared "is observed" system
+- **D-054** 🟢 Impossible geometry palette: rooms bigger on the inside, looping corridors, path-shifting labyrinths, seamless doors to strange locations; Superliminal-style creativity in level building → D-010, D-011, D-055, D-097
+- **D-057** 🟢 Run structure: hub-and-branch. Every run starts in the hub lobby, which has several doors → D-010, D-060
+- **D-058** 🟢 Layout: the starting lobby is fixed. Randomized per run: door destinations, enemy placement, item & ammo locations, room order, puzzles → D-039, D-053, D-056; tech: seeded randomization
+- **D-059** 🟢 Each run has 4–6 rooms/sections (≈4–6 min each) → D-015, D-040
+- **D-060** 🟢 Path choice is made by choosing which door to go through → D-023, D-028, D-057, D-106
+- **D-061** 🟢 Unlockable abilities are not required to progress; they give access to secrets, shortcuts, optional puzzles, and combat advantages → D-033, D-104
+- Silent rooms are part of the level palette → D-082
+
+## 8. Art direction
+- **D-005** 🟢 3D assets produced in Blender and/or AI 3D tools (Tripo, Meshy) → D-072
+- **D-062** 🟢 Visual palette: mostly white, with random office or home motifs scattered through the levels → D-010, D-020
+- **D-063** 🟢 Style: realistic, with aberration-horror elements → D-041, D-067
+- **D-064** 🟢 The white: overexposed, glowing white ("annoyingly bright") → D-008, D-077; tech: emissive surfaces + bloom
+- **D-065** 🟢 Lighting: from the walls themselves or from light-source objects. Dark cavities signal danger and may be portals or enemy spawn points → D-053, D-054, D-042
+- **D-066** 🟢 Opening: the real office is only briefly visible in the opening animation; not playable → D-021
+- **D-067** 🟢 Aberration look: fleshy beige-to-white skin, visible bone structure, lean muscles, pitch-black marble-like eyes; every type is a body variation tailored to its behaviour. Camouflage against white walls is intentional → D-041, D-043–D-048
+- **D-068** 🟢 Boss 1 look: preacher-like humanoid, elongated limbs, four arms → D-047 (⚠️ custom rig — Blender task)
+- **D-069** 🟢 Boss 2 look: fleshy aberration bull → D-048 (⚠️ quadruped rig — Blender task)
+- **D-070** 🟢 First-person view: only the equipped gun is visible (no hands); classic real-world gun looks → D-049 (reload animations without hands ⚪)
+- **D-071** 🟢 Erratic-voice effect: vision blurs and light decreases → D-030, D-064; tech: post-processing volume driven by voice state
+- **D-072** 🟢 Asset strategy: maximize AI 3D tools (developer is a Blender beginner); Blender only for targeted fixes (cleanup, boss rigs). Architecture built in Unity (ProBuilder) → D-005
+
+## 9. Audio
+- **D-006** 🟢 Music & audio generated with SUNO; stems/processing with FADR → D-075, D-076
+- **D-031** 🟢 Inner-monologue voice-over recorded locally by the developer → D-024, D-084
+- **D-075** 🟢 Adaptive music: exploration / combat / puzzle states → D-040, D-019; tech: music state machine, stem crossfades
+- **D-076** 🟢 Music style: dark ambient horror + industrial synth + distorted bossa nova (ironic office "muzak") → D-006, D-020
+- **D-077** 🟢 Ambient bed: fluorescent hum; sound effects with high reverb → D-064; tech: reverb zones / mixer
+- **D-078** 🟢 Each enemy type has its own sound effects → D-043–D-048, D-052
+- **D-079** 🟢 Player sounds: footsteps, interaction, jump, louder sprint; heartbeat at low HP → D-032, D-034, D-043
+- **D-080** 🟢 Inner-voice triggers: start/end of rooms, specific object interactions, start/end of puzzles → D-024, D-056; tech: event-driven dialogue triggers
+- **D-081** 🟢 Jump scares use sharp audio stingers → D-013
+- **D-082** 🟢 Some rooms are completely silent → D-013, D-075
+- **D-083** 🟡 SFX sources: Sonniss GDC bundles, Kenney CC0, Freesound (CC0 filter) + paid-tier AI SFX for creature sounds + own recordings; keep a license log → D-078
+- **D-084** 🟢 Localization: VO in English first; Spanish VO in a later sprint. Build localization-ready from day one → D-031, D-089
+
+## 10. UI/UX
+- **D-085** 🟢 Main menu: classic menu screen
+- **D-086** 🟢 HUD: HP, ammo, current gun → D-034, D-049, D-050
+- **D-087** 🟢 Inventory: simple grid inside the pause menu (game paused) → D-037
+- **D-088** 🟢 Gun switching: number keys or mouse wheel → D-035, D-038
+- **D-089** 🟢 Subtitles: optional, toggled in Settings → D-084
+- **D-090** 🟢 Settings menu: Graphics, Controls, Sound levels, Game settings. No key rebinding → D-038 (FOV / head bob / motion blur toggles ⚪)
+- **D-091** 🟢 Feedback cues: interaction prompts + hit markers (damage direction indicator ⚪)
+- **D-092** 🟢 End-of-run screen: run stats + a unique graphic per ending → D-025, D-028, D-029
+- **D-093** 🟢 Quitting mid-run exits and resets the run → D-034, D-039
+
+## 11. Progression & systems
+- **D-029** 🟢 Performance metric = optional-puzzle completeness (D-104) + enemies killed (avoided enemies don't count, D-052) → D-028, D-092
+- **D-037** 🟢 Inventory: up to 20 item types, max stack 99 each → D-033, D-050, D-087
+- **D-039** 🟢 No in-game meta-progression; only player knowledge carries over. Exception: endings seen are saved outside the run (D-099), so the inner voice can react on repeat playthroughs → D-015, D-034, D-058
+
+## 12. Technical (Unity)
+- **D-073** 🟢 Graphics target: standard (non-4K), mid-range PCs → D-016, D-100
+- **D-074** 🟢 Render pipeline: URP → D-064, D-071, D-097
+- **D-094** 🟢 Unity version: Unity 6.3 LTS, editor 6000.3.21f1 (latest LTS line; supported until Dec 2027). Template: Universal 3D → D-003
+- **D-095** 🟢 Developer coding level: mid-beginner; understands structure and purpose. Claude writes code and explains intent
+- **D-096** 🟢 Version control: Git + GitHub (account and repo exist). Claude gives specific, direct step-by-step commit instructions; Git LFS for large binaries → D-109
+- **D-097** 🟢 Impossible geometry tech: see-through portals (⚠️ cap simultaneous visible portals and recursion to hold D-100) → D-054
+- **D-099** 🟢 Save data: settings + endings achieved → D-039, D-093
+- **D-100** 🟢 Performance target: 60 FPS on mid-range PCs → D-073, D-097
+- **D-101** 🟢 Distribution: Steam (Steamworks integration later) → D-016
+- **D-102** 🟢 Development PC: Windows · Intel i7-9700KF · NVIDIA RTX 3060 12 GB · 16 GB RAM → D-007 (16 GB is workable; avoid running Unity + Blender + heavy tools at once)
+- **D-109** 🟢 Repository layout: Git repo at `C:\Dev\tWR` (root holds CLAUDE.md, docs/, .claude/, .gitignore, .gitattributes); Unity project in subfolder `TheWhiteRoom/`. Claude Code is always started from the repo root → D-096, D-094
+
+## 13. Production & pipeline
+- **D-007** 🟢 Early phases in claude.ai browser; switch to desktop (Claude Code + local Unity project) for scripting → D-096, D-102
+- **D-103** 🟢 First playable milestone (vertical slice): hub lobby + one room + one enemy + pistol + one puzzle → D-057, D-049
+- **D-107** 🟡 Vertical slice contents (recommended): Seeker (D-043) + pistol switch puzzle (D-105) + one see-through portal door in the lobby to test the riskiest tech early (D-097) — pending confirmation
+- **D-108** 🟢 Agents/skills: `twr-asset-prompts` skill (claude.ai); Claude Code subagents `unity-scripter` and `gdd-guardian` (in repo `.claude/agents/`)
+
+---
+
+## Interview log
+| Q# | Question | Answer | → Definitions |
+|----|----------|--------|---------------|
+| 1 | The hook | Psychological puzzle FPS; impossible geometry; liminal space; back-of-box text | D-008, D-009, D-010 |
+| 2 | Meaning of title | The setting | D-010 |
+| 3 | Inspirations | Portal, Stanley Parable, Doom, Superliminal, F.E.A.R. | D-011 |
+| 4 | Pillar balance | Shooting 20 / Horror 40 / Atmosphere 40 | D-012 |
+| 5 | Horror type | Psychological dread, frustration, surreal, minimal gore, few jump scares | D-013 |
+| 6 | Emotional arc | Confused → anxious | D-014 |
+| 7 | Length | 15–30 min per run | D-015 |
+| 8 | Platform | PC only | D-016 |
+| 9 | Scope & team | Solo + Claude | D-017 |
+| 10 | Rating | Mature | D-018 |
+| 11 | Puzzles in split | Embedded; 50% of atmosphere | D-012, D-019 |
+| 12 | What is a run | Full playthrough, 20–30 min, replayed for endings | D-015 |
+| 13 | Who is Daniel | Blank slate; millennial low-paid office drone | D-020 |
+| 14 | The black door | Mystery; horror dimension behind an office | D-021 |
+| 15 | Nature of the room | Abstract dimension with rules; puzzle box | D-022 |
+| 16 | Daniel's goal | Escape vs. discover | D-023 |
+| 17 | Endings | 4, choice + performance | D-025 |
+| 18 | Other voices | Inner monologue narrator | D-024 |
+| 19 | Storytelling | Environment + inner voice | D-026 |
+| 20 | Why a gun | Defence + puzzle tool | D-027 |
+| 21 | Ending matrix | 2×2 accepted | D-028 |
+| 22 | Performance | Puzzle completeness + enemies defeated | D-029 |
+| 23 | Inner voice | Honest → resolute or erratic | D-030 |
+| 24 | Voice production | Recorded locally | D-031 |
+| 25 | Movement | Base moveset + unlockable double jump, dash, phase | D-032, D-033 |
+| 26 | Health & death | HP bar; death restarts run | D-034 |
+| 27 | Guns | Pistol → up to 5 | D-035 |
+| 28 | Gun as puzzle tool | Switches, break geometry, move objects | D-036 |
+| 29 | Inventory | 20 types × 99 | D-037 |
+| 30 | Controls | Mouse & keyboard | D-038 |
+| F | Follow-ups | Midpoint = path decided; inspirations; no date | D-014, D-011, D-017 |
+| 31 | Death penalty | Full run restart | D-034 |
+| 32 | Carry-over | Only player knowledge | D-039 |
+| 33 | Doom vs dread | Quiet + bursts, escalating | D-040 |
+| 34 | Enemy fiction | Aberrations, dimensional demons | D-041 |
+| 35 | Variety | 4 common + 2 bosses | D-042 |
+| 36 | Behaviours | Seeker, Hunter, Lurker, Boomer, 2 bosses | D-043–D-048 |
+| 37 | Five guns | Pistol, Revolver, Shotgun, AK, Scoped rifle | D-049 |
+| 38 | Ammo | Pickup item | D-050 |
+| 39 | Enemy deaths | Gory, then dissolve | D-051 |
+| 40 | Combat & endings | Stealth possible in some sections | D-052 |
+| 41 | Room rules | Unobserved shifts, doors, gravity, reversed controls | D-053 |
+| 42 | Impossible geometry | Bigger inside, loops, labyrinths, seamless doors | D-054 |
+| 43 | Other puzzles | Physics, pattern, geometry | D-055 |
+| 44 | Hints & skipping | Voice hints; no skipping | D-056 |
+| 45 | Run structure | Hub lobby with doors | D-057 |
+| 46 | Same vs varied | Fixed start + randomized parts | D-058 |
+| 47 | Sections | 4–6 per run | D-059 |
+| 48 | Path choice | Door choice | D-060 |
+| 49 | Ability gating | Not required | D-061 |
+| 50 | Visual zones | White + office/home motifs | D-062 |
+| 51 | Style | Realistic + aberration horror | D-063 |
+| 52 | The white | Overexposed glowing | D-064 |
+| 53 | Lighting | Walls/objects; dark = danger | D-065 |
+| 54 | Office opening | Intro animation only | D-066 |
+| 55 | Enemy look | Fleshy beige-white, bones, black eyes | D-067 |
+| 56 | Bosses look | Four-armed preacher; fleshy bull | D-068, D-069 |
+| 57 | First person | Gun only | D-070 |
+| 58 | Screen effects | Erratic voice → blur + darker | D-071 |
+| 59 | Asset split | Maximize AI tools | D-072 |
+| 60 | Graphics target | Mid-range, non-4K | D-073 |
+| 61 | Music role | Adaptive, 3 states | D-075 |
+| 62 | Music style | Dark ambient, industrial synth, distorted bossa nova | D-076 |
+| 63 | Ambience | Fluorescent hum, reverb | D-077 |
+| 64 | Enemy audio | Unique per type | D-078 |
+| 65 | Player sounds | Footsteps, sprint, jump, heartbeat | D-079 |
+| 66 | Voice triggers | Rooms, objects, puzzles | D-080 |
+| 67 | Jump scares | Stingers | D-081 |
+| 68 | Silence | Silent rooms | D-082 |
+| 69 | SFX sources | Recommendations requested | D-083 |
+| 70 | Language | English first, Spanish later | D-084 |
+| 71 | Main menu | Classic | D-085 |
+| 72 | HUD | HP, ammo, gun | D-086 |
+| 73 | Inventory screen | Grid in pause menu | D-087 |
+| 74 | Gun switching | Number keys / wheel | D-088 |
+| 75 | Subtitles | Optional | D-089 |
+| 76 | Settings | Graphics, Controls, Sound, Game | D-090 |
+| 77 | Hint display | Voice only | D-056 |
+| 78 | End screen | Stats + ending graphic | D-092 |
+| 79 | Quitting mid-run | Resets run | D-093 |
+| 80 | Feedback cues | Prompts + hit markers | D-091 |
+| 81 | Unity version | Current LTS at dev start → 6000.3.21f1 | D-094 |
+| 82 | Render pipeline | URP | D-074 |
+| 83 | Coding level | Mid-beginner | D-095 |
+| 84 | Version control | GitHub; direct commit steps | D-096 |
+| 85 | Portals | See-through | D-097 |
+| 86 | Save data | Settings + endings | D-099 |
+| 87 | Frame rate | 60 FPS | D-100 |
+| 88 | Distribution | Steam | D-101 |
+| 89 | Dev PC | Windows | D-102 |
+| 90 | First milestone | Vertical slice | D-103 |
+| 91 | Gore scope | Brief gory death then dissolve; only gore | D-051 |
+| 92 | Stealth vs performance | Avoided enemies don't count | D-052, D-029 |
+| 93 | Puzzle completeness | Optional puzzles | D-104 |
+| 94 | Abilities' purpose | Secrets, shortcuts, optional puzzles, combat | D-061 |
+| 95 | Ammo | One shared type | D-050 |
+| 96 | Per-gun puzzles | Yes, one puzzle kind per gun | D-105 |
+| 97 | Boss placement | One boss per path | D-106 |
+| 98 | Voice drivers | HP and path | D-030 |
+| 99 | Randomization | Doors, enemies, items/ammo, room order, puzzles | D-058 |
+| 100 | Camouflage | Intended | D-067 |
+| 101 | Comfort | No key rebinding | D-038, D-090 |
+| 102 | Loose ends | Pillars confirmed; Superliminal level creativity; F.E.A.R. pursuit dread; nothing off-limits; PC specs | D-012, D-011, D-018, D-102 |
+
+## 14. Open questions
+- Which boss belongs to which path (D-106)
+- Exact HP/path → inner-voice mapping (D-030)
+- Hint lines for randomized puzzles: per-variant or generic (D-056, D-058)
+- Reload/interaction animations with no visible hands (D-070)
+- FOV / head bob / motion blur toggles; damage direction indicator (D-090, D-091)
+- Final SFX source selection (D-083)
+- Confirm vertical slice contents (D-107)
