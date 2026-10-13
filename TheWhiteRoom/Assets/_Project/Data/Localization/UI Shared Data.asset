@@ -19,6 +19,18 @@ MonoBehaviour:
     m_Key: interact.generic
     m_Metadata:
       m_Items: []
+  - m_Id: 9593739673600
+    m_Key: gun.pistol.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9593819365376
+    m_Key: hud.ammo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9593819365377
+    m_Key: item.ammo.name
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

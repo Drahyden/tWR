@@ -3,7 +3,7 @@
 > Source of truth for every chat in the "tWR Game Development" project.
 > Each definition gets an ID (D-###). Links between definitions use `→ D-###`.
 > Status: 🟢 locked · 🟡 tentative · ⚪ open
-> Interview complete (Q1–102). New decisions continue from D-117.
+> Interview complete (Q1–102). New decisions continue from D-124.
 
 ## 0. Index of sections
 1. Core identity · 2. Story & world · 3. Player & controls · 4. Combat · 5. Puzzles · 6. Enemies & AI · 7. Level design · 8. Art direction · 9. Audio · 10. UI/UX · 11. Progression & systems · 12. Technical (Unity) · 13. Production & pipeline · 14. Open questions
@@ -68,6 +68,11 @@
 - **D-050** 🟢 Ammo: one shared ammo type for all guns; pickup item held in the inventory → D-037, D-086
 - **D-051** 🟢 Enemy death: brief gory animation, then dissolve/disappear. This is the only gore in the game → D-013, D-018
 - **D-052** 🟢 Stealth: in some rooms/sections the player may avoid combat through stealth. Avoided enemies do NOT count toward performance (stealth is a trade-off: safer, but lowers the score) → D-029, D-032, D-040, D-079
+- **D-117** 🟢 Reload without hands: procedural gun-only animation (gun dips/tilts, magazine mesh slides out of view and back in, gun returns); timings per gun in GunData; switching guns cancels reload → D-070, D-049, D-119
+- **D-118** 🟢 Shooting model: hitscan from camera centre for all guns (shotgun = multiple pellet rays later); triggers and the Weapon layer are ignored. Hits resolve to IDamageable (HP holders; raises a killed event with the attacker → D-029) and IShootable (puzzle objects; receive hit point, normal, direction, force, gun and shooter → D-036). "Normal" switches accept any gun; gun-specific switches use an optional required-gun filter (GunRequirement, by gun type) → D-027, D-036, D-105
+- **D-119** 🟢 GunData ScriptableObject: localized name key, gun type, damage, fire mode, fire interval, magazine size, range, spread, recoil, reload timings, gunshot noise radius, impact noise radius. Shot = Gunshot noise at the muzzle; hit = Impact noise at the hit point (source = shooter); dry fire is silent. Pistol: 25 dmg, semi-auto, 0.15 s, mag 12, 100 m, gunshot 25 m, impact 6 m → D-049, D-114, D-116
+- **D-120** 🟢 Ammo storage: reserve ammo is the shared Ammo item stack in the inventory (cap 99, D-037); loaded rounds are per-gun magazine state kept across gun switches; reload draws from the stack when it completes; an empty trigger pull auto-reloads if reserve > 0. Slice defaults: full mag + 24 reserve at start, pickup +12 → D-050, D-037, D-087
+- **D-121** 🟢 Ammo pickups are collected by walking over them (trigger, no prompt); excess beyond the 99 cap stays in the pickup; collecting emits a small Pickup noise (≈2 m) and a picked-up event for voice triggers; placement randomized later per D-058 → D-050, D-058, D-080, D-114
 
 ## 5. Puzzles
 - **D-019** 🟢 Puzzles are embedded in gameplay and the space itself (not separate challenge rooms) → D-012, D-022, D-027, D-055
@@ -109,7 +114,7 @@
 - **D-067** 🟢 Aberration look: fleshy beige-to-white skin, visible bone structure, lean muscles, pitch-black marble-like eyes; every type is a body variation tailored to its behaviour. Camouflage against white walls is intentional → D-041, D-043–D-048
 - **D-068** 🟢 Boss 1 look: preacher-like humanoid, elongated limbs, four arms → D-047 (⚠️ custom rig — Blender task)
 - **D-069** 🟢 Boss 2 look: fleshy aberration bull → D-048 (⚠️ quadruped rig — Blender task)
-- **D-070** 🟢 First-person view: only the equipped gun is visible (no hands); classic real-world gun looks → D-049 (reload animations without hands ⚪)
+- **D-070** 🟢 First-person view: only the equipped gun is visible (no hands); classic real-world gun looks → D-049 (reload: → D-117; interaction animations without hands ⚪)
 - **D-071** 🟢 Erratic-voice effect: vision blurs and light decreases → D-030, D-064; tech: post-processing volume driven by voice state
 - **D-072** 🟢 Asset strategy: maximize AI 3D tools (developer is a Blender beginner); Blender only for targeted fixes (cleanup, boss rigs). Architecture built in Unity (ProBuilder) → D-005
 
@@ -137,6 +142,7 @@
 - **D-091** 🟢 Feedback cues: interaction prompts + hit markers (damage direction indicator ⚪)
 - **D-092** 🟢 End-of-run screen: run stats + a unique graphic per ending → D-025, D-028, D-029
 - **D-093** 🟢 Quitting mid-run exits and resets the run → D-034, D-039
+- **D-122** 🟢 Slice HUD: HP bar (PlayerHealth, max HP in PlayerTuning; death = scene reload per D-034), ammo "mag / reserve" via localized format string, current gun name via string table, centre crosshair dot, hit marker (stronger on kill). No damage direction indicator yet → D-086, D-091, D-084, D-034
 
 ## 11. Progression & systems
 - **D-029** 🟢 Performance metric = optional-puzzle completeness (D-104) + enemies killed (avoided enemies don't count, D-052) → D-028, D-092
@@ -157,6 +163,7 @@
 - **D-109** 🟢 Repository layout: Git repo at `C:\Dev\tWR` (root holds CLAUDE.md, docs/, .claude/, .gitignore, .gitattributes); Unity project in subfolder `TheWhiteRoom/`. Claude Code is always started from the repo root → D-096, D-094
 - **D-114** 🟢 Shared noise-event system (TWR.Core): global emit(position, radius, type, source) + listener registration. Player sources: crouch ≈ near-silent (small radius), walk = low, sprint = high, jump + landing (landing scaled by fall speed) = medium; later gunshots/impacts. Radius-only in step 1; wall muffling per D-116 → D-043, D-052, D-079
 - **D-116** 🟢 Noise and walls: walls muffle noise (reduce its effective radius) rather than fully blocking it. Implement when building the Seeker → D-043, D-052, D-114
+- **D-123** 🟢 First-person gun rendering: weapon holder parented to the player camera (inherits lean, D-111); gun on a "Weapon" layer drawn on top via URP Render Objects renderer features (no overlay camera); Weapon layer excluded from shoot/interact raycasts → D-070, D-074, D-100
 
 ## 13. Production & pipeline
 - **D-007** 🟢 Early phases in claude.ai browser; switch to desktop (Claude Code + local Unity project) for scripting → D-096, D-102
@@ -277,6 +284,6 @@
 - Which boss belongs to which path (D-106)
 - Exact HP/path → inner-voice mapping (D-030)
 - Hint lines for randomized puzzles: per-variant or generic (D-056, D-058)
-- Reload/interaction animations with no visible hands (D-070)
+- Interaction animations with no visible hands (D-070)
 - FOV / head bob / motion blur toggles; damage direction indicator (D-090, D-091)
 - Final SFX source selection (D-083)

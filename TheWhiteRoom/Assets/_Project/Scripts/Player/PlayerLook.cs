@@ -5,7 +5,8 @@ namespace TWR.Player
     /// <summary>
     /// Mouse look (D-032): turns the whole body left/right (yaw) and tilts the Head up/down (pitch).
     /// Stores yaw/pitch itself so portals can set them exactly via SetLookRotation (D-097).
-    /// Also applies the field of view from PlayerTuning to the player camera.
+    /// Also applies the field of view from PlayerTuning to the player camera, and the self-recovering
+    /// recoil view kick (AddViewKick, D-123).
     /// </summary>
     [DefaultExecutionOrder(-50)]
     public class PlayerLook : MonoBehaviour
@@ -18,6 +19,9 @@ namespace TWR.Player
 
         float yaw;
         float pitch;
+        float viewKick;               // extra upward pitch from recoil (D-123), recovers to 0
+        float viewKickRecoverSharpness = 10f;
+        const float MaxViewKick = 10f;
 
         public float Yaw => yaw;
         public float Pitch => pitch;
@@ -49,7 +53,23 @@ namespace TWR.Player
             Vector2 look = input.Look * tuning.mouseSensitivity;
             yaw += look.x;
             pitch = Mathf.Clamp(pitch - look.y, tuning.minPitch, tuning.maxPitch);
+
+            if (viewKick != 0f)
+            {
+                viewKick = Mathf.Lerp(viewKick, 0f, 1f - Mathf.Exp(-viewKickRecoverSharpness * Time.deltaTime));
+                if (viewKick < 0.01f) viewKick = 0f;
+            }
             ApplyRotation();
+        }
+
+        /// <summary>
+        /// Recoil camera kick (D-123): tilts the view up by some degrees on top of the mouse pitch.
+        /// It recovers by itself, so it never permanently moves your aim.
+        /// </summary>
+        public void AddViewKick(float pitchUpDegrees, float recoverSharpness)
+        {
+            viewKick = Mathf.Min(viewKick + pitchUpDegrees, MaxViewKick);
+            viewKickRecoverSharpness = Mathf.Max(0.1f, recoverSharpness);
         }
 
         /// <summary>Set the view direction instantly (used by Teleport / portals, D-097). Roll is ignored.</summary>
@@ -66,7 +86,8 @@ namespace TWR.Player
         void ApplyRotation()
         {
             transform.rotation = Quaternion.Euler(0f, yaw, 0f);
-            if (head != null) head.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+            float min = tuning != null ? tuning.minPitch : -85f;
+            if (head != null) head.localRotation = Quaternion.Euler(Mathf.Max(pitch - viewKick, min), 0f, 0f);
         }
     }
 }

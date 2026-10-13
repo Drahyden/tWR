@@ -14,6 +14,8 @@ namespace TWR.EditorTools
     /// Editor menu "TWR/Setup Project": one-click project setup so nothing has to be clicked by hand.
     /// Imports TMP Essentials, creates/activates Localization Settings, the English locale (project locale
     /// + Specific Locale Selector), and the "UI" string table with its starter entries (D-084).
+    /// Through TestSceneBuilder.PrepareSharedAssets it also creates the layers and sets up the
+    /// draw-the-gun-on-top renderer features (WeaponRenderSetup, D-123).
     /// Safe to run any time: it only creates or fixes what is missing. "TWR/Build Test Scene" runs it first.
     /// </summary>
     public static class ProjectSetup
@@ -27,6 +29,10 @@ namespace TWR.EditorTools
         static readonly (string key, string english)[] UiEntries =
         {
             ("interact.generic", "Press F to interact"),
+            // Step 2, pistol (D-086 HUD, D-119 / D-122).
+            ("gun.pistol.name", "Pistol"),
+            ("hud.ammo", "{0} / {1}"),          // {0} = magazine, {1} = reserve. Plain pattern, not a Smart String.
+            ("item.ammo.name", "Ammo"),         // inventory grid later (D-087)
         };
 
         [MenuItem("TWR/Setup Project", priority = 0)]

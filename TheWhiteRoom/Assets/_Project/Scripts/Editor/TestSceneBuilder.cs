@@ -19,9 +19,11 @@ namespace TWR.EditorTools
     /// from code so nobody hand-edits scene files. Creates (only if missing) the Interactable layer,
     /// white emissive materials (D-064), a Bloom volume profile, the PlayerTuning asset and the Player
     /// prefab, then lays out a cheap greybox room (D-100) to test every move, lean, crouch, interact and noise.
-    /// "TWR/Rebuild Player Prefab" overwrites the prefab from scratch if it ever gets broken.
+    /// Step 2 (pistol, D-107): also the Weapon layer, gun-on-top rendering, Ammo item + Pistol GunData assets,
+    /// and it UPGRADES an existing Player prefab with health, inventory, weapons and the placeholder pistol
+    /// (see TestSceneBuilder.Combat.cs). "TWR/Rebuild Player Prefab" overwrites the prefab from scratch.
     /// </summary>
-    public static class TestSceneBuilder
+    public static partial class TestSceneBuilder
     {
         const string Root = "Assets/_Project";
         const string ScenePath = Root + "/Scenes/Test_PlayerController.unity";
@@ -31,6 +33,7 @@ namespace TWR.EditorTools
         const string VolumeProfilePath = Root + "/Settings/Rendering/VP_WhiteRoom.asset";
         const string MaterialFolder = Root + "/Art/Materials";
         const string InteractableLayerName = "Interactable";
+        const string WeaponLayerName = "Weapon";
 
         [MenuItem("TWR/Build Test Scene")]
         public static void BuildTestScene()
@@ -43,6 +46,8 @@ namespace TWR.EditorTools
         static void BuildTestSceneAfterSetup()
         {
             if (!PrepareSharedAssets(out int interactableLayer, out PlayerTuning tuning, out InputActionAsset input))
+                return;
+            if (!PrepareCombatAssets(out CombatAssets combat))
                 return;
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return;
@@ -90,11 +95,15 @@ namespace TWR.EditorTools
 
             new GameObject("Noise Debug Drawer").AddComponent<NoiseDebugDrawer>();
 
+            // Shooting targets, ammo pickups, damage zone (step 2).
+            BuildCombatTestProps(combat);
+
             // Player.
-            GameObject player = GetOrCreatePlayerInstance(tuning, input, interactableLayer, false);
+            GameObject player = GetOrCreatePlayerInstance(tuning, input, interactableLayer, combat, false);
             player.transform.SetPositionAndRotation(new Vector3(0f, 0.05f, -6f), Quaternion.identity);
 
-            BuildHud(player.GetComponent<PlayerInteractor>());
+            GameObject hud = BuildHud(player.GetComponent<PlayerInteractor>());
+            BuildCombatHud(hud, player);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddSceneToBuildSettings(ScenePath);
@@ -107,11 +116,14 @@ namespace TWR.EditorTools
         {
             if (!PrepareSharedAssets(out int interactableLayer, out PlayerTuning tuning, out InputActionAsset input))
                 return;
+            if (!PrepareCombatAssets(out CombatAssets combat))
+                return;
             if (!EditorUtility.DisplayDialog("Rebuild Player Prefab",
                     "This overwrites " + PrefabPath + " (your changes to it will be lost). Continue?", "Rebuild", "Cancel"))
                 return;
 
             GameObject temp = CreatePlayerHierarchy(tuning, input, interactableLayer);
+            EnsurePlayerCombat(temp, combat, tuning, input);
             AssignSharedAssets(temp, tuning, input);
             ValidateSharedAssets(temp);
             PrefabUtility.SaveAsPrefabAsset(temp, PrefabPath);
@@ -143,11 +155,15 @@ namespace TWR.EditorTools
             }
 
             interactableLayer = EnsureLayer(InteractableLayerName);
-            if (interactableLayer < 0)
+            int weaponLayer = EnsureLayer(WeaponLayerName);
+            if (interactableLayer < 0 || weaponLayer < 0)
             {
-                EditorUtility.DisplayDialog("No free layer", "Could not create the 'Interactable' layer: all user layers are used.", "OK");
+                EditorUtility.DisplayDialog("No free layer", "Could not create the 'Interactable' / 'Weapon' layers: all user layers are used.", "OK");
                 return false;
             }
+
+            // Draw the held gun on top of walls without an overlay camera (D-123).
+            WeaponRenderSetup.Ensure(weaponLayer);
 
             EnsureFolder(Root + "/Data/Player");
             EnsureFolder(Root + "/Prefabs");
@@ -323,17 +339,22 @@ namespace TWR.EditorTools
 
         // ---------- player ----------
 
-        static GameObject GetOrCreatePlayerInstance(PlayerTuning tuning, InputActionAsset input, int interactableLayer, bool forceRebuild)
+        static GameObject GetOrCreatePlayerInstance(PlayerTuning tuning, InputActionAsset input, int interactableLayer,
+                                                    CombatAssets combat, bool forceRebuild)
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
             GameObject root;
             if (prefab != null && !forceRebuild)
             {
+                // Upgrade the existing prefab in place (adds step-2 parts only if missing), then place it.
+                UpgradePlayerPrefab(combat, tuning, input);
+                prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
                 root = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
             }
             else
             {
                 root = CreatePlayerHierarchy(tuning, input, interactableLayer);
+                EnsurePlayerCombat(root, combat, tuning, input);
                 PrefabUtility.SaveAsPrefabAssetAndConnect(root, PrefabPath, InteractionMode.AutomatedAction);
             }
 
@@ -451,7 +472,7 @@ namespace TWR.EditorTools
 
         // ---------- HUD ----------
 
-        static void BuildHud(PlayerInteractor interactor)
+        static GameObject BuildHud(PlayerInteractor interactor)
         {
             var canvasGO = new GameObject("HUD");
             var canvas = canvasGO.AddComponent<Canvas>();
@@ -485,6 +506,7 @@ namespace TWR.EditorTools
             var prompt = canvasGO.AddComponent<InteractionPromptUI>();
             Assign(prompt, "interactor", interactor);
             Assign(prompt, "label", label);
+            return canvasGO;
         }
 
         // ---------- helpers ----------

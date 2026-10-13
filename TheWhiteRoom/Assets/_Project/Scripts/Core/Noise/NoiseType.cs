@@ -11,6 +11,8 @@ namespace TWR.Core
         Land,
         Gunshot,
         Impact,
-        Interact
+        Interact,
+        /// <summary>Walking over an item pickup (D-121). Its own type so a Seeker can treat it differently from F-interactions.</summary>
+        Pickup
     }
 }

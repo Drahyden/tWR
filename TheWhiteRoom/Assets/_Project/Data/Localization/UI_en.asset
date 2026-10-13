@@ -22,6 +22,18 @@ MonoBehaviour:
     m_Localized: Press F to interact
     m_Metadata:
       m_Items: []
+  - m_Id: 9593739673600
+    m_Localized: Pistol
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9593819365376
+    m_Localized: '{0} / {1}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9593819365377
+    m_Localized: Ammo
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

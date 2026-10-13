@@ -91,5 +91,14 @@ namespace TWR.Player
         [Tooltip("Landings slower than this (m/s downward) make no noise, e.g. stepping off a kerb.")]
         public float landMinSpeed = 3f;
         public float interactNoise = 3f;
+
+        [Header("Health - D-034")]
+        public float maxHealth = 100f;
+        [Tooltip("Seconds between dying and the run restarting (scene reload).")]
+        public float deathRestartDelay = 1.5f;
+
+        [Header("Starting ammo - D-120")]
+        [Tooltip("Reserve rounds put in the Inventory at the start (on top of a full magazine).")]
+        public int startingReserveAmmo = 24;
     }
 }

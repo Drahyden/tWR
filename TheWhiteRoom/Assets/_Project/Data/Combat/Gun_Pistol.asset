@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aad155dd49b94774bbb82fc73b0f0dc3, type: 3}
+  m_Name: Gun_Pistol
+  m_EditorClassIdentifier: Assembly-CSharp::TWR.Combat.GunData
+  gunType: 0
+  displayName:
+    m_TableReference:
+      m_TableCollectionName: UI
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: gun.pistol.name
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  ammoItem: {fileID: 11400000, guid: 683cc0b8ab231fe49bb8e928c3b4f213, type: 2}
+  damage: 25
+  automatic: 0
+  fireInterval: 0.15
+  magazineSize: 12
+  range: 100
+  spreadDegrees: 0
+  hitForce: 4
+  equipTime: 0.3
+  reloadTime: 1.4
+  reloadLowerEnd: 0.2
+  reloadMagOutEnd: 0.45
+  reloadMagInStart: 0.55
+  reloadMagInEnd: 0.8
+  reloadDipDistance: 0.06
+  reloadTiltDegrees: {x: -20, y: 30}
+  magazineDropDistance: 0.3
+  equipDropDistance: 0.2
+  kickBackDistance: 0.04
+  kickPitchDegrees: 8
+  slideKickDistance: 0.025
+  kickReturnSharpness: 14
+  cameraKickDegrees: 1
+  cameraKickRecoverSharpness: 10
+  muzzleFlashDuration: 0.05
+  gunshotNoiseRadius: 25
+  impactNoiseRadius: 6
+  fireClip: {fileID: 0}
+  dryFireClip: {fileID: 0}
+  reloadClip: {fileID: 0}
+  references:
+    version: 2
+    RefIds: []

@@ -41,7 +41,13 @@ namespace TWR.Player
             if (interactableMask.value == 0) interactableMask = LayerMask.GetMask("Interactable");
             if (interactableMask.value == 0)
                 Debug.LogWarning("[PlayerInteractor] No 'Interactable' layer found. Create it in Tags and Layers.", this);
+
+            // The held gun (Weapon layer, D-123) and trigger volumes (Ignore Raycast) must never
+            // block the interaction ray, even if blockingMask is set to Everything.
+            rayMask = (interactableMask.value | blockingMask.value) & ~LayerMask.GetMask("Weapon", "Ignore Raycast");
         }
+
+        int rayMask;
 
         void Update()
         {
@@ -62,9 +68,7 @@ namespace TWR.Player
         {
             IInteractable found = null;
             Ray ray = playerCamera.ViewportPointToRay(ScreenCentre);
-            int mask = interactableMask.value | blockingMask.value;
-
-            if (Physics.Raycast(ray, out RaycastHit hit, tuning.interactDistance, mask, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(ray, out RaycastHit hit, tuning.interactDistance, rayMask, QueryTriggerInteraction.Ignore))
             {
                 lastHitPoint = hit.point;
                 if (hit.collider != lastCollider)

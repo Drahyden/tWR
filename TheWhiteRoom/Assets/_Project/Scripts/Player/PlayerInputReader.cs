@@ -20,6 +20,8 @@ namespace TWR.Player
         InputActionMap map;
         InputAction moveAction, lookAction, sprintAction, crouchAction, jumpAction;
         InputAction leanLeftAction, leanRightAction, interactAction;
+        InputAction shootAction, reloadAction, weaponScrollAction;
+        readonly InputAction[] weaponSlotActions = new InputAction[5];
 
         /// <summary>Reversed controls (D-053d). Room scripts set this on enter/exit.</summary>
         public bool ControlsInverted { get; set; }
@@ -51,6 +53,34 @@ namespace TWR.Player
         public bool JumpPressedThisFrame => jumpAction != null && jumpAction.WasPressedThisFrame();
         public bool InteractPressedThisFrame => interactAction != null && interactAction.WasPressedThisFrame();
 
+        // ---- Weapons (D-110: LMB shoot, R reload, 1-5 / wheel switch gun; D-088) ----
+        public bool ShootPressedThisFrame => shootAction != null && shootAction.WasPressedThisFrame();
+        /// <summary>Held trigger, for automatic guns later (AK, D-049).</summary>
+        public bool ShootHeld => shootAction != null && shootAction.IsPressed();
+        public bool ReloadPressedThisFrame => reloadAction != null && reloadAction.WasPressedThisFrame();
+
+        /// <summary>Slot index 0-4 if a number key 1-5 was pressed this frame, otherwise -1.</summary>
+        public int WeaponSlotPressedThisFrame
+        {
+            get
+            {
+                for (int i = 0; i < weaponSlotActions.Length; i++)
+                    if (weaponSlotActions[i] != null && weaponSlotActions[i].WasPressedThisFrame()) return i;
+                return -1;
+            }
+        }
+
+        /// <summary>+1 = wheel scrolled up (next gun), -1 = down (previous gun), 0 = no scroll this frame.</summary>
+        public int WeaponScrollStep
+        {
+            get
+            {
+                if (weaponScrollAction == null) return 0;
+                float y = weaponScrollAction.ReadValue<Vector2>().y;
+                return y > 0.01f ? 1 : y < -0.01f ? -1 : 0;
+            }
+        }
+
         /// <summary>-1 = lean left (Q), +1 = lean right (E), 0 = none/both.</summary>
         public float LeanAxis
         {
@@ -81,6 +111,21 @@ namespace TWR.Player
             leanLeftAction = map.FindAction("LeanLeft", true);
             leanRightAction = map.FindAction("LeanRight", true);
             interactAction = map.FindAction("Interact", true);
+
+            // Weapon actions (step 2). Looked up softly so an old copy of the asset only warns once.
+            shootAction = FindOptional("Shoot");
+            reloadAction = FindOptional("Reload");
+            weaponScrollAction = FindOptional("WeaponScroll");
+            for (int i = 0; i < weaponSlotActions.Length; i++)
+                weaponSlotActions[i] = FindOptional("Weapon" + (i + 1));
+        }
+
+        InputAction FindOptional(string actionName)
+        {
+            InputAction action = map.FindAction(actionName, false);
+            if (action == null)
+                Debug.LogWarning($"[PlayerInputReader] Action '{actionName}' missing from {actions.name}. Re-import TWR_Controls.inputactions.", this);
+            return action;
         }
 
         void OnEnable()
