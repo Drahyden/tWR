@@ -35,6 +35,13 @@ namespace TWR.EditorTools
         [MenuItem("TWR/Build Test Scene")]
         public static void BuildTestScene()
         {
+            // Project setup first (TMP Essentials, localization). If TMP has to be imported,
+            // the scene is built once that import finishes.
+            ProjectSetup.Run(BuildTestSceneAfterSetup);
+        }
+
+        static void BuildTestSceneAfterSetup()
+        {
             if (!PrepareSharedAssets(out int interactableLayer, out PlayerTuning tuning, out InputActionAsset input))
                 return;
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
@@ -114,7 +121,7 @@ namespace TWR.EditorTools
 
         // ---------- shared assets ----------
 
-        static bool PrepareSharedAssets(out int interactableLayer, out PlayerTuning tuning, out InputActionAsset input)
+        internal static bool PrepareSharedAssets(out int interactableLayer, out PlayerTuning tuning, out InputActionAsset input)
         {
             tuning = null;
             input = null;
