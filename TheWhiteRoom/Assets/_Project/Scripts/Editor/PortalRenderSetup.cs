@@ -8,7 +8,7 @@ using UnityEngine.Rendering.Universal;
 namespace TWR.EditorTools
 {
     /// <summary>
-    /// Creates the dedicated "Portal" Universal Renderer for portal cameras (proposed D-139; D-097, D-100) and adds
+    /// Creates the dedicated "Portal" Universal Renderer for portal cameras (D-139; D-097, D-100) and adds
     /// it to the renderer list of every URP asset the project uses (default + each quality level, found the same way
     /// as WeaponRenderSetup). It is a plain renderer: no Render Objects features (the gun is never in a portal view),
     /// no SSAO, no depth priming. Depth/opaque textures and MSAA are switched off per portal camera.
@@ -36,7 +36,7 @@ namespace TWR.EditorTools
                 }
                 AssetDatabase.CreateAsset(data, RendererPath);
                 ResourceReloader.TryReloadAllNullIn(data, UniversalRenderPipelineAsset.packagePath); // shaders etc., like URP's own "Create" menu
-                Debug.Log("[TWR] Created " + RendererPath + " (proposed D-139).");
+                Debug.Log("[TWR] Created " + RendererPath + " (D-139).");
             }
 
             data.depthPrimingMode = DepthPrimingMode.Disabled;

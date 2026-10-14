@@ -3,7 +3,7 @@ using UnityEngine;
 namespace TWR.Audio
 {
     /// <summary>
-    /// The non-spatial ambient bed (D-077 fluorescent hum; proposed D-144). A 2D looping AudioSource, so it sounds the
+    /// The non-spatial ambient bed (D-077 fluorescent hum; D-144). A 2D looping AudioSource, so it sounds the
     /// same everywhere: walking through a portal (a 500 m teleport) causes no audio pop. The clip slot may be empty:
     /// then a cheap generated placeholder hum is used (whole cycles in 1 s, so the loop doesn't click) until a real
     /// SUNO/FADR bed exists (D-006, D-083). Volume will move to the Sound settings / mixer later (D-090).

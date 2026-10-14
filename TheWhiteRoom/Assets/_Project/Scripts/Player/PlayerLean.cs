@@ -6,7 +6,7 @@ namespace TWR.Player
     /// <summary>
     /// Lean left/right with Q/E (D-032). Moves ONLY the camera (no body, no arms, D-070):
     /// a sideways offset plus a roll on the LeanPivot. A spherecast stops the camera entering walls,
-    /// and portal planes count as walls too (proposed D-142).
+    /// and portal planes count as walls too (D-142).
     /// Sprinting cancels lean; leaning while crouched is allowed.
     /// </summary>
     [DefaultExecutionOrder(10)]
@@ -66,7 +66,7 @@ namespace TWR.Player
                 free = hit.distance;
             }
             // A portal opening has no collider, but its plane counts as a wall here, so leaning can never
-            // push the camera through a portal (proposed D-142).
+            // push the camera through a portal (D-142).
             free = Mathf.Min(free, PortalRaycast.ClearDistance(head.position, direction, distance, tuning.leanCollisionRadius));
             return Mathf.Clamp01(free / distance);
         }

@@ -9,7 +9,7 @@ namespace TWR.Puzzles
     /// It is a puzzle output (IPuzzleOutput): when the puzzle is solved it unlocks, emits a Mechanism noise
     /// (~8 m, D-128) and turns its lock light from red to green (D-065: light, not UI).
     /// The Door asks IsLocked before opening. State is scene-only; a reload locks it again (D-129).
-    /// "Permanently locked (no puzzle)" mode (proposed D-145): the lobby's black entry door and the reserved
+    /// "Permanently locked (no puzzle)" mode (D-145): the lobby's black entry door and the reserved
     /// path doors (D-021, D-060) stay locked whatever calls Unlock; F still shows "Locked" and raises the
     /// interaction event (D-112) through the Door as usual.
     /// </summary>
@@ -17,7 +17,7 @@ namespace TWR.Puzzles
     {
         [SerializeField] DoorData data;
         [SerializeField] bool startsLocked = true;
-        [Tooltip("Never unlocks, not even from a puzzle (proposed D-145). Forces startsLocked on.")]
+        [Tooltip("Never unlocks, not even from a puzzle (D-145). Forces startsLocked on.")]
         [SerializeField] bool permanentlyLocked;
 
         [Header("Lock light - D-065")]

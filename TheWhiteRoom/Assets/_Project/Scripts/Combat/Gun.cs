@@ -9,7 +9,7 @@ namespace TWR.Combat
     /// <summary>
     /// The rules of one gun: magazine, fire rate, hitscan shot, reload timer (D-118, D-119, D-117).
     /// Shoots a ray from the CAMERA CENTRE (same origin as the interaction ray, D-112), so bullets go exactly
-    /// where the crosshair dot is, also through one open portal via the shared PortalRaycast (proposed D-143). Hits are resolved to IDamageable (HP) and IShootable (puzzles), both found
+    /// where the crosshair dot is, also through one open portal via the shared PortalRaycast (D-143). Hits are resolved to IDamageable (HP) and IShootable (puzzles), both found
     /// on the collider or its parents. Emits a Gunshot noise at the muzzle and an Impact noise at the hit
     /// point (D-079). Reserve ammo is read from / taken out of the owner's Inventory (D-050).
     /// Visuals (recoil, reload motion) are in GunViewModel; WeaponInventory decides WHEN to call TryFire.
@@ -130,7 +130,7 @@ namespace TWR.Combat
             Vector3 direction = ApplySpread(ray.direction);
 
             // Triggers (pickups, trigger zones) are ignored; so are the shooter's own colliders.
-            // The ray may go through ONE open portal (proposed D-143); the hit point is then where the target
+            // The ray may go through ONE open portal (D-143); the hit point is then where the target
             // really is, so the Impact noise is made there, not at the portal.
             if (!PortalRaycast.Raycast(ray.origin, direction, data.range, hitMask, QueryTriggerInteraction.Ignore,
                                        ownerRoot, out PortalRayHit shot))

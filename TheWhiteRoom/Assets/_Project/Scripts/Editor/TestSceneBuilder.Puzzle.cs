@@ -368,7 +368,7 @@ namespace TWR.EditorTools
                 {
                     var lockSo = new SerializedObject(doorLock);
                     SerializedProperty permanent = lockSo.FindProperty("permanentlyLocked");
-                    lockMode = permanent != null && permanent.boolValue ? " (PERMANENTLY locked, D-145 proposed)"
+                    lockMode = permanent != null && permanent.boolValue ? " (PERMANENTLY locked, D-145)"
                              : lockSo.FindProperty("startsLocked").boolValue ? " (locked until its puzzle is solved)" : " (unlocked)";
                 }
                 string line = $"[TWR] Door wiring: '{door.name}'  data: {(data != null ? data.name : "MISSING")}, " +

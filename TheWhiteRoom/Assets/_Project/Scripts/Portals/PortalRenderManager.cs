@@ -6,12 +6,12 @@ using UnityEngine.Rendering.Universal;
 namespace TWR.Portals
 {
     /// <summary>
-    /// Decides every frame which portals render a live view (proposed D-140; D-097, D-100). A portal renders only
+    /// Decides every frame which portals render a live view (D-140; D-097, D-100). A portal renders only
     /// while it is open, linked, the player camera is in FRONT of it and its screen is inside the camera frustum
     /// (GeometryUtility.TestPlanesAABB). Of those, only the nearest maxRenderedPortals render live; the rest show
-    /// flat white. It also turns a screen into a short box when the camera is about to step through (proposed D-142).
+    /// flat white. It also turns a screen into a short box when the camera is about to step through (D-142).
     /// Runs in a very late LateUpdate, so look, lean, head bob and the crossing teleport have already happened
-    /// this frame and the portal cameras copy the final pose (proposed D-139). One per scene.
+    /// this frame and the portal cameras copy the final pose (D-139). One per scene.
     /// </summary>
     [DefaultExecutionOrder(10000)]
     public class PortalRenderManager : MonoBehaviour
@@ -46,7 +46,7 @@ namespace TWR.Portals
 
         void Start()
         {
-            // One-time sanity check (proposed D-142): the maths assumes every pair differs only by position + yaw.
+            // One-time sanity check (D-142): the maths assumes every pair differs only by position + yaw.
             IReadOnlyList<Portal> portals = Portal.Active;
             for (int i = 0; i < portals.Count; i++)
             {

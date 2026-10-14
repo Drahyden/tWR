@@ -17,7 +17,7 @@ namespace TWR.EditorTools
 {
     /// <summary>
     /// Step 5 (hub lobby + see-through portal door, D-107; D-057, D-097) part of "TWR/Build Test Scene".
-    /// Implements the PROPOSED decisions D-139 to D-147 (not locked yet):
+    /// Implements decisions D-139 to D-147:
     /// - assets: PortalSettings (D-140), the portal screen shader + materials, the "Portal" URP renderer (D-139),
     ///   a swing DoorData for the portal door, the Portal / PortalFallback layers;
     /// - a bright lobby south of the white room (D-145; D-010, D-021, D-057, D-062, D-064) with five doors: the
@@ -39,7 +39,7 @@ namespace TWR.EditorTools
         const string PortalLayerName = GameLayers.Portal;
         const string PortalFallbackLayerName = GameLayers.PortalFallback;
 
-        // Opening of both portals (proposed D-142: at least 1.2 x 2.4 m). 3 m tall so a jump through doesn't bonk.
+        // Opening of both portals (D-142: at least 1.2 x 2.4 m). 3 m tall so a jump through doesn't bonk.
         const float OpeningWidth = 1.4f;
         const float OpeningHeight = 3f;
 
@@ -61,9 +61,9 @@ namespace TWR.EditorTools
         static readonly Vector3 LobbyProbe = new Vector3(-2f, 0f, -19f);
         static readonly Vector3 HallProbe = new Vector3(515f, 0f, -10f);
 
-        const float MinPortalSeparation = 200f;  // proposed D-144
-        const float MinVestibuleDepth = 1f;      // proposed D-142
-        const float PickupPortalClearance = 1.5f; // proposed D-143
+        const float MinPortalSeparation = 200f;  // D-144
+        const float MinVestibuleDepth = 1f;      // D-142
+        const float PickupPortalClearance = 1.5f; // D-143
 
         struct PortalAssets
         {
@@ -121,14 +121,14 @@ namespace TWR.EditorTools
                 assets.surface.shader = assets.shader;
                 EditorUtility.SetDirty(assets.surface);
             }
-            // Flat emissive white for portals seen inside a portal view and over-budget portals (proposed D-140).
+            // Flat emissive white for portals seen inside a portal view and over-budget portals (D-140).
             assets.fallback = GetOrCreateUnlitMaterial("M_PortalFallback", new Color(2.2f, 2.2f, 2.2f, 1f));
 
             assets.settings = LoadOrCreate<PortalSettings>(PortalSettingsPath, null);
             assets.swingDoor = LoadOrCreate<DoorData>(PortalDoorDataPath, door =>
             {
                 door.openStyle = DoorOpenStyle.Swing;
-                door.swingAngle = 95f;     // swings towards the lobby side (the portal's front, proposed D-146)
+                door.swingAngle = 95f;     // swings towards the lobby side (the portal's front, D-146)
                 door.openSeconds = 1.1f;
                 door.unlockNoiseRadius = 8f;
                 door.openNoiseRadius = 10f; // D-128
@@ -217,11 +217,11 @@ namespace TWR.EditorTools
             Transform hall = new GameObject("Impossible Hall (+500 m X, D-054)").transform;
             Portal hallPortal = BuildHall(assets, hall, white, offWhite, wood, plant, targetMat);
 
-            // Two-way pair (proposed D-146, D-147): each side's destination is the other one.
+            // Two-way pair (D-146, D-147): each side's destination is the other one.
             Assign(lobbyPortal, "destination", hallPortal);
             Assign(hallPortal, "destination", lobbyPortal);
 
-            // Non-spatial ambient hum over both spaces (proposed D-144, D-077): no audio pop when crossing.
+            // Non-spatial ambient hum over both spaces (D-144, D-077): no audio pop when crossing.
             var ambientGO = new GameObject("Ambient Bed (2D hum)");
             var source = ambientGO.AddComponent<AudioSource>();
             source.playOnAwake = false;
@@ -253,7 +253,7 @@ namespace TWR.EditorTools
             Block("Doorway Trim Top", new Vector3(0f, LobbyDoorwayHeight + 0.06f, -10.25f), new Vector3(x * 2f + 0.12f, 0.12f, 0.1f), trimMat, shell);
         }
 
-        /// A door panel on a wall face that never opens (proposed D-145): Door + permanently locked DoorLock.
+        /// A door panel on a wall face that never opens (D-145): Door + permanently locked DoorLock.
         /// floorPoint = where the door meets the floor on the wall face; facing = into the room.
         static Door BuildLockedDoor(string name, string id, Vector3 floorPoint, Vector3 facing, Vector2 size,
                                     Material panelMat, Material trimMat, Material lockMat, PuzzleAssets puzzle, Transform parent)
@@ -329,7 +329,7 @@ namespace TWR.EditorTools
 
         // ---------- the portal door (lobby side) ----------
 
-        /// Freestanding frame + short wall with a swing panel (proposed D-146). Root = the Portal's pose:
+        /// Freestanding frame + short wall with a swing panel (D-146). Root = the Portal's pose:
         /// bottom centre of the opening, local forward = front (south, towards the start).
         static Portal BuildLobbyPortalDoor(PortalAssets assets, Material trimMat, Material wallMat, Transform lobby)
         {
@@ -368,7 +368,7 @@ namespace TWR.EditorTools
             obstacle.carving = true;
             obstacle.carveOnlyStationary = false;
 
-            var doorLock = root.AddComponent<DoorLock>(); // unlocked: locking stays in D-127, not in the portal (proposed D-147)
+            var doorLock = root.AddComponent<DoorLock>(); // unlocked: locking stays in D-127, not in the portal (D-147)
             Assign(doorLock, "data", assets.swingDoor);
             var lockSo = new SerializedObject(doorLock);
             lockSo.FindProperty("startsLocked").boolValue = false;
@@ -444,7 +444,7 @@ namespace TWR.EditorTools
             return portal;
         }
 
-        /// Standalone Base camera, saved DISABLED and without a target texture (both are runtime-only, proposed D-139).
+        /// Standalone Base camera, saved DISABLED and without a target texture (both are runtime-only, D-139).
         static PortalCamera BuildPortalCamera(Transform parent, Portal portal, string id, PortalAssets assets)
         {
             var go = new GameObject("Portal Camera (view through " + id + ")");
@@ -464,7 +464,7 @@ namespace TWR.EditorTools
 
             var data = cam.GetUniversalAdditionalCameraData();
             data.renderType = CameraRenderType.Base;
-            data.renderPostProcessing = false; // bloom + tonemapping once, on the main camera (proposed D-141)
+            data.renderPostProcessing = false; // bloom + tonemapping once, on the main camera (D-141)
             data.requiresDepthOption = CameraOverrideOption.Off;
             data.requiresColorOption = CameraOverrideOption.Off;
             data.antialiasing = AntialiasingMode.None;
@@ -491,7 +491,7 @@ namespace TWR.EditorTools
 
         // ---------- the impossible hall ----------
 
-        /// 30 x 20 x 8 m white hall 500 m east of everything (proposed D-144, D-146), with the return portal in its
+        /// 30 x 20 x 8 m white hall 500 m east of everything (D-144, D-146), with the return portal in its
         /// west wall (an alcove behind it so you can step in), office/home props and one shootable target.
         static Portal BuildHall(PortalAssets assets, Transform hall, Material floorMat, Material trimMat, Material wood,
                                 Material plant, Material targetMat)
@@ -527,7 +527,7 @@ namespace TWR.EditorTools
             Block("Alcove Side N", new Vector3(HallMinX - 0.7f, OpeningHeight * 0.5f, zPortal + half + 0.1f), new Vector3(1.4f, OpeningHeight, 0.2f), trimMat, alcove);
             Block("Alcove Back", new Vector3(HallMinX - 1.3f, OpeningHeight * 0.5f, zPortal), new Vector3(0.2f, OpeningHeight, OpeningWidth + 0.4f), trimMat, alcove);
 
-            // Return portal: no panel, always open (proposed D-146).
+            // Return portal: no panel, always open (D-146).
             var anchor = new GameObject("Return Portal (hall side)");
             anchor.transform.SetParent(hall, false);
             anchor.transform.SetPositionAndRotation(HallPortalPosition, Quaternion.Euler(0f, HallPortalYaw, 0f));
@@ -559,7 +559,7 @@ namespace TWR.EditorTools
             GameObjectUtility.SetStaticEditorFlags(target, 0);
             target.AddComponent<TestShootableTarget>(); // any gun
 
-            // F-through-the-portal test (proposed D-143): a button just past the vestibule, beside the line of entry,
+            // F-through-the-portal test (D-143): a button just past the vestibule, beside the line of entry,
             // close enough to reach with the 2.5 m interaction ray from right in front of the lobby portal.
             Material buttonMat = GetOrCreateMaterial("M_TestButton", new Color(1f, 0.2f, 0.2f), new Color(0.5f, 0.1f, 0.1f));
             Transform anchorT = anchor.transform;
@@ -631,7 +631,7 @@ namespace TWR.EditorTools
 
         // ---------- validation ----------
 
-        /// Logs every portal link the slice depends on (proposed D-139 to D-147). Returns false if anything is wrong.
+        /// Logs every portal link the slice depends on (D-139 to D-147). Returns false if anything is wrong.
         static bool ValidatePortalSetup(PortalAssets assets, GameObject player, PlayerTuning tuning)
         {
             Physics.SyncTransforms(); // edit-mode physics queries need the new colliders' positions
@@ -707,7 +707,7 @@ namespace TWR.EditorTools
                               $"door: {(door != null ? door.name : "none (always open)")}");
             if (opening.x < 1.2f || opening.y < 2.4f) ok = false;
 
-            // Pairing (proposed D-142, D-144, D-147).
+            // Pairing (D-142, D-144, D-147).
             if (destination == null || destination == portal)
             {
                 report.AppendLine("  destination: MISSING");
@@ -757,7 +757,7 @@ namespace TWR.EditorTools
             return to.transform.TransformPoint(new Vector3(-local.x, local.y, -local.z));
         }
 
-        /// Proposed D-142: at least 1 m in front of the portal is free of colliders for a standing player capsule,
+        /// D-142: at least 1 m in front of the portal is free of colliders for a standing player capsule,
         /// and the floor there is at the portal's height. Door panels (Interactable) are ignored: they swing away.
         static bool CheckVestibule(Portal portal, PlayerTuning tuning, StringBuilder report)
         {
@@ -813,7 +813,7 @@ namespace TWR.EditorTools
             return ok;
         }
 
-        /// Proposed D-144: the lobby and the hall are physically apart and their NavMeshes don't connect.
+        /// D-144: the lobby and the hall are physically apart and their NavMeshes don't connect.
         static bool ValidatePortalNavMesh(Portal[] portals)
         {
             var path = new NavMeshPath();
@@ -832,7 +832,7 @@ namespace TWR.EditorTools
             foreach (Portal p in portals)
                 if (p.Destination != null) minSeparation = Mathf.Min(minSeparation, Vector3.Distance(p.transform.position, p.Destination.transform.position));
 
-            string line = $"[TWR] Portal separation (proposed D-144): spaces {minSeparation:0.0} m apart (min {MinPortalSeparation}); " +
+            string line = $"[TWR] Portal separation (D-144): spaces {minSeparation:0.0} m apart (min {MinPortalSeparation}); " +
                           $"lobby -> white room path: {(lobbyJoined ? "OK" : "MISSING")}; " +
                           $"hall NavMesh: {(hallOnMesh ? "own island" : "none")}, lobby -> hall path: {(hallReachable ? "CONNECTED - WRONG" : "none (Seekers can't follow)")}";
             bool ok = lobbyJoined && !hallReachable && minSeparation >= MinPortalSeparation;
@@ -841,7 +841,7 @@ namespace TWR.EditorTools
             return ok;
         }
 
-        /// Proposed D-143: no walk-over pickups within 1.5 m of a portal opening (they'd be collected "through" it).
+        /// D-143: no walk-over pickups within 1.5 m of a portal opening (they'd be collected "through" it).
         static bool ValidatePickupsNearPortals(Portal[] portals)
         {
             bool ok = true;
@@ -896,7 +896,7 @@ namespace TWR.EditorTools
             var so = new SerializedObject(managers[0]);
             Object settings = so.FindProperty("settings").objectReferenceValue;
             Object cam = so.FindProperty("playerCamera").objectReferenceValue;
-            // Proposed D-141: one look everywhere, so post-processing comes from GLOBAL volumes only.
+            // D-141: one look everywhere, so post-processing comes from GLOBAL volumes only.
             int volumes = 0, localVolumes = 0;
             foreach (Volume volume in Object.FindObjectsByType<Volume>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {

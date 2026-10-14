@@ -1,8 +1,8 @@
-// The White Room - portal screen (proposed D-139; D-097, D-074 URP).
+// The White Room - portal screen (D-139; D-097, D-074 URP).
 // Unlit and opaque: it shows the portal camera's HDR render texture, sampled by SCREEN position, so the picture
 // lines up pixel-for-pixel with the world around the frame. Any face of the mesh (flat screen or the near-plane
-// box, proposed D-142) shows the right pixel, which is why culling is off. No lighting, no post here:
-// bloom and tonemapping are applied once by the main camera (proposed D-141).
+// box, D-142) shows the right pixel, which is why culling is off. No lighting, no post here:
+// bloom and tonemapping are applied once by the main camera (D-141).
 // The texture is assigned at runtime by PortalCamera and is never saved.
 Shader "TWR/Portal Surface"
 {

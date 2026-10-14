@@ -9,7 +9,7 @@ namespace TWR.Player
 {
     /// <summary>
     /// Finds what the player is looking at (ray from screen centre, ~2.5 m) and uses it on F (D-032, D-038).
-    /// The ray can reach through one open portal (shared PortalRaycast, proposed D-143).
+    /// The ray can reach through one open portal (shared PortalRaycast, D-143).
     /// Only colliders on the Interactable layer count; walls in between block the ray.
     /// On use: calls IInteractable.Interact, emits an Interact noise (D-079) and raises
     /// InteractionEvents.OnInteracted for future voice triggers (D-080). FocusChanged drives the prompt (D-091).
@@ -72,7 +72,7 @@ namespace TWR.Player
         {
             IInteractable found = null;
             Ray ray = playerCamera.ViewportPointToRay(ScreenCentre);
-            // Same one-hop portal ray as the gun (proposed D-143); the 2.5 m reach is the TOTAL of both legs.
+            // Same one-hop portal ray as the gun (D-143); the 2.5 m reach is the TOTAL of both legs.
             if (PortalRaycast.Raycast(ray.origin, ray.direction, tuning.interactDistance, rayMask,
                                       QueryTriggerInteraction.Ignore, transform, out PortalRayHit portalHit))
             {

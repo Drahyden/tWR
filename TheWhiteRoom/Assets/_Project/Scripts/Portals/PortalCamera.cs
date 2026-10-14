@@ -4,7 +4,7 @@ using UnityEngine.Rendering.Universal;
 namespace TWR.Portals
 {
     /// <summary>
-    /// The camera that films the view through one portal (proposed D-139, D-141). It is a standalone Base
+    /// The camera that films the view through one portal (D-139, D-141). It is a standalone Base
     /// camera (never an overlay or camera stack, D-123) that renders into a runtime HDR RenderTexture before the
     /// main camera (lower depth). Every frame it is placed where the player camera WOULD be on the other side
     /// (same FOV, aspect, near/far and full rotation including lean roll) and gets an oblique near plane on the
@@ -56,7 +56,7 @@ namespace TWR.Portals
 
         /// <summary>
         /// Place the camera for this frame and make sure it renders. Called from PortalRenderManager's
-        /// late LateUpdate, after look, lean, head bob and the crossing check (proposed D-139).
+        /// late LateUpdate, after look, lean, head bob and the crossing check (D-139).
         /// </summary>
         public void Render(Camera player, PortalSettings settings, int width, int height, int urpRendererIndex)
         {
@@ -100,7 +100,7 @@ namespace TWR.Portals
             }
             else
             {
-                // Too close to the plane: an oblique matrix this close gives artefacts (proposed D-142).
+                // Too close to the plane: an oblique matrix this close gives artefacts (D-142).
                 cam.projectionMatrix = baseProjection;
             }
             // Cull with the normal frustum; the oblique one has a distorted far plane.

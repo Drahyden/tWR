@@ -19,12 +19,12 @@ namespace TWR.Portals
     }
 
     /// <summary>
-    /// Shared "ray that can go through ONE portal" (proposed D-143), used by Gun hitscan (D-118) and
+    /// Shared "ray that can go through ONE portal" (D-143), used by Gun hitscan (D-118) and
     /// PlayerInteractor (D-112). It casts normally up to the first open portal it enters from the front; if nothing
     /// is hit before it, the ray continues from the matching spot on the destination portal, turned like the
     /// view, with the distance that is left (so interaction stays 2.5 m in total). Never more than one hop (D-140).
     /// Also gives PlayerLean the distance to the nearest portal plane, so leaning can't push the camera through
-    /// (proposed D-142). Allocation-free: one shared hit buffer.
+    /// (D-142). Allocation-free: one shared hit buffer.
     /// </summary>
     public static class PortalRaycast
     {

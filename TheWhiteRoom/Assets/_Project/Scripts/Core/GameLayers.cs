@@ -16,9 +16,9 @@ namespace TWR.Core
         public const string Weapon = "Weapon";
         public const string Interactable = "Interactable";
         public const string IgnoreRaycast = "Ignore Raycast";
-        /// <summary>Live portal screens: drawn ONLY by the player camera, never by portal cameras (proposed D-140).</summary>
+        /// <summary>Live portal screens: drawn ONLY by the player camera, never by portal cameras (D-140).</summary>
         public const string Portal = "Portal";
-        /// <summary>Flat white portal stand-ins: drawn ONLY by portal cameras (no portal-in-portal, proposed D-140).</summary>
+        /// <summary>Flat white portal stand-ins: drawn ONLY by portal cameras (no portal-in-portal, D-140).</summary>
         public const string PortalFallback = "PortalFallback";
 
         static bool cached;

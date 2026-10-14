@@ -17,11 +17,11 @@ namespace TWR.Portals
 
     /// <summary>
     /// One side of a see-through portal (D-097, D-054). Its transform sits at the bottom centre of the opening,
-    /// local forward (+Z) pointing out of the FRONT side; only the front works (one-sided, proposed D-146).
+    /// local forward (+Z) pointing out of the FRONT side; only the front works (one-sided, D-146).
     /// It knows where it leads (a serialized destination portal + SetDestination for later D-058 / D-053b,
-    /// proposed D-147), whether it is open (its optional D-127 Door), and does the "pair maths" that maps
+    /// D-147), whether it is open (its optional D-127 Door), and does the "pair maths" that maps
     /// points, directions and rotations from here to the destination with a 180-degree turn. Portals in a pair
-    /// may differ only by position and yaw (proposed D-142). It also switches its own screen between live,
+    /// may differ only by position and yaw (D-142). It also switches its own screen between live,
     /// fallback-white and hidden; PortalRenderManager decides which.
     /// </summary>
     [DisallowMultipleComponent]
@@ -29,12 +29,12 @@ namespace TWR.Portals
     {
         [Tooltip("Stable ID for events and voice triggers (D-080), e.g. 'lobby.portal'.")]
         [SerializeField] string portalId = "portal";
-        [Tooltip("The portal you come out of (proposed D-147). Change at runtime with SetDestination.")]
+        [Tooltip("The portal you come out of (D-147). Change at runtime with SetDestination.")]
         [SerializeField] Portal destination;
         [Tooltip("Optional door (D-127). The portal only renders and lets things through while it is open or opening. " +
                  "Empty = always open (e.g. the return portal in the hall).")]
         [SerializeField] Door door;
-        [Tooltip("Inner size of the opening in metres (width, height). Minimum 1.2 x 2.4 (proposed D-142).")]
+        [Tooltip("Inner size of the opening in metres (width, height). Minimum 1.2 x 2.4 (D-142).")]
         [SerializeField] Vector2 openingSize = new Vector2(1.4f, 3f);
 
         [Header("Screen")]
@@ -109,7 +109,7 @@ namespace TWR.Portals
             if (liveMaterial != null) Destroy(liveMaterial);
         }
 
-        /// <summary>Point this portal somewhere else (proposed D-147; D-058 / D-053b will call this). Null = leads nowhere.</summary>
+        /// <summary>Point this portal somewhere else (D-147; D-058 / D-053b will call this). Null = leads nowhere.</summary>
         public void SetDestination(Portal newDestination)
         {
             destination = newDestination;
@@ -130,7 +130,7 @@ namespace TWR.Portals
 
         /// <summary>
         /// True if moving from "from" to "to" goes from the FRONT side to the back side through the opening.
-        /// Back to front never counts: the portal is one-sided (proposed D-146).
+        /// Back to front never counts: the portal is one-sided (D-146).
         /// </summary>
         public bool SegmentCrossesFront(Vector3 from, Vector3 to)
         {
@@ -192,7 +192,7 @@ namespace TWR.Portals
         public float YawDelta => Mathf.DeltaAngle(0f, destination.transform.eulerAngles.y + 180f - transform.eulerAngles.y);
 
         /// <summary>
-        /// Proposed D-142 check: both portals stand upright, unscaled, so the pair differs only by position + yaw.
+        /// D-142 check: both portals stand upright, unscaled, so the pair differs only by position + yaw.
         /// Used by the scene builder's validation and once at start by PortalRenderManager (not per frame).
         /// </summary>
         public static bool DiffersOnlyByYaw(Portal a, Portal b, out string problem)
@@ -222,7 +222,7 @@ namespace TWR.Portals
 
         /// <summary>
         /// Show the screen as live / fallback / hidden. near = draw it as a box reaching depth metres behind the
-        /// plane (Cull Off), so the camera's near plane can't clip a hole while you step through (proposed D-142).
+        /// plane (Cull Off), so the camera's near plane can't clip a hole while you step through (D-142).
         /// Only touches the renderer when something changes (no per-frame cost).
         /// </summary>
         public void SetSurface(PortalSurfaceMode mode, bool near, float depth)

@@ -4,7 +4,7 @@ using TWR.Player;
 namespace TWR.Portals
 {
     /// <summary>
-    /// Sits on the Player and teleports it when it walks through a portal (proposed D-142; D-097, D-113).
+    /// Sits on the Player and teleports it when it walks through a portal (D-142; D-097, D-113).
     /// It watches the UN-LEANED head pivot (the Head transform, before LeanPivot), so leaning can never trigger a
     /// crossing. When the line from last frame's head position to this frame's crosses a portal's front face inside
     /// the opening, the player is moved in the SAME frame through PlayerController.Teleport (IPlayerMotor): feet

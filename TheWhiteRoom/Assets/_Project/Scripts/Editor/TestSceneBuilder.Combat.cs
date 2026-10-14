@@ -179,7 +179,7 @@ namespace TWR.EditorTools
             slots.GetArrayElementAtIndex(0).objectReferenceValue = pistol; // slot 1 = pistol (D-035)
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            // Step 5: portal crossing + camera layer setup (TestSceneBuilder.Portal.cs, proposed D-140 / D-142).
+            // Step 5: portal crossing + camera layer setup (TestSceneBuilder.Portal.cs, D-140 / D-142).
             EnsurePlayerPortalParts(root, cam);
         }
 

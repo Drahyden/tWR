@@ -4,7 +4,7 @@ using UnityEngine;
 namespace TWR.Portals
 {
     /// <summary>
-    /// Shared static portal events (proposed D-142), like PuzzleEvents / InteractionEvents. Inner-voice triggers
+    /// Shared static portal events (D-142), like PuzzleEvents / InteractionEvents. Inner-voice triggers
     /// (D-080), music (D-075) and later run logic (D-058) can listen without scene references.
     /// </summary>
     public static class PortalEvents

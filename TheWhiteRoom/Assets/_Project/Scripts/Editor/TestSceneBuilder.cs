@@ -30,7 +30,7 @@ namespace TWR.EditorTools
     /// Step 5 (hub lobby + portal door, D-107; D-057, D-097): Portal / PortalFallback layers, the Portal renderer,
     /// portal shader/materials/settings, a lobby south of the white room with five doors (player starts there),
     /// the see-through portal door and the impossible hall 500 m away (see TestSceneBuilder.Portal.cs;
-    /// proposed D-139 to D-147).
+    /// D-139 to D-147).
     /// </summary>
     public static partial class TestSceneBuilder
     {
@@ -126,7 +126,7 @@ namespace TWR.EditorTools
             // Hub lobby with five doors, the portal door and the impossible hall 500 m away (step 5).
             BuildLobbyAndPortal(portal, puzzle, white, offWhite);
 
-            // Player: starts in the lobby in front of the black entry door, facing into the lobby (proposed D-145).
+            // Player: starts in the lobby in front of the black entry door, facing into the lobby (D-145).
             GameObject player = GetOrCreatePlayerInstance(tuning, input, interactableLayer, combat, false);
             player.transform.SetPositionAndRotation(PlayerStartPosition, Quaternion.identity);
 
@@ -201,7 +201,7 @@ namespace TWR.EditorTools
             int weaponLayer = EnsureLayer(WeaponLayerName);
             int playerLayer = EnsureLayer(PlayerLayerName); // player's capsule: never a wall for noise/sight (D-131)
             int enemyLayer = EnsureLayer(EnemyLayerName);   // Seeker body: shootable, never a wall (D-134)
-            int portalLayer = EnsureLayer(PortalLayerName);           // live portal screens: player camera only (proposed D-140)
+            int portalLayer = EnsureLayer(PortalLayerName);           // live portal screens: player camera only (D-140)
             int portalFallbackLayer = EnsureLayer(PortalFallbackLayerName); // white stand-ins: portal cameras only
             if (interactableLayer < 0 || weaponLayer < 0 || playerLayer < 0 || enemyLayer < 0 || portalLayer < 0 || portalFallbackLayer < 0)
             {
