@@ -3,7 +3,7 @@
 > Source of truth for every chat in the "tWR Game Development" project.
 > Each definition gets an ID (D-###). Links between definitions use `→ D-###`.
 > Status: 🟢 locked · 🟡 tentative · ⚪ open
-> Interview complete (Q1–110). New decisions continue from D-156.
+> Interview complete (Q1–110). New decisions continue from D-161.
 
 ## 0. Index of sections
 1. Core identity · 2. Story & world · 3. Player & controls · 4. Combat · 5. Puzzles · 6. Enemies & AI · 7. Level design · 8. Art direction · 9. Audio · 10. UI/UX · 11. Progression & systems · 12. Technical (Unity) · 13. Production & pipeline · 14. Open questions
@@ -122,6 +122,11 @@
 - **D-151** 🟢 Run structure: 2–3 sections before the fork room, then 2 after it (the path section + the boss arena), for 4–6 sections in total (D-059) → D-015, D-057, D-059, D-106, D-148, D-149
 - **D-154** 🟢 First run: the very first run (no endings saved yet, D-099) uses a fixed, curated layout; seeded randomization (D-058, D-153) starts from run 2 → D-039, D-058, D-099, D-153
 - **D-155** 🟢 Section templates for now (placeholder geometry): puzzle room (existing), combat room, stealth room (D-052), impossible-geometry room using the portal (D-139–D-147), silent room (D-082); plus the fork room (D-149) and two placeholder boss arenas (D-148) → D-052, D-054, D-055, D-058, D-082, D-097, D-151
+- **D-156** 🟢 Section count: the hub lobby (D-057) and the fork room (D-149) are connectors, not sections. A run plan has 2–3 sections before the fork + path section + boss arena = 4–5 sections; D-059's upper bound of 6 is headroom. Path section is drawn from templates tagged path=none or the chosen path; boss arenas are path-tagged only (D-148). Both post-fork branches are generated from the seed at run start and the active one is fixed when the player picks a fork door → D-059, D-060, D-148, D-149, D-151, D-155
+- **D-157** 🟢 Run reset: death (D-034) and quitting (D-093) end the run, discard the run plan and return to the hub lobby with a new plan (new seed, or the curated plan while no endings are saved). Supersedes "death = scene reload" in D-122 and D-129; section scene state (puzzles, enemies) still resets whenever a section loads → D-034, D-039, D-093, D-122, D-129, D-154
+- **D-158** 🟢 RunStats is run-scoped (supersedes "scene-scoped" in D-137): resets at run start, persists across section loads, counts player-credited kills, enemies spawned and optional puzzles solved/available in sections actually loaded this run; bosses excluded from both kill numbers; live score per D-152; a term with a zero denominator scores its full 50 → D-029, D-052, D-104, D-137, D-152
+- **D-159** 🟢 Run seed format and first run: 32-bit unsigned, non-zero for random runs, shown as 8 hex characters; seed 0 is reserved for the curated first-run plan (D-154), stored as an authored plan asset, not generated. "No endings saved" is read through an endings-record interface (stub returns 0 until D-099 exists). Debug overlay (run plan, seed, section, score, skip-section, seed entry) exists only in editor/development builds and is exempt from localization (D-084) → D-084, D-099, D-153, D-154
+- **D-160** 🟡 Curated first run: puzzle room → combat room → impossible-geometry room → fork room → path section (Escape: stealth room; Discover: silent room) → boss arena per D-148 → D-154, D-155
 - Silent rooms are part of the level palette → D-082
 
 ## 8. Art direction

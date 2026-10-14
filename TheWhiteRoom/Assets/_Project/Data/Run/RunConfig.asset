@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3306d9c4f90bba746b1b7ceb54f2f714, type: 3}
+  m_Name: RunConfig
+  m_EditorClassIdentifier: Assembly-CSharp::TWR.Run.RunConfig
+  lobbySceneName: Test_PlayerController
+  minPreForkSections: 2
+  maxPreForkSections: 3
+  sectionPool:
+  - {fileID: 11400000, guid: be2715abe4a2ec5498c2706c69bb1c58, type: 2}
+  - {fileID: 11400000, guid: 99529810c4725164b85f5253d19148e0, type: 2}
+  - {fileID: 11400000, guid: 6efe91b1d86d501458664b43d37fd3a3, type: 2}
+  - {fileID: 11400000, guid: 26f33debcdffb9a4fb2e2518b9027069, type: 2}
+  - {fileID: 11400000, guid: 3a2ee4afd40eb5a4cb597d512f342283, type: 2}
+  forkRoom: {fileID: 11400000, guid: 3e11df79c0d8283499f841c132bcb238, type: 2}
+  bossArenas:
+  - {fileID: 11400000, guid: 27c44b9ac673b3b409c89403105a403e, type: 2}
+  - {fileID: 11400000, guid: d5407e2629cd4ce4bac1147b29daf3dd, type: 2}
+  curatedPlan: {fileID: 11400000, guid: ddb884d93a7f6c547b6b758565134014, type: 2}

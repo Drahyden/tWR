@@ -3,13 +3,16 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TWR.Combat;
+using TWR.Core;
 
 namespace TWR.Player
 {
     /// <summary>
     /// The player's HP (D-034). Max HP comes from PlayerTuning. TakeDamage lowers it and raises Changed
     /// (HP bar, D-086, D-122); at 0 it raises Died and CombatEvents.Killed, stops player input, and
-    /// after a short pause reloads the active scene: death = full restart of the run, no checkpoints (D-034).
+    /// after a short pause asks the RunManager (through RunHooks) to end the run, which returns to the hub
+    /// lobby with a new run plan (D-157). Without a RunManager it just reloads the active scene.
+    /// Death = full restart of the run, no checkpoints (D-034).
     /// Later the low-HP heartbeat (D-079) and inner-voice mood (D-030) can listen to Changed.
     /// </summary>
     public class PlayerHealth : MonoBehaviour, IDamageable
@@ -72,6 +75,14 @@ namespace TWR.Player
             float delay = tuning != null ? tuning.deathRestartDelay : 1.5f;
             yield return new WaitForSeconds(delay);
 
+            // D-157: the RunManager ends the run and returns to the hub lobby with a new plan.
+            if (RunHooks.Handler != null)
+            {
+                RunHooks.Handler.HandlePlayerDeath();
+                yield break;
+            }
+
+            // No RunManager in this scene (e.g. a bare test scene): old behaviour, reload the scene.
             Scene scene = SceneManager.GetActiveScene();
             if (scene.buildIndex >= 0) SceneManager.LoadScene(scene.buildIndex);
             else SceneManager.LoadScene(scene.name); // only works if the scene is in Build Settings

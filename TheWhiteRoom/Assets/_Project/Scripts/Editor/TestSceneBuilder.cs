@@ -10,6 +10,7 @@ using UnityEngine.UI;
 using TWR.Core;
 using TWR.Interaction;
 using TWR.Player;
+using TWR.Run;
 using TWR.UI;
 
 namespace TWR.EditorTools
@@ -25,12 +26,14 @@ namespace TWR.EditorTools
     /// Step 3 (switch puzzle, D-107): a puzzle room east of the white room with three pistol-only switches
     /// and a locked exit door (see TestSceneBuilder.Puzzle.cs; D-124 to D-130).
     /// Step 4 (Seeker, D-107; D-043): Player + Enemy layers, NoiseSettings (wall muffling), the Seeker prefab,
-    /// a patrolling Seeker spawn point in the puzzle room, RunStats and a baked + saved NavMesh
+    /// a patrolling Seeker spawn point in the puzzle room and a baked + saved NavMesh
     /// (see TestSceneBuilder.Seeker.cs; D-132 confirmed, D-131 and D-133 to D-138).
     /// Step 5 (hub lobby + portal door, D-107; D-057, D-097): Portal / PortalFallback layers, the Portal renderer,
     /// portal shader/materials/settings, a lobby south of the white room with five doors (player starts there),
     /// the see-through portal door and the impossible hall 500 m away (see TestSceneBuilder.Portal.cs;
     /// D-139 to D-147).
+    /// Run Structure R1 (D-156 to D-160): section assets, the curated first run, the RunConfig and the RunManager
+    /// bootstrap (see TestSceneBuilder.Run.cs). Also available alone as "TWR/Run/Create Run Assets".
     /// </summary>
     public static partial class TestSceneBuilder
     {
@@ -71,6 +74,8 @@ namespace TWR.EditorTools
             if (!PrepareSeekerAssets(out SeekerAssets seeker)) // SeekerData, sound set, NoiseSettings, Seeker prefab
                 return;
             if (!PreparePortalAssets(out PortalAssets portal)) // PortalSettings, shader + materials, Portal renderer, swing DoorData
+                return;
+            if (!PrepareRunAssets(out RunConfig runConfig)) // SectionData x8, curated first run, RunConfig (R1, D-156 to D-160)
                 return;
 
             Material white = GetOrCreateMaterial("M_White", new Color(0.95f, 0.95f, 0.95f), Color.black);
@@ -120,7 +125,7 @@ namespace TWR.EditorTools
             // Pistol switch puzzle room east of the white room (step 3).
             BuildPuzzleTest(combat, puzzle, white, whiteEmissive, offWhite);
 
-            // Seeker spawn point + patrol route, muffling test listeners/marks, RunStats (step 4).
+            // Seeker spawn point + patrol route, muffling test listeners/marks (step 4).
             BuildSeekerTest(seeker);
 
             // Hub lobby with five doors, the portal door and the impossible hall 500 m away (step 5).
@@ -134,6 +139,9 @@ namespace TWR.EditorTools
             BuildCombatHud(hud, player);
             BuildPortalRuntime(portal, player); // PortalRenderManager (needs the player camera)
 
+            // Run Structure R1: the RunManager bootstrap (owns run-scoped RunStats, D-158; debug overlay F1).
+            BuildRunBootstrap(runConfig);
+
             // Last, once all geometry exists: bake the NavMesh and save it as an asset next to the scene.
             BakeAndSaveNavMesh();
 
@@ -144,10 +152,11 @@ namespace TWR.EditorTools
             bool wiringOk = ValidatePuzzleWiring();
             wiringOk &= ValidateSeekerSetup();
             wiringOk &= ValidatePortalSetup(portal, player, tuning);
+            wiringOk &= ValidateRunSetup(); // also adds the lobby scene to Build Settings if missing
             bool savedOk = ValidateSavedSceneReferences(TuningPath, PuzzleDataPath, DoorDataPath,
                 SeekerPrefabPath, SeekerDataPath, SeekerSoundSetPath, NavMeshAssetPath,
                 PortalSettingsPath, PortalSurfaceMaterialPath, PortalFallbackMaterialPath, PortalShaderPath,
-                PortalDoorDataPath, PortalRenderSetup.RendererPath);
+                PortalDoorDataPath, PortalRenderSetup.RendererPath, RunConfigPath);
             if (wiringOk && savedOk)
                 Debug.Log("[TWR] Built " + ScenePath + ". Press Play to test.");
             else

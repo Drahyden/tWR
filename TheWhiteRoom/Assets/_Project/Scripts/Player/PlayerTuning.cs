@@ -94,7 +94,7 @@ namespace TWR.Player
 
         [Header("Health - D-034")]
         public float maxHealth = 100f;
-        [Tooltip("Seconds between dying and the run restarting (scene reload).")]
+        [Tooltip("Seconds between dying and the run ending (back to the hub lobby with a new run, D-157).")]
         public float deathRestartDelay = 1.5f;
 
         [Header("Starting ammo - D-120")]

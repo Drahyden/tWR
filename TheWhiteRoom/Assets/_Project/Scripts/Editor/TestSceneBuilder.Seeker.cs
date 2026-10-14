@@ -7,7 +7,6 @@ using UnityEngine.AI;
 using UnityEngine.Rendering;
 using TWR.Core;
 using TWR.Enemies;
-using TWR.Stats;
 
 namespace TWR.EditorTools
 {
@@ -16,8 +15,8 @@ namespace TWR.EditorTools
     /// Resources folder (D-131 wall muffling), the SeekerData and SeekerSoundSet assets, and rebuilds the
     /// Seeker prefab (pale capsule with a black eye and a state-colour band, D-067; D-132 confirmed, D-133 to D-138).
     /// In the scene it adds a Seeker spawn point with a 4-waypoint patrol in the puzzle room, two extra noise
-    /// test listeners (puzzle room + behind the exit door) and two floor marks for the muffling test, RunStats
-    /// (D-137), and bakes + SAVES the NavMesh (D-135) next to the scene. Validation logs what
+    /// test listeners (puzzle room + behind the exit door) and two floor marks for the muffling test
+    /// (RunStats, D-137, now lives on the RunManager: D-158), and bakes + SAVES the NavMesh (D-135) next to the scene. Validation logs what
     /// every spawn point is wired to and errors if the NavMesh is missing, unsaved or doesn't join both rooms.
     /// Like steps 2 and 3, every asset is loaded/created AFTER EditorSceneManager.NewScene (see BuildTestSceneAfterSetup).
     /// </summary>
@@ -230,7 +229,7 @@ namespace TWR.EditorTools
 
         // ---------- scene ----------
 
-        /// Spawn point + patrol route in the puzzle room, muffling test listeners and floor marks, RunStats.
+        /// Spawn point + patrol route in the puzzle room, muffling test listeners and floor marks.
         static void BuildSeekerTest(SeekerAssets assets)
         {
             Transform group = new GameObject("Seeker Test").transform;
@@ -271,8 +270,7 @@ namespace TWR.EditorTools
             Material green = GetOrCreateMaterial("M_TestMarkGreen", new Color(0.15f, 0.85f, 0.3f), new Color(0.05f, 0.3f, 0.1f));
             FloorMark("Test Mark (blue, behind wall)", new Vector3(8f, 0.005f, 5f), blue, group);
             FloorMark("Test Mark (green, doorway line)", new Vector3(6f, 0.005f, 0f), green, group);
-
-            new GameObject("Run Stats (debug log)").AddComponent<RunStats>().transform.SetParent(group, false);
+            // RunStats is no longer a scene object: the RunManager owns it (run-scoped, D-158; TestSceneBuilder.Run.cs).
         }
 
         static void TestListener(string name, Vector3 position, Material material, Transform parent)
