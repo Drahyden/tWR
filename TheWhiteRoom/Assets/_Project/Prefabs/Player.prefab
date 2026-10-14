@@ -467,7 +467,7 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 4294959103
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -616,6 +616,7 @@ GameObject:
   - component: {fileID: 2151998929358447426}
   - component: {fileID: 8800937712690290040}
   - component: {fileID: 1290676669663896219}
+  - component: {fileID: 6577917278361826768}
   m_Layer: 10
   m_Name: Player
   m_TagString: Player
@@ -936,6 +937,21 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+--- !u!114 &6577917278361826768
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5781611534502239820}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ecc96468fd962646a87fc19a707a1c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TWR.Portals.PortalTraveller
+  controller: {fileID: 1956485530581821362}
+  pivot: {fileID: 647160094089962231}
+  logCrossings: 1
 --- !u!1 &6217073827258311307
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,10 +1,12 @@
 using UnityEngine;
+using TWR.Portals;
 
 namespace TWR.Player
 {
     /// <summary>
     /// Lean left/right with Q/E (D-032). Moves ONLY the camera (no body, no arms, D-070):
-    /// a sideways offset plus a roll on the LeanPivot. A spherecast stops the camera entering walls.
+    /// a sideways offset plus a roll on the LeanPivot. A spherecast stops the camera entering walls,
+    /// and portal planes count as walls too (proposed D-142).
     /// Sprinting cancels lean; leaning while crouched is allowed.
     /// </summary>
     [DefaultExecutionOrder(10)]
@@ -57,12 +59,16 @@ namespace TWR.Player
         {
             Vector3 direction = head.right * side;
             float distance = tuning.leanDistance;
+            float free = distance;
             if (Physics.SphereCast(head.position, tuning.leanCollisionRadius, direction, out RaycastHit hit,
                                    distance, tuning.obstacleMask, QueryTriggerInteraction.Ignore))
             {
-                return Mathf.Clamp01(hit.distance / distance);
+                free = hit.distance;
             }
-            return 1f;
+            // A portal opening has no collider, but its plane counts as a wall here, so leaning can never
+            // push the camera through a portal (proposed D-142).
+            free = Mathf.Min(free, PortalRaycast.ClearDistance(head.position, direction, distance, tuning.leanCollisionRadius));
+            return Mathf.Clamp01(free / distance);
         }
     }
 }

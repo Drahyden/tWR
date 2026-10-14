@@ -2,13 +2,14 @@ using System;
 using UnityEngine;
 using TWR.Core;
 using TWR.Items;
+using TWR.Portals;
 
 namespace TWR.Combat
 {
     /// <summary>
     /// The rules of one gun: magazine, fire rate, hitscan shot, reload timer (D-118, D-119, D-117).
     /// Shoots a ray from the CAMERA CENTRE (same origin as the interaction ray, D-112), so bullets go exactly
-    /// where the crosshair dot is. Hits are resolved to IDamageable (HP) and IShootable (puzzles), both found
+    /// where the crosshair dot is, also through one open portal via the shared PortalRaycast (proposed D-143). Hits are resolved to IDamageable (HP) and IShootable (puzzles), both found
     /// on the collider or its parents. Emits a Gunshot noise at the muzzle and an Impact noise at the hit
     /// point (D-079). Reserve ammo is read from / taken out of the owner's Inventory (D-050).
     /// Visuals (recoil, reload motion) are in GunViewModel; WeaponInventory decides WHEN to call TryFire.
@@ -23,8 +24,6 @@ namespace TWR.Combat
                  "Keep Interactable ON so buttons and switches stop bullets.")]
         [SerializeField] LayerMask hitMask = ~0;
 
-        const int MaxRayHits = 16;
-        static readonly RaycastHit[] rayHits = new RaycastHit[MaxRayHits]; // shared buffer: no garbage per shot
         static readonly Vector3 ScreenCentre = new Vector3(0.5f, 0.5f, 0f);
 
         GameObject owner;
@@ -131,21 +130,14 @@ namespace TWR.Combat
             Vector3 direction = ApplySpread(ray.direction);
 
             // Triggers (pickups, trigger zones) are ignored; so are the shooter's own colliders.
-            int count = Physics.RaycastNonAlloc(ray.origin, direction, rayHits, data.range, hitMask, QueryTriggerInteraction.Ignore);
-            int nearest = -1;
-            float nearestDistance = float.MaxValue;
-            for (int i = 0; i < count; i++)
-            {
-                if (rayHits[i].distance >= nearestDistance) continue;
-                if (ownerRoot != null && rayHits[i].collider.transform.IsChildOf(ownerRoot)) continue;
-                nearest = i;
-                nearestDistance = rayHits[i].distance;
-            }
-            if (nearest < 0) return; // hit nothing within range
+            // The ray may go through ONE open portal (proposed D-143); the hit point is then where the target
+            // really is, so the Impact noise is made there, not at the portal.
+            if (!PortalRaycast.Raycast(ray.origin, direction, data.range, hitMask, QueryTriggerInteraction.Ignore,
+                                       ownerRoot, out PortalRayHit shot))
+                return; // hit nothing within range
 
-            RaycastHit hit = rayHits[nearest];
-            HitResult result = ResolveHit(hit, direction);
-            NoiseSystem.Emit(hit.point, data.impactNoiseRadius, NoiseType.Impact, owner);
+            HitResult result = ResolveHit(shot.hit, shot.direction);
+            NoiseSystem.Emit(shot.hit.point, data.impactNoiseRadius, NoiseType.Impact, owner);
             if (result != HitResult.None) HitLanded?.Invoke(result);
         }
 

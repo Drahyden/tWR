@@ -11,7 +11,8 @@ namespace TWR.Puzzles
     /// localized "Locked" prompt and does nothing else (PlayerInteractor still raises the interaction event
     /// and Interact noise). Once unlocked, the prompt is "Press F to open" and F slides or swings the panel
     /// open procedurally, with a ~10 m Mechanism noise credited to the player (D-128).
-    /// It only opens: where the door leads (D-053b, D-058) is a separate, later component.
+    /// It only opens: where the door leads (D-053b, D-058) is a separate component (e.g. a Portal, proposed D-147).
+    /// A door whose DoorLock is "permanently locked" never opens but still shows "Locked" (proposed D-145).
     /// The panel's collider sits on the Interactable layer and also stops bullets like a wall.
     /// </summary>
     public class Door : MonoBehaviour, IInteractable
@@ -33,6 +34,8 @@ namespace TWR.Puzzles
 
         public bool IsLocked => doorLock != null && doorLock.IsLocked;
         public bool IsOpen => isOpen;
+        /// <summary>True from the moment it starts opening. A portal behind the door renders from then on (proposed D-146).</summary>
+        public bool IsOpenOrOpening => isOpen || opening;
 
         /// <summary>Raised when the door starts opening. (door, opener)</summary>
         public event Action<Door, GameObject> OpenStarted;

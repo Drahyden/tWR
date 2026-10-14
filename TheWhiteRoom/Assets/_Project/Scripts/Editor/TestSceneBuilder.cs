@@ -27,6 +27,10 @@ namespace TWR.EditorTools
     /// Step 4 (Seeker, D-107; D-043): Player + Enemy layers, NoiseSettings (wall muffling), the Seeker prefab,
     /// a patrolling Seeker spawn point in the puzzle room, RunStats and a baked + saved NavMesh
     /// (see TestSceneBuilder.Seeker.cs; D-132 confirmed, D-131 and D-133 to D-138).
+    /// Step 5 (hub lobby + portal door, D-107; D-057, D-097): Portal / PortalFallback layers, the Portal renderer,
+    /// portal shader/materials/settings, a lobby south of the white room with five doors (player starts there),
+    /// the see-through portal door and the impossible hall 500 m away (see TestSceneBuilder.Portal.cs;
+    /// proposed D-139 to D-147).
     /// </summary>
     public static partial class TestSceneBuilder
     {
@@ -65,6 +69,8 @@ namespace TWR.EditorTools
             if (!PreparePuzzleAssets(out PuzzleAssets puzzle))
                 return;
             if (!PrepareSeekerAssets(out SeekerAssets seeker)) // SeekerData, sound set, NoiseSettings, Seeker prefab
+                return;
+            if (!PreparePortalAssets(out PortalAssets portal)) // PortalSettings, shader + materials, Portal renderer, swing DoorData
                 return;
 
             Material white = GetOrCreateMaterial("M_White", new Color(0.95f, 0.95f, 0.95f), Color.black);
@@ -117,12 +123,16 @@ namespace TWR.EditorTools
             // Seeker spawn point + patrol route, muffling test listeners/marks, RunStats (step 4).
             BuildSeekerTest(seeker);
 
-            // Player.
+            // Hub lobby with five doors, the portal door and the impossible hall 500 m away (step 5).
+            BuildLobbyAndPortal(portal, puzzle, white, offWhite);
+
+            // Player: starts in the lobby in front of the black entry door, facing into the lobby (proposed D-145).
             GameObject player = GetOrCreatePlayerInstance(tuning, input, interactableLayer, combat, false);
-            player.transform.SetPositionAndRotation(new Vector3(0f, 0.05f, -6f), Quaternion.identity);
+            player.transform.SetPositionAndRotation(PlayerStartPosition, Quaternion.identity);
 
             GameObject hud = BuildHud(player.GetComponent<PlayerInteractor>());
             BuildCombatHud(hud, player);
+            BuildPortalRuntime(portal, player); // PortalRenderManager (needs the player camera)
 
             // Last, once all geometry exists: bake the NavMesh and save it as an asset next to the scene.
             BakeAndSaveNavMesh();
@@ -133,8 +143,11 @@ namespace TWR.EditorTools
 
             bool wiringOk = ValidatePuzzleWiring();
             wiringOk &= ValidateSeekerSetup();
+            wiringOk &= ValidatePortalSetup(portal, player, tuning);
             bool savedOk = ValidateSavedSceneReferences(TuningPath, PuzzleDataPath, DoorDataPath,
-                SeekerPrefabPath, SeekerDataPath, SeekerSoundSetPath, NavMeshAssetPath);
+                SeekerPrefabPath, SeekerDataPath, SeekerSoundSetPath, NavMeshAssetPath,
+                PortalSettingsPath, PortalSurfaceMaterialPath, PortalFallbackMaterialPath, PortalShaderPath,
+                PortalDoorDataPath, PortalRenderSetup.RendererPath);
             if (wiringOk && savedOk)
                 Debug.Log("[TWR] Built " + ScenePath + ". Press Play to test.");
             else
@@ -188,9 +201,11 @@ namespace TWR.EditorTools
             int weaponLayer = EnsureLayer(WeaponLayerName);
             int playerLayer = EnsureLayer(PlayerLayerName); // player's capsule: never a wall for noise/sight (D-131)
             int enemyLayer = EnsureLayer(EnemyLayerName);   // Seeker body: shootable, never a wall (D-134)
-            if (interactableLayer < 0 || weaponLayer < 0 || playerLayer < 0 || enemyLayer < 0)
+            int portalLayer = EnsureLayer(PortalLayerName);           // live portal screens: player camera only (proposed D-140)
+            int portalFallbackLayer = EnsureLayer(PortalFallbackLayerName); // white stand-ins: portal cameras only
+            if (interactableLayer < 0 || weaponLayer < 0 || playerLayer < 0 || enemyLayer < 0 || portalLayer < 0 || portalFallbackLayer < 0)
             {
-                EditorUtility.DisplayDialog("No free layer", "Could not create the 'Interactable' / 'Weapon' / 'Player' / 'Enemy' layers: all user layers are used.", "OK");
+                EditorUtility.DisplayDialog("No free layer", "Could not create the 'Interactable' / 'Weapon' / 'Player' / 'Enemy' / 'Portal' / 'PortalFallback' layers: all user layers are used.", "OK");
                 return false;
             }
 
@@ -340,7 +355,7 @@ namespace TWR.EditorTools
             Block("Floor", new Vector3(0f, -0.1f, 0f), new Vector3(20f, 0.2f, 20f), floorMat, room);
             Block("Ceiling", new Vector3(0f, 4.1f, 0f), new Vector3(20f, 0.2f, 20f), wallMat, room);
             Block("Wall N", new Vector3(0f, 2f, 10.1f), new Vector3(20.4f, 4f, 0.2f), wallMat, room);
-            Block("Wall S", new Vector3(0f, 2f, -10.1f), new Vector3(20.4f, 4f, 0.2f), wallMat, room);
+            BuildSouthWallWithDoorway(wallMat, room); // doorway into the step-5 lobby (TestSceneBuilder.Portal.cs)
             BuildEastWallWithDoorway(wallMat, room); // doorway into the step-3 puzzle room (TestSceneBuilder.Puzzle.cs)
             Block("Wall W", new Vector3(-10.1f, 2f, 0f), new Vector3(0.2f, 4f, 20f), wallMat, room);
 

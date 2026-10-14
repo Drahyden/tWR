@@ -9,11 +9,16 @@ namespace TWR.Puzzles
     /// It is a puzzle output (IPuzzleOutput): when the puzzle is solved it unlocks, emits a Mechanism noise
     /// (~8 m, D-128) and turns its lock light from red to green (D-065: light, not UI).
     /// The Door asks IsLocked before opening. State is scene-only; a reload locks it again (D-129).
+    /// "Permanently locked (no puzzle)" mode (proposed D-145): the lobby's black entry door and the reserved
+    /// path doors (D-021, D-060) stay locked whatever calls Unlock; F still shows "Locked" and raises the
+    /// interaction event (D-112) through the Door as usual.
     /// </summary>
     public class DoorLock : MonoBehaviour, IPuzzleOutput
     {
         [SerializeField] DoorData data;
         [SerializeField] bool startsLocked = true;
+        [Tooltip("Never unlocks, not even from a puzzle (proposed D-145). Forces startsLocked on.")]
+        [SerializeField] bool permanentlyLocked;
 
         [Header("Lock light - D-065")]
         [Tooltip("Small emissive block that shows the lock state.")]
@@ -32,13 +37,14 @@ namespace TWR.Puzzles
         bool locked;
 
         public bool IsLocked => locked;
+        public bool IsPermanentlyLocked => permanentlyLocked;
 
         /// <summary>Raised once when the lock opens.</summary>
         public event Action<DoorLock> Unlocked;
 
         void Awake()
         {
-            locked = startsLocked;
+            locked = startsLocked || permanentlyLocked;
             audioSource = GetComponent<AudioSource>();
             ApplyVisual();
         }
@@ -48,7 +54,7 @@ namespace TWR.Puzzles
         /// <summary>Unlock the door. source = who caused it (credited for the noise).</summary>
         public void Unlock(GameObject source)
         {
-            if (!locked) return;
+            if (!locked || permanentlyLocked) return;
             locked = false;
             ApplyVisual();
             if (data != null)

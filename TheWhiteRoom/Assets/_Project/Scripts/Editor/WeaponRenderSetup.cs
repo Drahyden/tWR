@@ -57,7 +57,9 @@ namespace TWR.EditorTools
                 if (list == null || !list.isArray) continue;
                 for (int i = 0; i < list.arraySize; i++)
                 {
-                    if (list.GetArrayElementAtIndex(i).objectReferenceValue is UniversalRendererData data && seen.Add(data))
+                    // The Portal renderer (proposed D-139) must stay feature-free: the gun is never in a portal view.
+                    if (list.GetArrayElementAtIndex(i).objectReferenceValue is UniversalRendererData data
+                        && !PortalRenderSetup.IsPortalRenderer(data) && seen.Add(data))
                         yield return data;
                 }
             }

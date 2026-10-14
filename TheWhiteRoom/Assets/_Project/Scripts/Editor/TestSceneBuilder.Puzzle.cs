@@ -363,8 +363,16 @@ namespace TWR.EditorTools
                 string Key(LocalizedString s) => s == null || s.IsEmpty ? "EMPTY" : $"{s.TableReference.TableCollectionName}/{s.TableEntryReference.Key}";
                 var panelGO = (panel as Transform)?.gameObject;
                 bool doorOk = data != null && doorLock != null && panelGO != null && panelGO.layer == interactableLayer;
+                string lockMode = "";
+                if (doorLock != null)
+                {
+                    var lockSo = new SerializedObject(doorLock);
+                    SerializedProperty permanent = lockSo.FindProperty("permanentlyLocked");
+                    lockMode = permanent != null && permanent.boolValue ? " (PERMANENTLY locked, D-145 proposed)"
+                             : lockSo.FindProperty("startsLocked").boolValue ? " (locked until its puzzle is solved)" : " (unlocked)";
+                }
                 string line = $"[TWR] Door wiring: '{door.name}'  data: {(data != null ? data.name : "MISSING")}, " +
-                              $"lock: {(doorLock != null ? doorLock.name : "MISSING")}, panel: {(panel != null ? panel.name : "MISSING")}, " +
+                              $"lock: {(doorLock != null ? doorLock.name + lockMode : "MISSING")}, panel: {(panel != null ? panel.name : "MISSING")}, " +
                               $"panel layer: {(panelGO != null ? LayerMask.LayerToName(panelGO.layer) : "-")}" +
                               (data != null ? $", prompts: locked={Key(data.lockedPrompt)} open={Key(data.openPrompt)}" : "");
                 if (doorOk) Debug.Log(line, door);
