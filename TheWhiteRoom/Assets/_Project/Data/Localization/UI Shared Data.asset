@@ -39,6 +39,22 @@ MonoBehaviour:
     m_Key: door.open
     m_Metadata:
       m_Items: []
+  - m_Id: 419125443821568
+    m_Key: item.health.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 419125527707648
+    m_Key: sign.exit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 419125527707649
+    m_Key: sign.basement
+    m_Metadata:
+      m_Items: []
+  - m_Id: 419125527707650
+    m_Key: run.complete
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

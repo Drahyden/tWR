@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using TWR.Core;
 using TWR.Items;
 using TWR.Player;
 
@@ -11,9 +12,11 @@ namespace TWR.Combat
     /// LMB fires (held for automatic guns), R reloads (D-110). Switching hides the old gun, which cancels
     /// its reload (D-117); loaded rounds stay with each gun. Also gives the starting reserve ammo
     /// (D-120), adds the camera kick through PlayerLook (D-123) and relays HUD events.
+    /// Guns, magazines and reserve ammo carry over between sections (D-162); ResetForNewRun (IRunResettable) puts
+    /// everything back to the run-start state: inventory emptied, every magazine full, starting reserve, slot 1.
     /// </summary>
     [DefaultExecutionOrder(40)]
-    public class WeaponInventory : MonoBehaviour
+    public class WeaponInventory : MonoBehaviour, IRunResettable
     {
         public const int SlotCount = 5;
 
@@ -64,13 +67,38 @@ namespace TWR.Combat
 
         void Start()
         {
-            // D-120: full magazine (Gun does that) + starting reserve in the Inventory.
-            Gun first = FirstGun();
-            if (first != null && first.Data != null && inventory != null && tuning != null)
-                inventory.Add(first.Data.ammoItem, tuning.startingReserveAmmo);
+            ResetForNewRun(); // the run-start loadout (D-120); safe to run again later
+        }
+
+        /// <summary>
+        /// Run-start loadout (D-120, D-162): the inventory is emptied (D-037 items found in the run are gone), every
+        /// gun gets a full magazine, the starting reserve goes into the inventory and slot 1 is equipped. Calling it
+        /// twice gives the same result (never double ammo). Gun slots are fixed until gun pickups exist (D-035).
+        /// </summary>
+        public void ResetForNewRun()
+        {
+            for (int i = 0; i < SlotCount; i++)
+                if (slots[i] != null) slots[i].ResetForNewRun();
+
+            if (inventory != null)
+            {
+                inventory.Clear();
+                Gun first = FirstGun();
+                if (first != null && first.Data != null && tuning != null)
+                    inventory.Add(first.Data.ammoItem, tuning.startingReserveAmmo);
+            }
 
             for (int i = 0; i < SlotCount; i++)
-                if (slots[i] != null) { Equip(i); break; }
+            {
+                if (slots[i] == null) continue;
+                if (i == currentIndex)
+                {
+                    CurrentGunChanged?.Invoke(slots[i]); // already equipped: just refresh the HUD
+                    AmmoChanged?.Invoke();
+                }
+                else Equip(i);
+                break;
+            }
         }
 
         void OnEnable()

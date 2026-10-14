@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
 
 namespace TWR.Portals
 {
@@ -44,9 +45,22 @@ namespace TWR.Portals
                 Debug.LogError("[PortalRenderManager] Needs PortalSettings and the player camera. Run TWR > Build Test Scene.", this);
         }
 
-        void Start()
+        // In the run, this manager lives in the persistent Core scene and portals arrive and leave with the section
+        // scenes (D-161): re-run the pair check whenever a section is loaded additively. Portals register themselves
+        // in Portal.Active (OnEnable/OnDisable) and free their render textures when unloaded (PortalCamera.OnDestroy).
+        void OnEnable() => SceneManager.sceneLoaded += HandleSceneLoaded;
+        void OnDisable() => SceneManager.sceneLoaded -= HandleSceneLoaded;
+
+        void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            // One-time sanity check (D-142): the maths assumes every pair differs only by position + yaw.
+            if (mode == LoadSceneMode.Additive) CheckPairs();
+        }
+
+        void Start() => CheckPairs();
+
+        void CheckPairs()
+        {
+            // Sanity check (D-142): the maths assumes every pair differs only by position + yaw.
             IReadOnlyList<Portal> portals = Portal.Active;
             for (int i = 0; i < portals.Count; i++)
             {

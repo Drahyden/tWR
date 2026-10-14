@@ -79,12 +79,20 @@ namespace TWR.Stats
         }
 
         /// <summary>
+        /// The persistent Core scene (D-161) holds no section content and is never counted. Set by the RunManager in
+        /// the run (Core + additive sections); empty in the sandbox test scene, where the scene itself is the section.
+        /// </summary>
+        public string IgnoredSceneName { get; set; }
+
+        /// <summary>
         /// A section scene finished loading: add its puzzles to the "available" totals (D-104, D-158).
         /// Called once per load by the RunManager (from SceneManager.sceneLoaded), so a section loaded twice counts twice.
+        /// Enemies from the section that was just unloaded are dropped first (their objects are destroyed).
         /// </summary>
         public void AddLoadedScene(Scene scene)
         {
             enemies.RemoveWhere(IsDestroyed); // enemies from the unloaded scene are gone
+            if (!string.IsNullOrEmpty(IgnoredSceneName) && scene.name == IgnoredSceneName) return;
             int added = 0, addedOptional = 0;
             foreach (PuzzleController puzzle in FindObjectsByType<PuzzleController>(FindObjectsSortMode.None))
             {

@@ -17,4 +17,5 @@ MonoBehaviour:
   path: 0
   tags:
   - portal
-  sceneName: 
+  sceneName: Section_ImpossibleGeometry
+  exitCondition: 0

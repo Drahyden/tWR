@@ -26,5 +26,15 @@ namespace TWR.Items
 
         [Tooltip("Noise radius (m) when walking over a pickup of this item (D-079). Small: picking things up is quiet.")]
         [Min(0f)] public float pickupNoiseRadius = 2f;
+
+        /// <summary>
+        /// What happens when a collector walks over a pickup of this item (ItemPickup calls this). Default: as much as
+        /// fits goes into the Inventory. Returns how many units were taken; 0 leaves the pickup where it is.
+        /// Special items override it (e.g. HealthItemData heals instead, D-171).
+        /// </summary>
+        public virtual int Collect(GameObject collector, Inventory inventory, int amount)
+        {
+            return inventory != null ? inventory.Add(this, amount) : 0;
+        }
     }
 }

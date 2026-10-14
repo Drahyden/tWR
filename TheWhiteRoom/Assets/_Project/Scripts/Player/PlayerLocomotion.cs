@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using TWR.Core;
 
 namespace TWR.Player
 {
@@ -8,8 +9,9 @@ namespace TWR.Player
     /// and hands it to the IPlayerMotor, which does the actual collision-aware moving (swappable, D-053c).
     /// Built to grow into D-033 abilities: jump COUNT (double jump), AddImpulse (dash/knockback) and
     /// SetIgnoredLayers (phase). Crouch checks headroom before standing; also sets the Head's eye height.
+    /// ResetMotion stops all movement (section transitions, D-167); ResetForNewRun also removes item abilities (D-162).
     /// </summary>
-    public class PlayerLocomotion : MonoBehaviour
+    public class PlayerLocomotion : MonoBehaviour, IRunResettable
     {
         [SerializeField] PlayerTuning tuning;
         [SerializeField] PlayerInputReader input;
@@ -181,6 +183,28 @@ namespace TWR.Player
             float along = Vector3.Dot(velocityChange, up);
             upSpeed += along;
             impulseVelocity += velocityChange - up * along;
+        }
+
+        /// <summary>
+        /// Stop dead: no walking speed, no impulse, no falling speed (D-167: the SectionLoader calls this before it
+        /// freezes the player, so footsteps stop and nobody keeps sliding after a teleport).
+        /// </summary>
+        public void ResetMotion()
+        {
+            planarVelocity = Vector3.zero;
+            impulseVelocity = Vector3.zero;
+            upSpeed = 0f;
+            jumpsUsed = 0;
+            HorizontalSpeed = 0f;
+            IsSprinting = false;
+        }
+
+        /// <summary>Run start (D-162): abilities found in the run are gone (D-033), movement stops.</summary>
+        public void ResetForNewRun()
+        {
+            BonusJumps = 0;
+            if (motor != null) motor.SetIgnoredLayers(0);
+            ResetMotion();
         }
 
         /// <summary>Collision-layer toggle for D-033 phase. Pass 0 to collide with everything again.</summary>

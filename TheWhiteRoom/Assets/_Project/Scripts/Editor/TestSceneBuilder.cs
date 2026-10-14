@@ -34,6 +34,8 @@ namespace TWR.EditorTools
     /// D-139 to D-147).
     /// Run Structure R1 (D-156 to D-160): section assets, the curated first run, the RunConfig and the RunManager
     /// bootstrap (see TestSceneBuilder.Run.cs). Also available alone as "TWR/Run/Create Run Assets".
+    /// Run Structure R2 (D-161 to D-171): the real run scenes (Core + additive content scenes) come from
+    /// "TWR/Run/Build Run Scenes" (TestSceneBuilder.RunScenes.cs); this test scene stays a standalone sandbox.
     /// </summary>
     public static partial class TestSceneBuilder
     {
@@ -85,20 +87,7 @@ namespace TWR.EditorTools
             Material listenerMat = GetOrCreateMaterial("M_NoiseListener", new Color(0.6f, 0.6f, 0.6f), new Color(0.2f, 0.2f, 0.2f));
             VolumeProfile profile = GetOrCreateVolumeProfile();
 
-            // Lighting: flat bright ambient + one soft, shadowless light for shape readability (cheap, D-100).
-            RenderSettings.ambientMode = AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.75f, 0.75f, 0.78f);
-            var lightGO = new GameObject("Directional Light");
-            var light = lightGO.AddComponent<Light>();
-            light.type = LightType.Directional;
-            light.intensity = 0.6f;
-            light.shadows = LightShadows.None;
-            lightGO.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
-
-            var volumeGO = new GameObject("Global Volume (Bloom)");
-            var volume = volumeGO.AddComponent<Volume>();
-            volume.isGlobal = true;
-            volume.sharedProfile = profile;
+            BuildGlobalLighting(profile);
 
             BuildRoom(white, whiteEmissive, offWhite);
 
@@ -345,6 +334,25 @@ namespace TWR.EditorTools
             EditorUtility.SetDirty(profile);
             AssetDatabase.SaveAssets();
             return profile;
+        }
+
+        /// Lighting: flat bright ambient + one soft, shadowless light for shape readability (cheap, D-100), and the
+        /// global Bloom volume (D-064). Used by the sandbox and by the Core scene of the run (D-161).
+        static void BuildGlobalLighting(VolumeProfile profile)
+        {
+            RenderSettings.ambientMode = AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.75f, 0.75f, 0.78f);
+            var lightGO = new GameObject("Directional Light");
+            var light = lightGO.AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.intensity = 0.6f;
+            light.shadows = LightShadows.None;
+            lightGO.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+
+            var volumeGO = new GameObject("Global Volume (Bloom)");
+            var volume = volumeGO.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.sharedProfile = profile;
         }
 
         static void AddComponentToProfileAsset(VolumeComponent component, VolumeProfile profile)

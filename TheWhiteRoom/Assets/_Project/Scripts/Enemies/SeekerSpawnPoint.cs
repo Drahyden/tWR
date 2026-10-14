@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.SceneManagement;
 
 namespace TWR.Enemies
 {
@@ -43,6 +44,10 @@ namespace TWR.Enemies
 
             SpawnedSeeker = Instantiate(seekerPrefab, position, transform.rotation);
             SpawnedSeeker.name = seekerPrefab.name + " (" + name + ")";
+            // Instantiate puts new objects in the ACTIVE scene, which is Core during a run (D-161). Move the Seeker
+            // into this spawn point's own section scene, so it is unloaded together with that section.
+            if (SpawnedSeeker.gameObject.scene != gameObject.scene)
+                SceneManager.MoveGameObjectToScene(SpawnedSeeker.gameObject, gameObject.scene);
             SpawnedSeeker.SetPatrolRoute(patrolRoute); // before the Seeker's Start, which begins the patrol
             return SpawnedSeeker;
         }

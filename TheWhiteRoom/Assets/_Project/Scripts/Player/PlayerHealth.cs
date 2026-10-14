@@ -13,9 +13,11 @@ namespace TWR.Player
     /// after a short pause asks the RunManager (through RunHooks) to end the run, which returns to the hub
     /// lobby with a new run plan (D-157). Without a RunManager it just reloads the active scene.
     /// Death = full restart of the run, no checkpoints (D-034).
+    /// HP carries over between sections and is never refilled automatically (D-162); only health pickups heal
+    /// (IHealable, D-171). ResetForNewRun (IRunResettable) restores full HP at every run start.
     /// Later the low-HP heartbeat (D-079) and inner-voice mood (D-030) can listen to Changed.
     /// </summary>
-    public class PlayerHealth : MonoBehaviour, IDamageable
+    public class PlayerHealth : MonoBehaviour, IDamageable, IHealable, IRunResettable
     {
         [SerializeField] PlayerTuning tuning;
 
@@ -30,6 +32,8 @@ namespace TWR.Player
         public float Max => tuning != null ? Mathf.Max(1f, tuning.maxHealth) : 100f;
         public float Normalized => current / Max;
         public bool IsAlive => current > 0f;
+        /// <summary>Alive and below max HP: a health pickup would do something (D-171).</summary>
+        public bool NeedsHealing => IsAlive && current < Max;
 
         void Awake()
         {
@@ -50,11 +54,22 @@ namespace TWR.Player
             if (current <= 0f) Die(damage);
         }
 
-        /// <summary>Restore HP (medkits later). Does nothing once dead.</summary>
+        /// <summary>Restore HP (health pickups, D-171), clamped to max HP. Does nothing once dead.</summary>
         public void Heal(float amount)
         {
             if (!IsAlive || amount <= 0f) return;
             current = Mathf.Min(Max, current + amount);
+            Changed?.Invoke(current, Max);
+        }
+
+        /// <summary>
+        /// Run start (D-162): full HP again and any pending death restart cancelled. Does not touch the input
+        /// reader; the SectionLoader turns input back on once the player stands in the lobby.
+        /// </summary>
+        public void ResetForNewRun()
+        {
+            StopAllCoroutines();
+            current = Max;
             Changed?.Invoke(current, Max);
         }
 

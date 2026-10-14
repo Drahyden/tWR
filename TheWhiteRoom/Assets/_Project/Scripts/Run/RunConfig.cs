@@ -1,20 +1,36 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TWR.Run
 {
     /// <summary>
     /// Everything the RunManager needs to build a run (D-151, D-156): the section pool, the fork room,
-    /// the boss arenas (one per path, D-148), the curated first-run plan (D-154, D-160) and the lobby scene
-    /// a run returns to when it ends (D-157). Validate() is shared by the RunManager and the editor menu
-    /// "TWR/Run/Validate Run Setup". Create via: Create > TWR > Run > Run Config.
+    /// the boss arenas (one per path, D-148), the curated first-run plan (D-154, D-160), the lobby scene
+    /// a run returns to when it ends (D-157), and (R2) the persistent Core scene plus the section-transition
+    /// timings and the placeholder end-screen text (D-161, D-167, D-092). Validate() is shared by the RunManager and
+    /// the editor menu "TWR/Run/Validate Run Setup". Create via: Create > TWR > Run > Run Config.
     /// </summary>
     [CreateAssetMenu(fileName = "RunConfig", menuName = "TWR/Run/Run Config")]
     public class RunConfig : ScriptableObject
     {
-        [Header("Scenes - D-057, D-157")]
-        [Tooltip("The hub lobby scene a run starts in and returns to. For the slice the whole test scene is the lobby.")]
-        public string lobbySceneName = "Test_PlayerController";
+        [Header("Scenes - D-057, D-157, D-161")]
+        [Tooltip("The hub lobby content scene a run starts in and returns to (loaded additively next to Core, D-163).")]
+        public string lobbySceneName = "Lobby";
+        [Tooltip("The persistent scene with the player, HUD, RunManager, ambient bed and lighting (D-161). Never counted by RunStats.")]
+        public string coreSceneName = "Core";
+
+        [Header("Section transition - D-167")]
+        [Tooltip("Fade to white before the old section unloads (seconds).")]
+        [Min(0f)] public float fadeOutSeconds = 0.4f;
+        [Tooltip("Fade back in once the player stands at the new entry spawn (seconds).")]
+        [Min(0f)] public float fadeInSeconds = 0.4f;
+
+        [Header("Run complete (placeholder end screen) - D-092, D-167")]
+        [Tooltip("How long the white 'run complete' screen stays before the lobby loads with a new run.")]
+        [Min(0f)] public float runCompleteHoldSeconds = 3f;
+        [Tooltip("Localized title on the placeholder end screen (table 'UI', key 'run.complete', D-084).")]
+        public LocalizedString runCompleteMessage = new LocalizedString("UI", "run.complete");
 
         [Header("Run length - D-151, D-156")]
         [Range(1, 4)] public int minPreForkSections = 2;
@@ -35,6 +51,10 @@ namespace TWR.Run
         public bool Validate(List<string> errors, List<string> warnings)
         {
             if (string.IsNullOrEmpty(lobbySceneName)) errors.Add("Lobby scene name is empty.");
+            if (string.IsNullOrEmpty(coreSceneName)) warnings.Add("Core scene name is empty (D-161). Run TWR > Run > Build Run Scenes.");
+            WarnIfNoScene(forkRoom, warnings);
+            if (sectionPool != null) foreach (SectionData s in sectionPool) WarnIfNoScene(s, warnings);
+            if (bossArenas != null) foreach (SectionData b in bossArenas) WarnIfNoScene(b, warnings);
             if (minPreForkSections < 1 || maxPreForkSections < minPreForkSections)
                 errors.Add($"Pre-fork section count {minPreForkSections}-{maxPreForkSections} is invalid.");
             else if (minPreForkSections != 2 || maxPreForkSections != 3)
@@ -71,6 +91,12 @@ namespace TWR.Run
             else if (!curatedPlan.IsValid(out string problem)) errors.Add("Curated run plan is invalid: " + problem + ".");
 
             return errors.Count == 0;
+        }
+
+        static void WarnIfNoScene(SectionData section, List<string> warnings)
+        {
+            if (section != null && string.IsNullOrEmpty(section.sceneName))
+                warnings.Add($"Section '{section.DisplayId}' has no scene name (D-161). Run TWR > Run > Build Run Scenes.");
         }
     }
 }

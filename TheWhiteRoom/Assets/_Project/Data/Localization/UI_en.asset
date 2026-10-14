@@ -42,6 +42,22 @@ MonoBehaviour:
     m_Localized: Press F to open
     m_Metadata:
       m_Items: []
+  - m_Id: 419125443821568
+    m_Localized: Health
+    m_Metadata:
+      m_Items: []
+  - m_Id: 419125527707648
+    m_Localized: EXIT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 419125527707649
+    m_Localized: BASEMENT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 419125527707650
+    m_Localized: Run complete
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

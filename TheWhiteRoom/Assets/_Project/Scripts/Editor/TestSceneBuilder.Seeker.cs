@@ -230,7 +230,8 @@ namespace TWR.EditorTools
         // ---------- scene ----------
 
         /// Spawn point + patrol route in the puzzle room, muffling test listeners and floor marks.
-        static void BuildSeekerTest(SeekerAssets assets)
+        /// includeNoiseTests = false: only the spawn point and route (the run's puzzle section, which has no white room).
+        static void BuildSeekerTest(SeekerAssets assets, bool includeNoiseTests = true)
         {
             Transform group = new GameObject("Seeker Test").transform;
 
@@ -259,6 +260,7 @@ namespace TWR.EditorTools
             var spawn = spawnGO.AddComponent<SeekerSpawnPoint>();
             Assign(spawn, "seekerPrefab", assets.prefab);
             AssignArray(spawn, "patrolRoute", waypoints);
+            if (!includeNoiseTests) return;
 
             // Muffling test (D-131). Both floor marks are ~7.1 m from the puzzle-room listener:
             // blue = a wall in between (muffled x0.5), green = straight through the open doorway (clear).
@@ -303,8 +305,12 @@ namespace TWR.EditorTools
         /// Bakes one NavMeshSurface over the whole scene and saves its data as an asset next to the scene,
         /// so it survives reloads. Bodies, held guns, trigger volumes and Interactable things (door panels, the
         /// test button) are left out of the bake; the door panel blocks paths with a carving NavMeshObstacle instead.
-        static NavMeshSurface BakeAndSaveNavMesh()
+        static NavMeshSurface BakeAndSaveNavMesh() => BakeAndSaveNavMesh(NavMeshFolder);
+
+        /// Same bake, saved as folder/NavMesh.asset (each run scene keeps its own NavMesh, D-161).
+        static NavMeshSurface BakeAndSaveNavMesh(string folder)
         {
+            string assetPath = folder + "/NavMesh.asset";
             ConfigureHumanoidAgent(0.4f, 2f);
 
             var go = new GameObject("NavMesh Surface");
@@ -321,11 +327,11 @@ namespace TWR.EditorTools
                 return surface;
             }
 
-            EnsureFolder(NavMeshFolder);
-            if (AssetDatabase.LoadAssetAtPath<Object>(NavMeshAssetPath) != null)
-                AssetDatabase.DeleteAsset(NavMeshAssetPath);
+            EnsureFolder(folder);
+            if (AssetDatabase.LoadAssetAtPath<Object>(assetPath) != null)
+                AssetDatabase.DeleteAsset(assetPath);
             surface.navMeshData.name = "NavMesh";
-            AssetDatabase.CreateAsset(surface.navMeshData, NavMeshAssetPath);
+            AssetDatabase.CreateAsset(surface.navMeshData, assetPath);
             AssetDatabase.SaveAssets();
             EditorUtility.SetDirty(surface);
             return surface;

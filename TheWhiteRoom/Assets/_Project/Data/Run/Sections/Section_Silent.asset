@@ -17,4 +17,5 @@ MonoBehaviour:
   path: 0
   tags:
   - silent
-  sceneName: 
+  sceneName: Section_Silent
+  exitCondition: 0

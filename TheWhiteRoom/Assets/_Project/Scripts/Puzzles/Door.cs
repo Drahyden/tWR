@@ -79,6 +79,17 @@ namespace TWR.Puzzles
             OpenStarted?.Invoke(this, opener);
         }
 
+        /// <summary>Snap shut at once, no sound or noise (D-166: the fork door not taken closes and locks).</summary>
+        public void CloseInstantly()
+        {
+            if (panel == null) return;
+            opening = false;
+            isOpen = false;
+            openTimer = 0f;
+            panel.localPosition = closedPosition;
+            panel.localRotation = closedRotation;
+        }
+
         void Update()
         {
             if (!opening) return;

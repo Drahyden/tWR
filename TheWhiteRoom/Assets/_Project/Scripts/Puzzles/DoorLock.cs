@@ -65,6 +65,26 @@ namespace TWR.Puzzles
             Unlocked?.Invoke(this);
         }
 
+        /// <summary>
+        /// Unlock without the Mechanism noise or sound (D-165): for section exits whose condition is "None", which are
+        /// open from the moment the section loads, so enemies don't hear a door that nobody touched.
+        /// </summary>
+        public void UnlockQuietly()
+        {
+            if (!locked || permanentlyLocked) return;
+            locked = false;
+            ApplyVisual();
+            Unlocked?.Invoke(this);
+        }
+
+        /// <summary>Lock for good, whatever calls Unlock later (D-166: the fork door the player did not take).</summary>
+        public void LockPermanently()
+        {
+            permanentlyLocked = true;
+            locked = true;
+            ApplyVisual();
+        }
+
         void ApplyVisual()
         {
             Color colour = locked ? lockedColour : unlockedColour;

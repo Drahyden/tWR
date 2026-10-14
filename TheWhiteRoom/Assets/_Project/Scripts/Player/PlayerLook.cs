@@ -1,4 +1,5 @@
 using UnityEngine;
+using TWR.Core;
 
 namespace TWR.Player
 {
@@ -6,10 +7,10 @@ namespace TWR.Player
     /// Mouse look (D-032): turns the whole body left/right (yaw) and tilts the Head up/down (pitch).
     /// Stores yaw/pitch itself so portals can set them exactly via SetLookRotation (D-097).
     /// Also applies the field of view from PlayerTuning to the player camera, and the self-recovering
-    /// recoil view kick (AddViewKick, D-123).
+    /// recoil view kick (AddViewKick, D-123). ResetForNewRun clears a leftover kick (D-162).
     /// </summary>
     [DefaultExecutionOrder(-50)]
-    public class PlayerLook : MonoBehaviour
+    public class PlayerLook : MonoBehaviour, IRunResettable
     {
         [SerializeField] PlayerTuning tuning;
         [SerializeField] PlayerInputReader input;
@@ -70,6 +71,13 @@ namespace TWR.Player
         {
             viewKick = Mathf.Min(viewKick + pitchUpDegrees, MaxViewKick);
             viewKickRecoverSharpness = Mathf.Max(0.1f, recoverSharpness);
+        }
+
+        /// <summary>Run start (D-162): no recoil kick left over. The view direction is set by the lobby teleport.</summary>
+        public void ResetForNewRun()
+        {
+            viewKick = 0f;
+            ApplyRotation();
         }
 
         /// <summary>Set the view direction instantly (used by Teleport / portals, D-097). Roll is ignored.</summary>

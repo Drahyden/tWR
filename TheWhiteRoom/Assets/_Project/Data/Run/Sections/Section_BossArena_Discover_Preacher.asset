@@ -18,4 +18,5 @@ MonoBehaviour:
   tags:
   - boss
   - preacher
-  sceneName: 
+  sceneName: Boss_Discover
+  exitCondition: 2

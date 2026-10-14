@@ -18,4 +18,5 @@ MonoBehaviour:
   tags:
   - boss
   - bull
-  sceneName: 
+  sceneName: Boss_Escape
+  exitCondition: 2

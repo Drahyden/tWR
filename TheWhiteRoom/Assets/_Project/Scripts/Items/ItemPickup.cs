@@ -52,8 +52,9 @@ namespace TWR.Items
             }
             if (lastInventory == null) return;
 
-            int taken = lastInventory.Add(item, remaining);
-            if (taken <= 0) return; // stack full: stay here, do nothing
+            // The item decides what "collect" means: ammo goes into the Inventory, health heals (D-171).
+            int taken = item.Collect(lastInventory.gameObject, lastInventory, remaining);
+            if (taken <= 0) return; // stack full / HP full: stay here, do nothing
 
             remaining -= taken;
             GameObject collector = lastInventory.gameObject;

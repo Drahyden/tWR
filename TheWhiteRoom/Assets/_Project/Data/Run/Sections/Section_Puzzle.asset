@@ -17,4 +17,5 @@ MonoBehaviour:
   path: 0
   tags:
   - puzzle
-  sceneName: 
+  sceneName: Section_Puzzle
+  exitCondition: 1

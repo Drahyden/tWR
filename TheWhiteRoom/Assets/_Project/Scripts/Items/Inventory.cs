@@ -80,6 +80,17 @@ namespace TWR.Items
             return removed;
         }
 
+        /// <summary>Remove every stack (run start, D-162). Raises Changed with count 0 for each removed item.</summary>
+        public void Clear()
+        {
+            for (int i = stacks.Count - 1; i >= 0; i--)
+            {
+                ItemData item = stacks[i].item;
+                stacks.RemoveAt(i);
+                Changed?.Invoke(item, 0);
+            }
+        }
+
         static int Cap(ItemData item) => Mathf.Clamp(item.maxStack, 1, MaxStack);
 
         int IndexOf(ItemData item)

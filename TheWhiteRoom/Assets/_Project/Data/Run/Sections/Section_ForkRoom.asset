@@ -17,4 +17,5 @@ MonoBehaviour:
   path: 0
   tags:
   - connector
-  sceneName: 
+  sceneName: Fork
+  exitCondition: 0

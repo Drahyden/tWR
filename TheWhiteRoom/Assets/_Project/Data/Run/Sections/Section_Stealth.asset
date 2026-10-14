@@ -17,4 +17,5 @@ MonoBehaviour:
   path: 0
   tags:
   - stealth
-  sceneName: 
+  sceneName: Section_Stealth
+  exitCondition: 0

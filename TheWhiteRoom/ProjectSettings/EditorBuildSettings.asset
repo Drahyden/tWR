@@ -6,6 +6,36 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/_Project/Scenes/Run/Core.unity
+    guid: 829e452196d734a4f907b89833426fe8
+  - enabled: 1
+    path: Assets/_Project/Scenes/Run/Lobby.unity
+    guid: 374364ea37a14f647b2fa868ce36a4d6
+  - enabled: 1
+    path: Assets/_Project/Scenes/Run/Section_Puzzle.unity
+    guid: f6eb677822c833c44af9594e98b97fae
+  - enabled: 1
+    path: Assets/_Project/Scenes/Run/Section_Combat.unity
+    guid: b5c706ae889ff0242960fe52ffd3c622
+  - enabled: 1
+    path: Assets/_Project/Scenes/Run/Section_ImpossibleGeometry.unity
+    guid: 96fb9d80a2d79fb47bd27595c5ecc779
+  - enabled: 1
+    path: Assets/_Project/Scenes/Run/Section_Stealth.unity
+    guid: fec421bc89eb80949a4dee867c307e73
+  - enabled: 1
+    path: Assets/_Project/Scenes/Run/Section_Silent.unity
+    guid: e0d8f06775877d64fac164a6aa5e7603
+  - enabled: 1
+    path: Assets/_Project/Scenes/Run/Fork.unity
+    guid: fadca946ddb57b64586b0d25a545fcbd
+  - enabled: 1
+    path: Assets/_Project/Scenes/Run/Boss_Escape.unity
+    guid: 52af37826ed32924795cfb76916e50c7
+  - enabled: 1
+    path: Assets/_Project/Scenes/Run/Boss_Discover.unity
+    guid: 6509fc1bf69aaae4b9fd14336975d10b
+  - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   - enabled: 1

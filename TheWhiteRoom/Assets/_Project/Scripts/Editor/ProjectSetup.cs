@@ -36,6 +36,21 @@ namespace TWR.EditorTools
             // Step 3, switch puzzle exit door (D-127).
             ("door.locked", "Locked"),
             ("door.open", "Press F to open"),
+            // Run Structure R2: fork room door texts (D-150, D-166) and the placeholder end screen (D-092, D-167).
+            ("item.health.name", "Health"),     // health pickup (D-171), inventory grid later
+            ("sign.exit", "EXIT"),
+            ("sign.basement", "BASEMENT"),
+            ("run.complete", "Run complete"),
+        };
+
+        const string SubtitlesTable = "Subtitles";
+
+        /// Placeholder inner-voice subtitles (D-080, D-089). Keys are final; the English is a stand-in until the
+        /// developer writes and records the real lines (D-031).
+        static readonly (string key, string english)[] SubtitleEntries =
+        {
+            ("fork.exit_door", "(placeholder) An exit sign. Too easy?"),
+            ("fork.basement_door", "(placeholder) A black door. Basement. Of course there's a basement."),
         };
 
         [MenuItem("TWR/Setup Project", priority = 0)]
@@ -101,7 +116,8 @@ namespace TWR.EditorTools
 
             Locale english = GetOrCreateLocale();
             SetProjectLocaleAndSelector(settings, english);
-            SetupUiTable(english);
+            SetupStringTable(english, UiTable, UiEntries);
+            SetupStringTable(english, SubtitlesTable, SubtitleEntries);
 
             AssetDatabase.SaveAssets();
             return true;
@@ -176,13 +192,14 @@ namespace TWR.EditorTools
             EditorUtility.SetDirty(settings);
         }
 
-        static void SetupUiTable(Locale english)
+        /// Creates the string table collection if missing and adds the English entries that are missing or empty.
+        static void SetupStringTable(Locale english, string tableName, (string key, string english)[] entries)
         {
-            StringTableCollection collection = LocalizationEditorSettings.GetStringTableCollection(UiTable);
+            StringTableCollection collection = LocalizationEditorSettings.GetStringTableCollection(tableName);
             if (collection == null)
             {
-                collection = LocalizationEditorSettings.CreateStringTableCollection(UiTable, LocalizationFolder);
-                Debug.Log("[TWR] Created string table '" + UiTable + "' in " + LocalizationFolder);
+                collection = LocalizationEditorSettings.CreateStringTableCollection(tableName, LocalizationFolder);
+                Debug.Log("[TWR] Created string table '" + tableName + "' in " + LocalizationFolder);
             }
 
             var table = collection.GetTable(english.Identifier) as StringTable;
@@ -190,11 +207,11 @@ namespace TWR.EditorTools
                 table = collection.AddNewTable(english.Identifier) as StringTable;
             if (table == null)
             {
-                Debug.LogError("[TWR] Could not create the English '" + UiTable + "' table.");
+                Debug.LogError("[TWR] Could not create the English '" + tableName + "' table.");
                 return;
             }
 
-            foreach (var (key, englishText) in UiEntries)
+            foreach (var (key, englishText) in entries)
             {
                 StringTableEntry entry = table.GetEntry(key);
                 if (entry == null)

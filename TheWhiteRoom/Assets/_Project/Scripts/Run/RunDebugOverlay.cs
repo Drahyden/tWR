@@ -15,6 +15,8 @@ namespace TWR.Run
     /// (D-152, D-158). Buttons: next section, choose Escape/Discover at the fork, end run as death, quit run,
     /// start a run with a typed seed, and "pretend endings saved". While open it pauses the PlayerInputReader
     /// (frees the cursor, stops look/shoot) and restores it on close. Added at runtime by the RunManager.
+    /// R2 (D-161, D-167): in Core mode "next section" / F2 go through the real SectionLoader (fade + scene load), the
+    /// header shows the loaded content scene, and the pause is re-applied after each transition.
     /// </summary>
     [DisallowMultipleComponent]
     public class RunDebugOverlay : MonoBehaviour
@@ -36,20 +38,33 @@ namespace TWR.Run
         GUIStyle rich;
         PlayerInputReader pausedReader;
 
+        SectionLoader loader;
+
         void Awake()
         {
             manager = GetComponent<RunManager>();
+            loader = GetComponent<SectionLoader>();
         }
 
         void OnEnable()
         {
             SceneManager.sceneLoaded += HandleSceneLoaded;
+            if (loader != null) loader.TransitionFinished += HandleTransitionFinished;
         }
 
         void OnDisable()
         {
             SceneManager.sceneLoaded -= HandleSceneLoaded;
+            if (loader != null) loader.TransitionFinished -= HandleTransitionFinished;
             if (open) SetOpen(false);
+        }
+
+        void HandleTransitionFinished()
+        {
+            // The SectionLoader just gave the player its input back; keep it paused while the overlay is open.
+            if (!open) return;
+            pausedReader = null;
+            PausePlayerInput();
         }
 
         void Update()
@@ -159,6 +174,10 @@ namespace TWR.Run
         {
             GUILayout.Label($"Run #{manager.RunNumber}   Seed <b>{RunSeed.Format(plan.Seed)}</b>   Curated: <b>{(plan.IsCurated ? "yes" : "no")}</b>", rich);
             GUILayout.Label($"Active path: <b>{manager.ActivePath}</b>   Sections: {plan.SectionCount} (+ lobby, fork room)", rich);
+            if (loader != null)
+                GUILayout.Label($"Loaded scene: <b>{loader.CurrentContentScene ?? "(none)"}</b>{(manager.IsTransitioning ? "   (transition running...)" : "")}", rich);
+            else
+                GUILayout.Label($"<color={Dim}>Sandbox mode: sections are only tracked, no scenes load (play the Core scene for real sections).</color>", rich);
 
             if (manager.EndingsRecord is StubEndingsRecord stub)
             {

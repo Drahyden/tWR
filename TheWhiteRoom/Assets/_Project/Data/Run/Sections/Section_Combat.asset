@@ -17,4 +17,5 @@ MonoBehaviour:
   path: 0
   tags:
   - combat
-  sceneName: 
+  sceneName: Section_Combat
+  exitCondition: 0

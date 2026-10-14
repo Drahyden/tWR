@@ -187,7 +187,9 @@ namespace TWR.EditorTools
 
         // ---------- lobby ----------
 
-        static void BuildLobbyAndPortal(PortalAssets assets, PuzzleAssets puzzle, Material white, Material offWhite)
+        /// includeAmbientBed: the sandbox scene owns its hum; in the run, the ambient bed lives in Core (D-161, D-167).
+        static void BuildLobbyAndPortal(PortalAssets assets, PuzzleAssets puzzle, Material white, Material offWhite,
+                                        bool includeAmbientBed = true)
         {
             Material glow = GetOrCreateMaterial("M_LobbyGlow", Color.white, Color.white * 2.4f); // overexposed white (D-064)
             Material blackDoor = GetOrCreateMaterial("M_BlackDoor", new Color(0.015f, 0.015f, 0.015f), Color.black);
@@ -222,12 +224,18 @@ namespace TWR.EditorTools
             Assign(hallPortal, "destination", lobbyPortal);
 
             // Non-spatial ambient hum over both spaces (D-144, D-077): no audio pop when crossing.
+            if (includeAmbientBed) BuildAmbientBedObject();
+        }
+
+        static GameObject BuildAmbientBedObject()
+        {
             var ambientGO = new GameObject("Ambient Bed (2D hum)");
             var source = ambientGO.AddComponent<AudioSource>();
             source.playOnAwake = false;
             source.spatialBlend = 0f;
             source.loop = true;
             ambientGO.AddComponent<AmbientBed>();
+            return ambientGO;
         }
 
         static void BuildLobbyShell(Transform lobby, Material floorMat, Material glowMat, Material trimMat)
@@ -331,11 +339,17 @@ namespace TWR.EditorTools
 
         /// Freestanding frame + short wall with a swing panel (D-146). Root = the Portal's pose:
         /// bottom centre of the opening, local forward = front (south, towards the start).
-        static Portal BuildLobbyPortalDoor(PortalAssets assets, Material trimMat, Material wallMat, Transform lobby)
+        static Portal BuildLobbyPortalDoor(PortalAssets assets, Material trimMat, Material wallMat, Transform lobby) =>
+            BuildPortalDoor(assets, trimMat, wallMat, lobby, "Door 3 - Portal Door (freestanding)", LobbyPortalPosition,
+                            LobbyPortalYaw, "lobby.portal", "door.portal");
+
+        /// Same freestanding portal door at any pose (the impossible-geometry section reuses it, D-164).
+        static Portal BuildPortalDoor(PortalAssets assets, Material trimMat, Material wallMat, Transform parent, string name,
+                                      Vector3 position, float yaw, string portalId, string doorId)
         {
-            var root = new GameObject("Door 3 - Portal Door (freestanding)");
-            root.transform.SetParent(lobby, false);
-            root.transform.SetPositionAndRotation(LobbyPortalPosition, Quaternion.Euler(0f, LobbyPortalYaw, 0f));
+            var root = new GameObject(name);
+            root.transform.SetParent(parent, false);
+            root.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
             var audio = root.AddComponent<AudioSource>();
             audio.playOnAwake = false;
             audio.spatialBlend = 1f;
@@ -379,10 +393,10 @@ namespace TWR.EditorTools
             Assign(door, "doorLock", doorLock);
             Assign(door, "panel", hinge.transform);
             var doorSo = new SerializedObject(door);
-            doorSo.FindProperty("interactionId").stringValue = "door.portal";
+            doorSo.FindProperty("interactionId").stringValue = doorId;
             doorSo.ApplyModifiedPropertiesWithoutUndo();
 
-            return BuildPortal("Portal (lobby side)", "lobby.portal", root.transform, door, assets);
+            return BuildPortal("Portal (lobby side)", portalId, root.transform, door, assets);
         }
 
         /// Thin off-white frame around the opening on the front face (also hides the screen's edges).
@@ -494,7 +508,13 @@ namespace TWR.EditorTools
         /// 30 x 20 x 8 m white hall 500 m east of everything (D-144, D-146), with the return portal in its
         /// west wall (an alcove behind it so you can step in), office/home props and one shootable target.
         static Portal BuildHall(PortalAssets assets, Transform hall, Material floorMat, Material trimMat, Material wood,
-                                Material plant, Material targetMat)
+                                Material plant, Material targetMat) =>
+            BuildHall(assets, hall, floorMat, trimMat, wood, plant, targetMat, "hall.return", float.NaN);
+
+        /// returnPortalId: unique per scene (D-080 ids). eastDoorZ: NaN = solid east wall (sandbox / lobby); a value
+        /// = leave a door opening in the east wall at that z for the section exit (D-164).
+        static Portal BuildHall(PortalAssets assets, Transform hall, Material floorMat, Material trimMat, Material wood,
+                                Material plant, Material targetMat, string returnPortalId, float eastDoorZ)
         {
             Material wallMat = GetOrCreateMaterial("M_WhiteEmissive", Color.white, Color.white * 1.6f);
             float h = HallHeight;
@@ -507,7 +527,11 @@ namespace TWR.EditorTools
             Block("Ceiling", new Vector3(cx, h + 0.1f, cz), new Vector3(sx + 0.4f, 0.2f, sz + 0.4f), wallMat, shell);
             Block("Wall N", new Vector3(cx, h * 0.5f, HallMaxZ + 0.1f), new Vector3(sx + 0.4f, h + 0.2f, 0.2f), wallMat, shell);
             Block("Wall S", new Vector3(cx, h * 0.5f, HallMinZ - 0.1f), new Vector3(sx + 0.4f, h + 0.2f, 0.2f), wallMat, shell);
-            Block("Wall E", new Vector3(HallMaxX + 0.1f, h * 0.5f, cz), new Vector3(0.2f, h + 0.2f, sz + 0.4f), wallMat, shell);
+            if (float.IsNaN(eastDoorZ))
+                Block("Wall E", new Vector3(HallMaxX + 0.1f, h * 0.5f, cz), new Vector3(0.2f, h + 0.2f, sz + 0.4f), wallMat, shell);
+            else
+                WallAlongZ(shell, "Wall E", HallMaxX + 0.1f, HallMinZ - 0.2f, HallMaxZ + 0.2f, h + 0.1f, wallMat,
+                           RunDoorWidth, RunDoorHeight, eastDoorZ);
 
             // West wall (x = 499.9) with the portal opening at z -16.7..-15.3, 0..3 m.
             float zPortal = HallPortalPosition.z;
@@ -532,7 +556,7 @@ namespace TWR.EditorTools
             anchor.transform.SetParent(hall, false);
             anchor.transform.SetPositionAndRotation(HallPortalPosition, Quaternion.Euler(0f, HallPortalYaw, 0f));
             BuildFrameTrim(anchor.transform, trimMat, 0.16f);
-            Portal hallPortal = BuildPortal("Portal (hall side)", "hall.return", anchor.transform, null, assets);
+            Portal hallPortal = BuildPortal("Portal (hall side)", returnPortalId, anchor.transform, null, assets);
 
             // Props (D-062), all well clear of the 1 m vestibule in front of the portal.
             Transform props = new GameObject("Hall Props (office/home motifs)").transform;

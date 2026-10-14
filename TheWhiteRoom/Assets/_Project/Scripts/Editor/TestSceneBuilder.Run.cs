@@ -20,6 +20,8 @@ namespace TWR.EditorTools
     /// - Menus: "TWR/Run/Create Run Assets" (assets + bootstrap into Test_PlayerController) and
     ///   "TWR/Run/Validate Run Setup" (config, curated plan, bootstrap, lobby scene in Build Settings).
     /// "TWR/Build Test Scene" runs the same steps. Every step logs with "[TWR]".
+    /// R2: the real run scenes are built by "TWR/Run/Build Run Scenes" (TestSceneBuilder.RunScenes.cs); the bootstrap
+    /// in the sandbox test scene has no SectionLoader, so it keeps the R1 behaviour there.
     /// </summary>
     public static partial class TestSceneBuilder
     {
@@ -71,7 +73,12 @@ namespace TWR.EditorTools
         [MenuItem("TWR/Run/Validate Run Setup")]
         public static void ValidateRunSetupMenu()
         {
-            if (ValidateRunSetup())
+            bool ok = ValidateRunSetup();
+            // R2 (D-161): the run scenes, if they have been built.
+            if (File.Exists(RunScenePath(CoreSceneName))) ok &= ValidateRunScenes();
+            else Debug.LogWarning("[TWR] The run scenes are not built yet. Run TWR > Run > Build Run Scenes (R2).");
+
+            if (ok)
                 Debug.Log("[TWR] Run setup is valid.");
             else
                 Debug.LogError("[TWR] Run setup has problems (see errors above).");
@@ -258,6 +265,12 @@ namespace TWR.EditorTools
             if (config == null || string.IsNullOrEmpty(config.lobbySceneName)) return false;
 
             string lobbyPath = FindScenePath(config.lobbySceneName);
+            if (lobbyPath == null && config.lobbySceneName == LobbySceneName)
+            {
+                // R2 run lobby not built yet: the sandbox doesn't need it (it reloads itself, R1 behaviour).
+                Debug.LogWarning("[TWR] The run's Lobby scene is not built yet. Run TWR > Run > Build Run Scenes (R2).");
+                return true;
+            }
             if (lobbyPath == null)
             {
                 Debug.LogError($"[TWR] Lobby scene '{config.lobbySceneName}' (RunConfig) was not found in the project. " +

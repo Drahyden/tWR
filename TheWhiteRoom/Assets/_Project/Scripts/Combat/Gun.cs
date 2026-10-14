@@ -79,6 +79,15 @@ namespace TWR.Combat
             if (holder != null) audioSource = holder.GetComponent<AudioSource>();
         }
 
+        /// <summary>Run start (D-120, D-162): full magazine, no reload in progress. Called by WeaponInventory.</summary>
+        public void ResetForNewRun()
+        {
+            if (data == null) return;
+            loadedRounds = data.magazineSize;
+            reloading = false;
+            AmmoChanged?.Invoke();
+        }
+
         void OnEnable()
         {
             equipStartTime = Time.time;

@@ -106,7 +106,8 @@ namespace TWR.EditorTools
 
         // ---------- puzzle room ----------
 
-        static void BuildPuzzleTest(CombatAssets combat, PuzzleAssets assets, Material floorMat, Material wallMat, Material propMat)
+        /// Returns the exit door's lock (the run's puzzle section adds its SectionExitGate there, D-165).
+        static DoorLock BuildPuzzleTest(CombatAssets combat, PuzzleAssets assets, Material floorMat, Material wallMat, Material propMat)
         {
             Material switchMat = GetOrCreateMaterial("M_PuzzleSwitch", new Color(0.55f, 0.05f, 0.04f), new Color(0.3f, 0.03f, 0.02f));
             Material lockMat = GetOrCreateMaterial("M_DoorLockLight", new Color(1f, 0.08f, 0.05f), new Color(1f, 0.08f, 0.05f));
@@ -146,6 +147,7 @@ namespace TWR.EditorTools
             AssignArray(controller, "outputs", new Object[] { doorLock });
 
             new GameObject("Puzzle Event Logger (test)").AddComponent<PuzzleEventLogger>().transform.SetParent(group, false);
+            return doorLock;
         }
 
         static void BuildPuzzleRoomShell(Transform group, Material floorMat, Material wallMat)

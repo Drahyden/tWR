@@ -22,6 +22,21 @@ namespace TWR.Run
         Discover
     }
 
+    /// <summary>
+    /// What must happen before a section's exit door unlocks (D-165). Optional puzzles never gate an exit (D-104).
+    /// Defaults: puzzle room = MainPuzzlesSolved; combat, stealth, silent, impossible geometry, fork = None;
+    /// boss arena = BossDefeated.
+    /// </summary>
+    public enum SectionExitCondition
+    {
+        /// <summary>The exit is open from the start (never locked on kills, D-165, D-169).</summary>
+        None,
+        /// <summary>Every main-path puzzle (PuzzleData.isOptional = false) in the section is solved.</summary>
+        MainPuzzlesSolved,
+        /// <summary>The arena's boss is beaten (placeholder stub for now, D-148).</summary>
+        BossDefeated
+    }
+
     /// <summary>Why a run ended (D-157). Completed = past the boss arena (stub until the end screen, D-092).</summary>
     public enum RunEndReason
     {

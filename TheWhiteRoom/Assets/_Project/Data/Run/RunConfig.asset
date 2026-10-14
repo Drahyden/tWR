@@ -12,7 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3306d9c4f90bba746b1b7ceb54f2f714, type: 3}
   m_Name: RunConfig
   m_EditorClassIdentifier: Assembly-CSharp::TWR.Run.RunConfig
-  lobbySceneName: Test_PlayerController
+  lobbySceneName: Lobby
+  coreSceneName: Core
+  fadeOutSeconds: 0.4
+  fadeInSeconds: 0.4
+  runCompleteHoldSeconds: 3
+  runCompleteMessage:
+    m_TableReference:
+      m_TableCollectionName: UI
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: run.complete
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   minPreForkSections: 2
   maxPreForkSections: 3
   sectionPool:
@@ -26,3 +39,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 27c44b9ac673b3b409c89403105a403e, type: 2}
   - {fileID: 11400000, guid: d5407e2629cd4ce4bac1147b29daf3dd, type: 2}
   curatedPlan: {fileID: 11400000, guid: ddb884d93a7f6c547b6b758565134014, type: 2}
+  references:
+    version: 2
+    RefIds: []
