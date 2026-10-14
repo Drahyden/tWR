@@ -3,7 +3,7 @@
 > Source of truth for every chat in the "tWR Game Development" project.
 > Each definition gets an ID (D-###). Links between definitions use `→ D-###`.
 > Status: 🟢 locked · 🟡 tentative · ⚪ open
-> Interview complete (Q1–102). New decisions continue from D-139.
+> Interview complete (Q1–110). New decisions continue from D-156.
 
 ## 0. Index of sections
 1. Core identity · 2. Story & world · 3. Player & controls · 4. Combat · 5. Puzzles · 6. Enemies & AI · 7. Level design · 8. Art direction · 9. Audio · 10. UI/UX · 11. Progression & systems · 12. Technical (Unity) · 13. Production & pipeline · 14. Open questions
@@ -96,7 +96,8 @@
 - **D-046** 🟢 Boomer: rushes the player and self-destructs for high damage
 - **D-047** 🟢 Boss 1: teleports randomly around the arena; ranged attacks → D-068, D-106
 - **D-048** 🟢 Boss 2: very large; charges and tramples like a bull → D-069, D-106
-- **D-106** 🟢 Boss placement: one boss per path (Escape / Discover) → D-023, D-060 (which boss on which path ⚪)
+- **D-106** 🟢 Boss placement: one boss per path (Escape / Discover) → D-023, D-060 (which boss on which path → D-148)
+- **D-148** 🟢 Boss per path: Escape → Boss 2, the bull (D-048, D-069); Discover → Boss 1, the preacher (D-047, D-068). Resolves D-106 → D-023, D-028, D-060, D-106
 - **D-132** 🟢 Seeker senses: hearing via D-114/D-131 (ignores enemy-sourced noise) + motion-gated sight — "reacts to movement" (D-043) means sight (confirmed by developer): 110° cone + line of sight to head/chest at ~5 Hz; moving player seen ≤15 m, crouch-moving ≤6 m, still ≤2.5 m; awareness builds over ~0.5 s; toggle `useSight` in SeekerData. Cone/LOS geometry is the shared TWR.Core.Perception.ViewCone helper, reused later by the is-observed system → D-043, D-045, D-052, D-053
 - **D-133** 🟢 Seeker states: Patrol (waypoints, 1.6 m/s, 1–2 s pauses) → Suspicious (footstep/jump/land/interact/pickup: stop and turn 1 s) → Investigate (2.5 m/s; gunshot/impact/mechanism or a repeated small noise; 4 s look-around) → Chase (4.5 m/s, between player walk and sprint; on sight, noise ≤3 m, or being damaged) → Attack → Search (5 s without sight → last known position, random points within 6 m for 8 s) → Return (nearest waypoint). Per-noise-type sensitivity in SeekerData; state shown by a coloured band; raises EnemyEvents.AwarenessChanged for music/voice → D-040, D-043, D-075, D-080
 - **D-134** 🟢 Seeker combat (SeekerData SO): 100 HP (4 pistol hits); melee 20 dmg, 1.8 m range, 0.4 s telegraphed wind-up (lean + flash + sound; hit lands only if the player is still in range and in front), 1.2 s cooldown. Enemies live on a shootable "Enemy" layer; the player root is on a "Player" layer → D-034, D-118, D-119, D-120, D-130
@@ -113,6 +114,14 @@
 - **D-059** 🟢 Each run has 4–6 rooms/sections (≈4–6 min each) → D-015, D-040
 - **D-060** 🟢 Path choice is made by choosing which door to go through → D-023, D-028, D-057, D-106
 - **D-061** 🟢 Unlockable abilities are not required to progress; they give access to secrets, shortcuts, optional puzzles, and combat advantages → D-033, D-104
+- **D-145** 🟢 Slice hub lobby: a bright area (emissive white + bloom, office/home props) in the test scene, physically connected to the test room/puzzle/Seeker area by an open doorway; the player starts here in front of the black entry door (D-021). Doors: the black door (permanently locked), the doorway to the existing rooms (D-103), the portal door, and two permanently locked doors reserved for the D-060 path doors. Locked doors reuse D-127 with a "permanently locked" mode that still shows "Locked" and raises interaction events → D-010, D-021, D-057, D-058, D-060, D-062, D-064, D-127
+- **D-146** 🟢 Slice impossible space: the portal door is a freestanding frame-and-wall segment in the lobby that the player can walk around (nothing behind it; one-sided). Its D-127 panel is unlocked, opens with F and swings toward the lobby; the portal renders only while it is open. Through it: a ~30 × 20 × 8 m white hall with office/home props, far bigger than the space it stands in. Two-way: an always-open return portal in the hall leads back. The hall contains a shootable test target and an F test button; nothing required → D-054, D-062, D-064, D-097
+- **D-147** 🟢 Portal destinations are data: each portal has a serialized destination (its linked portal) plus SetDestination(), separate from door locking (D-127), so D-053b / D-058 can assign destinations from the run seed later → D-053, D-058, D-127
+- **D-149** 🟢 Path choice location: a dedicated fork room after section 2 or 3, around the run's midpoint, where the player commits to Escape or Discover by choosing a door → D-014, D-023, D-060, D-151
+- **D-150** 🟢 Fork doors: the Escape door has a clearly readable "EXIT" sign above the frame; the Discover door is a black door (echoing the entry door, D-021) with a rectangular white plate on its upper middle reading "BASEMENT". Both texts are localized (D-084); the inner voice comments on both doors (D-080) → D-021, D-023, D-060, D-080, D-084, D-149
+- **D-151** 🟢 Run structure: 2–3 sections before the fork room, then 2 after it (the path section + the boss arena), for 4–6 sections in total (D-059) → D-015, D-057, D-059, D-106, D-148, D-149
+- **D-154** 🟢 First run: the very first run (no endings saved yet, D-099) uses a fixed, curated layout; seeded randomization (D-058, D-153) starts from run 2 → D-039, D-058, D-099, D-153
+- **D-155** 🟢 Section templates for now (placeholder geometry): puzzle room (existing), combat room, stealth room (D-052), impossible-geometry room using the portal (D-139–D-147), silent room (D-082); plus the fork room (D-149) and two placeholder boss arenas (D-148) → D-052, D-054, D-055, D-058, D-082, D-097, D-151
 - Silent rooms are part of the level palette → D-082
 
 ## 8. Art direction
@@ -156,11 +165,13 @@
 - **D-122** 🟢 Slice HUD: HP bar (PlayerHealth, max HP in PlayerTuning; death = scene reload per D-034), ammo "mag / reserve" via localized format string, current gun name via string table, centre crosshair dot, hit marker (stronger on kill). No damage direction indicator yet → D-086, D-091, D-084, D-034
 
 ## 11. Progression & systems
-- **D-029** 🟢 Performance metric = optional-puzzle completeness (D-104) + enemies killed (avoided enemies don't count, D-052) → D-028, D-092
+- **D-029** 🟢 Performance metric = optional-puzzle completeness (D-104) + enemies killed (avoided enemies don't count, D-052) → D-028, D-092 (formula → D-152)
 - **D-037** 🟢 Inventory: up to 20 item types, max stack 99 each → D-033, D-050, D-087
 - **D-039** 🟢 No in-game meta-progression; only player knowledge carries over. Exception: endings seen are saved outside the run (D-099), so the inner voice can react on repeat playthroughs → D-015, D-034, D-058
 - **D-129** 🟢 Puzzle state lives only in the scene for the current run; a scene reload (death, D-122) or quit (D-093) resets it; nothing is saved (D-099). Variant selection will come from the run seed (D-058) → D-034, D-039, D-058, D-093
 - **D-137** 🟢 RunStats (minimal, scene-scoped): counts player-credited kills of real enemies (CombatEvents.Killed, attacker = player), registered enemies, and puzzles solved/total incl. optional (PuzzleEvents.Solved); resets on reload; debug log only, no score formula yet → D-029, D-052, D-092, D-104, D-126, D-129
+- **D-152** 🟢 Performance score (0–100) = (kills ÷ enemies spawned in the run) × 50 + (optional puzzles solved ÷ optional puzzles available) × 50; Good ≥ 60, otherwise Poor (D-028 ending matrix). Resolves the D-029 weighting question; computed from RunStats (D-137) → D-028, D-029, D-052, D-092, D-104, D-137
+- **D-153** 🟢 Run seed: every run has a seed that drives its randomization (D-058); shown small on the end-of-run screen (D-092); a seed can be entered only in a debug menu → D-058, D-092, D-147, D-154
 
 ## 12. Technical (Unity)
 - **D-073** 🟢 Graphics target: standard (non-4K), mid-range PCs → D-016, D-100
@@ -179,6 +190,12 @@
 - **D-123** 🟢 First-person gun rendering: weapon holder parented to the player camera (inherits lean, D-111); gun on a "Weapon" layer drawn on top via URP Render Objects renderer features (no overlay camera); Weapon layer excluded from shoot/interact raycasts → D-070, D-074, D-100
 - **D-128** 🟢 Mechanism noise type (D-114): switch activation ≈ 4 m at the switch (source = shooter), door unlock ≈ 8 m and door open ≈ 10 m at the door (source = player for the open); values in PuzzleData / DoorData; walls muffle per D-116 → D-043, D-114, D-116
 - **D-131** 🟢 Noise muffling (implements D-116): NoiseSystem checks only listeners inside the raw radius and casts one ray from the source (+0.3 m) to each listener on an occluder mask (Default + Interactable; not Player/Enemy/Weapon/Ignore Raycast; own colliders skipped); effective radius = radius × product of per-wall factors (default 0.5; NoiseOccluder override: thin 0.6, thick 0.3, door panel 0.6; minimum 0.1 per wall and in total; max 4 walls counted); open doors don't muffle because the panel is out of the ray path. Values in a NoiseSettings SO loaded from Resources → D-100, D-114, D-116, D-128
+- **D-139** 🟢 Portal rendering: render-texture portals (not stencil) in URP 17. One standalone Base camera per portal (never overlay/stack, D-123) renders the destination side into a runtime-allocated HDR render texture (never saved) before the main camera; its pose and an oblique near-plane projection (clips everything between it and the destination portal; skipped within ~0.05 m) are set in LateUpdate after look/lean/crossing. The portal surface is an unlit screen-space shader (PortalSurface.shader). Portal cameras use a dedicated lightweight "Portal" Universal Renderer (no Render Objects features, no depth priming) added to the URP renderer list → D-074, D-097, D-100, D-123
+- **D-140** 🟢 Portal budget (PortalSettings SO): a portal renders only while its door is open (or opening), the camera is in front of it and it is inside the view frustum; otherwise its camera is disabled. maxRenderedPortals = 2 (nearest first; over-budget portals show a flat emissive-white fallback). Recursion cap = 0: live portal screens are on a "Portal" layer only the player camera draws, and each portal has a flat white quad on a "PortalFallback" layer only portal cameras draw, so a portal seen inside a portal view is always flat white. resolutionScale 1.0 by default (0.5–1.0; future Graphics setting, D-090) → D-090, D-097, D-100
+- **D-141** 🟢 Portal look, gun and HUD: portal cameras copy the player camera's FOV, aspect, clip planes and full rotation (incl. lean roll) every frame, so they follow the FOV setting automatically; HDR with post-processing off, so bloom/tonemapping are applied once by the main camera (no double bloom); global volumes only. Portal cameras never draw the Weapon, Player, Ignore Raycast or Portal layers, so the first-person gun is drawn only by the player camera's Weapon features (D-123) and stays on top while crossing; the HUD is a screen-space overlay and is unaffected. A 2D ambient bed plays across connected spaces so crossing has no audio pop → D-064, D-077, D-090, D-111, D-122, D-123
+- **D-142** 🟢 Portal crossing: one-sided portals (front face only); PortalTraveller on the player watches the un-leaned head pivot and, in the same frame it crosses the portal plane inside the opening, teleports via PlayerController.Teleport → IPlayerMotor.Teleport (D-113) with feet position and camera rotation mapped through the pair; portal pairs must be upright and differ only by yaw; view direction and momentum turn with the pair. Within ~0.3 m of the plane the portal screen is drawn as a thin box (~0.25 m deep) behind the plane to hide near-plane clipping. Each exit has a clear vestibule ≥1 m deep at the same floor height; openings ≥1.2 × 2.4 m (slice: 1.4 × 3.0 m); lean treats the portal plane as a blocker. Raises PortalEvents.Crossed(portalId, from, to) for voice/room triggers → D-080, D-111, D-113
+- **D-143** 🟢 Rays through portals: a shared one-hop PortalRaycast continues gun hitscan (D-118) and interaction (D-112; 2.5 m total across both legs) through one open portal, so shooting a target seen through a portal hits it (damage, IShootable, hit marker) and impact noise is emitted at the real hit point on the far side; no walk-over pickups within 1.5 m of a portal → D-112, D-118, D-121
+- **D-144** 🟢 Noise and enemies don't cross portals (for now): portal-connected spaces are physically ≥200 m apart (slice hall ≈500 m), beyond every noise radius and audio max distance; their NavMeshes are not connected (builder verifies); Seeker sight and hearing stay physical, so an enemy chasing the player goes to the last known position on its side. Revisit per §14 → D-114, D-131, D-132, D-135
 
 ## 13. Production & pipeline
 - **D-007** 🟢 Early phases in claude.ai browser; switch to desktop (Claude Code + local Unity project) for scripting → D-096, D-102
@@ -294,13 +311,21 @@
 | 100 | Camouflage | Intended | D-067 |
 | 101 | Comfort | No key rebinding | D-038, D-090 |
 | 102 | Loose ends | Pillars confirmed; Superliminal level creativity; F.E.A.R. pursuit dread; nothing off-limits; PC specs | D-012, D-011, D-018, D-102 |
+| 103 | Boss per path | Escape → Boss 2 (bull); Discover → Boss 1 (preacher) | D-148, D-106 |
+| 104 | Path choice location | Dedicated fork room after section 2 or 3, around the midpoint | D-149 |
+| 105 | Fork doors | Escape: "EXIT" sign above the frame; Discover: black door with a white "BASEMENT" plate; localized; inner voice comments on both | D-150 |
+| 106 | Run length | 2–3 sections before the fork, then 2 after (path section + boss arena); 4–6 total | D-151, D-059 |
+| 107 | Performance | Score = kills/spawned × 50 + optional puzzles solved/available × 50; Good ≥ 60/100 | D-152, D-029 |
+| 108 | Seed | Each run has a seed; shown small on the end screen; enterable only in a debug menu | D-153 |
+| 109 | First run | Very first run is fixed and curated; randomization from run 2 | D-154 |
+| 110 | Section templates | Puzzle, combat, stealth, impossible-geometry (portal), silent room; fork room; two boss arenas | D-155 |
 
 ## 14. Open questions
-- Which boss belongs to which path (D-106)
 - Exact HP/path → inner-voice mapping (D-030)
 - Hint lines for randomized puzzles: per-variant or generic (D-056, D-058)
 - Interaction animations with no visible hands (D-070)
 - FOV / head bob / motion blur toggles; damage direction indicator (D-090, D-091)
 - Final SFX source selection (D-083)
-- Performance formula: weighting of kills vs optional-puzzle completeness (D-029, D-137)
-- Can enemies follow through portals / location-changing doors, and can later enemy types open doors? (D-053b, D-097, D-135)
+- Can enemies follow, see or hear through portals / location-changing doors, and can later enemy types open doors? (D-053b, D-097, D-135, D-144)
+- Does the "is observed" check (D-045, D-053a) count observation through a portal view? (D-139)
+- Portal recursion (portal-in-portal) and sound through portals after the slice (D-140, D-144)
