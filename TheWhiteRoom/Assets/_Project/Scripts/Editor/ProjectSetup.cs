@@ -51,6 +51,10 @@ namespace TWR.EditorTools
         {
             ("fork.exit_door", "(placeholder) An exit sign. Too easy?"),
             ("fork.basement_door", "(placeholder) A black door. Basement. Of course there's a basement."),
+            // R3 (D-178): one generic hint per puzzle variant family, raised when a puzzle starts. No audio yet.
+            ("hint.puzzle.allactive_latch", "(placeholder) Three switches. Light them all up."),
+            ("hint.puzzle.sequence_latch", "(placeholder) They lit up in an order. Maybe that order matters."),
+            ("hint.puzzle.allactive_toggle", "(placeholder) Hit one twice and it goes dark again. Careful."),
         };
 
         [MenuItem("TWR/Setup Project", priority = 0)]

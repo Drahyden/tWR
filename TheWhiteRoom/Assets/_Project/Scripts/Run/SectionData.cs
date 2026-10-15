@@ -8,6 +8,7 @@ namespace TWR.Run
     /// boss arenas must be tagged Escape or Discover (D-148, D-156). OnValidate warns about wrong setups.
     /// R2 (D-161, D-165): sceneName is the content scene loaded additively next to the Core scene, and
     /// exitCondition says what unlocks the section's exit door. "TWR/Run/Build Run Scenes" fills both.
+    /// R3 (D-176): enemyCount = how many Seekers a seeded run spawns here (seed 0 uses the authored spawn points).
     /// Create via: Project window > right-click > Create > TWR > Run > Section Data.
     /// </summary>
     [CreateAssetMenu(fileName = "Section_", menuName = "TWR/Run/Section Data")]
@@ -27,6 +28,23 @@ namespace TWR.Run
         [Tooltip("What unlocks the exit door. Defaults: puzzle = MainPuzzlesSolved; boss arena = BossDefeated; others = None. " +
                  "Optional puzzles never gate an exit (D-104).")]
         public SectionExitCondition exitCondition = SectionExitCondition.None;
+
+        [Header("Seeded content - D-172, D-176")]
+        [Tooltip("How many Seekers a seeded run spawns here (fixed per template, D-176): combat 3, stealth 2, puzzle 1, " +
+                 "others 0. Boss placeholders are not counted. The scene needs at least enemyCount + 1 rollable spawn points.")]
+        [Min(0)] public int enemyCount;
+
+        /// <summary>The R3 default enemy count per template (D-176); "TWR/Run/Build Run Scenes" writes it.</summary>
+        public static int DefaultEnemyCount(SectionType type)
+        {
+            switch (type)
+            {
+                case SectionType.Combat: return 3;
+                case SectionType.Stealth: return 2;  // D-169: at least 2 patrols
+                case SectionType.Puzzle: return 1;
+                default: return 0;
+            }
+        }
 
         /// <summary>Id, or the asset name if the id is empty.</summary>
         public string DisplayId => string.IsNullOrEmpty(id) ? name : id;

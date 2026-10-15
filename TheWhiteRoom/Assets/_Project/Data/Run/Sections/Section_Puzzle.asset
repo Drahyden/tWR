@@ -19,3 +19,4 @@ MonoBehaviour:
   - puzzle
   sceneName: Section_Puzzle
   exitCondition: 1
+  enemyCount: 1

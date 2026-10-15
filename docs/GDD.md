@@ -3,7 +3,7 @@
 > Source of truth for every chat in the "tWR Game Development" project.
 > Each definition gets an ID (D-###). Links between definitions use `→ D-###`.
 > Status: 🟢 locked · 🟡 tentative · ⚪ open
-> Interview complete (Q1–110). New decisions continue from D-172.
+> Interview complete (Q1–110). New decisions continue from D-180.
 
 ## 0. Index of sections
 1. Core identity · 2. Story & world · 3. Player & controls · 4. Combat · 5. Puzzles · 6. Enemies & AI · 7. Level design · 8. Art direction · 9. Audio · 10. UI/UX · 11. Progression & systems · 12. Technical (Unity) · 13. Production & pipeline · 14. Open questions
@@ -138,6 +138,14 @@
 - **D-169** 🟢 Stealth room minimum: at least 2 patrolling Seekers covering the main route plus a crouch/cover route to the exit; the exit is never locked on kills; avoided enemies still count as spawned → D-052, D-132, D-133, D-158
 - **D-170** 🟢 Enemy placement in sections uses fixed SeekerSpawnPoints for now; seeded selection (a per-section random generator built from run seed + section index) comes in a later step; seed 0 (curated) always uses fixed placement → D-058, D-135, D-153, D-154, D-159
 - **D-171** 🟢 Health pickups: the only in-run HP source (D-162). A placeholder health pickup (reuse the existing ItemPickup/ItemData pickup flow; heal amount in a ScriptableObject, default 25; not consumed when HP is full; can't exceed max HP) placed at fixed points in some sections (e.g. one in combat, one in stealth, one in the fork room); seeded placement later with D-170 → D-034, D-037, D-120, D-162
+- **D-172** 🟡 R3 seeded section rolls: each loaded section rolls its content from SeededRandom(seed, 0x100 + branch×0x40 + sectionIndex×4 + category) (branch 0 pre-fork/fork, 1 Escape, 2 Discover; category 0 enemies, 1 pickups, 2 puzzle); plan streams 0–2 unchanged so existing seeds keep their plans; candidates are sorted by authored stable id before rolling; rolls are recomputed identically on every section load; seed 0 uses authored defaults everywhere; rolls listed per section in the debug overlay only → D-153, D-157, D-159, D-170
+- **D-173** 🟡 Puzzle variants (main path): pool = AllActive+Latch, Sequence+Latch, AllActive+Toggle (no Sequence+Toggle); 3 active switches picked from N authored slots, unused slots disabled (no decoys); GunRequirement limited to run-start guns (Pistol); isOptional never rolled; seed 0 = AllActive+Latch → D-124, D-125, D-130, D-056, D-165
+- **D-174** 🟡 Solved is final: once a puzzle raises Solved, its switches freeze and its outputs stay unlocked; Toggle can only undo progress before the solve → D-124, D-126, D-127
+- **D-175** 🟡 Sequence variants need an in-world order clue (symbols/tally marks per slot or an ordered light-up on Started, no text); trial-and-error stays possible via D-124 reset and its mechanism noise → D-019, D-056, D-124, D-128
+- **D-176** 🟡 Seeded enemy placement: enemy count fixed per template (SectionData); spawn points chosen without replacement from ≥ count+1 authored SeekerSpawnPoints, each with its own patrol route; no spawn point within entry-vestibule line of sight or within 15 m of the entry spawn (validated in editor); stealth points authored so any subset satisfies D-169; the curated first run (seed 0, D-160) keeps its authored R2 spawn points and is exempt from the sight/distance rule (those points are curated-only, never used by seeded rolls) → D-132, D-152, D-158, D-160, D-165, D-169, D-170
+- **D-177** 🟡 Seeded pickup placement: positions only, counts and amounts fixed per template; every mandatory gun-gated puzzle keeps ≥1 ammo pickup with all candidate spots inside its puzzle area and reachable before solving; boss arenas keep 2 ammo pickups → D-121, D-130, D-162, D-171
+- **D-178** 🟡 Hints for randomized puzzles: generic hint per variant family (solve mode × behaviour) as voice-trigger events with placeholder localized subtitle keys, no audio yet; per-variant lines later if needed. Resolves the §14 hint question for now → D-056, D-080, D-084
+- **D-179** 🟡 R3 scope exclusions: lobby doors and portal destinations are not randomized yet (run door fixed per D-163; D-164 portal pair fixed); door/portal destination shifting comes with D-053b → D-053, D-147, D-163, D-164
 - Silent rooms are part of the level palette → D-082
 
 ## 8. Art direction
@@ -338,7 +346,7 @@
 
 ## 14. Open questions
 - Exact HP/path → inner-voice mapping (D-030)
-- Hint lines for randomized puzzles: per-variant or generic (D-056, D-058)
+- Per-variant hint lines beyond generic family hints (D-178).
 - Interaction animations with no visible hands (D-070)
 - FOV / head bob / motion blur toggles; damage direction indicator (D-090, D-091)
 - Final SFX source selection (D-083)

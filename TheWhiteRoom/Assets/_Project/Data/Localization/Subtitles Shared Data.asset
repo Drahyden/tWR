@@ -23,6 +23,18 @@ MonoBehaviour:
     m_Key: fork.basement_door
     m_Metadata:
       m_Items: []
+  - m_Id: 117319819984896
+    m_Key: hint.puzzle.allactive_latch
+    m_Metadata:
+      m_Items: []
+  - m_Id: 117319899676672
+    m_Key: hint.puzzle.sequence_latch
+    m_Metadata:
+      m_Items: []
+  - m_Id: 117319903870976
+    m_Key: hint.puzzle.allactive_toggle
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

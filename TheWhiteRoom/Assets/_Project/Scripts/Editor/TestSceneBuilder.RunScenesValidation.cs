@@ -29,6 +29,7 @@ namespace TWR.EditorTools
     /// door behind it, at least one SectionExit, a gate that matches its SectionData, the fork room both path exits,
     /// boss arenas a BossDefeated stub, portal pairs at least 200 m apart (D-144), and a baked NavMesh wherever Seekers
     /// spawn (stealth: at least 2 patrols, D-169). Opens each scene additively and closes it again. Logs with [TWR].
+    /// R3 (D-172 to D-177): the seeded-roll checks live in TestSceneBuilder.RunRollsValidation.cs.
     /// </summary>
     public static partial class TestSceneBuilder
     {
@@ -272,6 +273,9 @@ namespace TWR.EditorTools
                 }
             }
             else report.AppendLine($"  NavMesh: {surfaces.Count} surface(s), no Seekers here");
+
+            // R3 seeded rolls (D-172 to D-177): stable ids, spawn rules, pickup groups, puzzle slots + variant pool.
+            if (!isLobby) ok &= ValidateSectionRolls(report, scene, section, entries.Count == 1 ? entries[0] : null);
 
             if (ok) Debug.Log(report.ToString());
             else Debug.LogError(report.ToString());

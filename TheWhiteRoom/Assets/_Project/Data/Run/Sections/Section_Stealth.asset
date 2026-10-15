@@ -19,3 +19,4 @@ MonoBehaviour:
   - stealth
   sceneName: Section_Stealth
   exitCondition: 0
+  enemyCount: 2

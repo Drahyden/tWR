@@ -26,6 +26,18 @@ MonoBehaviour:
     m_Localized: (placeholder) A black door. Basement. Of course there's a basement.
     m_Metadata:
       m_Items: []
+  - m_Id: 117319819984896
+    m_Localized: (placeholder) Three switches. Light them all up.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 117319899676672
+    m_Localized: (placeholder) They lit up in an order. Maybe that order matters.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 117319903870976
+    m_Localized: (placeholder) Hit one twice and it goes dark again. Careful.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

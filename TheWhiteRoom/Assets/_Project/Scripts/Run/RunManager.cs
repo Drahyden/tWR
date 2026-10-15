@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using TWR.Combat;
 using TWR.Core;
 using TWR.Stats;
 
@@ -21,7 +22,12 @@ namespace TWR.Run
     ///   (D-162) and load the Lobby content scene with a new plan (D-157). Raises SectionStarted/SectionEnded for music
     ///   (D-075) and the matching VoiceEvents for the inner voice (D-080).
     /// - Sandbox mode (the Test_PlayerController scene, no SectionLoader): R1 behaviour. Sections are only tracked,
-    ///   the object survives scene loads (DontDestroyOnLoad) and the run end reloads that scene.
+    ///   the object survives scene loads (DontDestroyOnLoad) and the run end reloads that scene. No section rolls.
+    /// R3 (D-172): in Core mode, when a section scene finishes loading, its content is rolled from the seed in the
+    /// sceneLoaded callback, i.e. after the new scene's Awake/OnEnable and BEFORE any of its Start methods (Seekers spawn
+    /// in Start), through SectionRoller. Seed 0 (curated) applies the authored defaults. The result is kept per plan stop
+    /// as a SectionRollReport for the debug overlay and logged as "[Run] Rolls for ..." (D-172: overlay/log only).
+    /// The lobby is never rolled (D-179).
     /// </summary>
     [DefaultExecutionOrder(-200)]
     [DisallowMultipleComponent]
@@ -78,6 +84,13 @@ namespace TWR.Run
         /// <summary>The run is over; the lobby loads next and a new run starts.</summary>
         public event Action<RunEndReason> RunEnded;
 
+        /// <summary>Section rolls of this run, by plan stop (D-172). Debug overlay only.</summary>
+        public IReadOnlyDictionary<int, SectionRollReport> RollReports => rollReports;
+        /// <summary>A section's rolls were applied (stop index, report).</summary>
+        public event Action<int, SectionRollReport> SectionRolled;
+
+        readonly Dictionary<int, SectionRollReport> rollReports = new Dictionary<int, SectionRollReport>();
+        readonly List<GunData> runStartGuns = new List<GunData>(5);
         SectionLoader loader;
         string homeSceneName;
         Action onSectionLoaded;
@@ -154,8 +167,47 @@ namespace TWR.Run
                 isEnding = false;
                 StartNewRun();
             }
+            // Seeded content first (D-172): still before any Start of the new scene, so Seekers spawn where rolled.
+            if (IsCoreMode) ApplySectionRolls(scene);
             // Puzzles in every loaded section count as available this run (D-158). RunStats skips the Core scene.
             Stats.AddLoadedScene(scene);
+        }
+
+        // ---------- section rolls (R3, D-172 to D-177) ----------
+
+        /// <summary>
+        /// Roll the content of the section scene that just loaded. Runs inside SceneManager.sceneLoaded, which Unity
+        /// raises after the scene's Awake/OnEnable and before its Start, so spawn points, pickups and puzzles are set
+        /// before anything spawns or can be touched. Same seed + stop = same rolls on every load (D-172).
+        /// </summary>
+        void ApplySectionRolls(Scene scene)
+        {
+            if (Plan == null || config == null || scene.name == config.coreSceneName) return;
+            if (CurrentStopIndex == RunPlan.LobbyIndex) return; // the lobby is fixed (D-179)
+            SectionData section = CurrentSection;
+            if (section == null || section.sceneName != scene.name) return; // a leftover or unrelated scene
+
+            SectionRollMode mode = Plan.IsCurated ? SectionRollMode.Curated : SectionRollMode.Seeded;
+            int branch = SectionRollContext.BranchOf(Plan, CurrentStopIndex, ActivePath);
+            var context = new SectionRollContext(Plan.Seed, branch, CurrentStopIndex, mode, section);
+
+            SectionRollReport report = SectionRoller.Apply(scene, context, CurrentStopIndex, RunStartGuns());
+            rollReports[CurrentStopIndex] = report;
+            foreach (string problem in report.Problems)
+                Debug.LogError($"[Run] Roll fallback in {section.DisplayId}: {problem}.", this);
+            Log(report.OneLine());
+            SectionRolled?.Invoke(CurrentStopIndex, report);
+        }
+
+        /// <summary>The player's run-start guns (D-120), read once from the persistent player's WeaponInventory.</summary>
+        List<GunData> RunStartGuns()
+        {
+            if (runStartGuns.Count == 0 && loader != null && loader.Player != null)
+            {
+                WeaponInventory weapons = loader.Player.GetComponent<WeaponInventory>();
+                if (weapons != null) weapons.CollectRunStartGuns(runStartGuns);
+            }
+            return runStartGuns;
         }
 
         // ---------- run start ----------
@@ -204,6 +256,7 @@ namespace TWR.Run
             }
 
             Plan = plan;
+            rollReports.Clear(); // rolls belong to one run (D-172)
             CurrentStopIndex = RunPlan.LobbyIndex;
             ActivePath = RunPath.None;
             RunNumber++;

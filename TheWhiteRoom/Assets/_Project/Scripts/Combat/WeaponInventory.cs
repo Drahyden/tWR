@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using TWR.Core;
 using TWR.Items;
@@ -68,6 +69,17 @@ namespace TWR.Combat
         void Start()
         {
             ResetForNewRun(); // the run-start loadout (D-120); safe to run again later
+        }
+
+        /// <summary>
+        /// Adds the GunData of every gun the player starts a run with (D-120; slots are fixed until gun pickups exist,
+        /// D-035). Seeded puzzle variants may only require these guns (D-130, D-173). Section load only, not per frame.
+        /// </summary>
+        public void CollectRunStartGuns(List<GunData> result)
+        {
+            if (result == null || slots == null) return;
+            for (int i = 0; i < slots.Length; i++)
+                if (slots[i] != null && slots[i].Data != null && !result.Contains(slots[i].Data)) result.Add(slots[i].Data);
         }
 
         /// <summary>

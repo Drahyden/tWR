@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b345f81880ab43e3a624aac1f59f6d3a, type: 3}
+  m_Name: PuzzleVariantPool_Main
+  m_EditorClassIdentifier: Assembly-CSharp::TWR.Puzzles.PuzzleVariantPool
+  variants:
+  - solveMode: 0
+    switchBehaviour: 0
+    hint:
+      m_TableReference:
+        m_TableCollectionName: Subtitles
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: hint.puzzle.allactive_latch
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
+  - solveMode: 1
+    switchBehaviour: 0
+    hint:
+      m_TableReference:
+        m_TableCollectionName: Subtitles
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: hint.puzzle.sequence_latch
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
+  - solveMode: 0
+    switchBehaviour: 1
+    hint:
+      m_TableReference:
+        m_TableCollectionName: Subtitles
+      m_TableEntryReference:
+        m_KeyId: 0
+        m_Key: hint.puzzle.allactive_toggle
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
+  activeSwitchCount: 3
+  clueStartDelay: 0.8
+  clueStepSeconds: 0.6
+  clueGapSeconds: 0.25
+  clueColour: {r: 1, g: 0.85, b: 0.35, a: 1}
+  references:
+    version: 2
+    RefIds: []

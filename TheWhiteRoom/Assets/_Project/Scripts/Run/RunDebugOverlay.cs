@@ -17,6 +17,8 @@ namespace TWR.Run
     /// (frees the cursor, stops look/shoot) and restores it on close. Added at runtime by the RunManager.
     /// R2 (D-161, D-167): in Core mode "next section" / F2 go through the real SectionLoader (fade + scene load), the
     /// header shows the loaded content scene, and the pause is re-applied after each transition.
+    /// R3 (D-172): under every plan stop it lists what was rolled there (enemy spawn ids, pickup spot ids, puzzle
+    /// variant + active switches in order) once the section has loaded this run; seed 0 shows "curated, fixed".
     /// </summary>
     [DisallowMultipleComponent]
     public class RunDebugOverlay : MonoBehaviour
@@ -195,11 +197,16 @@ namespace TWR.Run
             int current = manager.CurrentStopIndex;
             RunPath active = manager.ActivePath;
 
-            GUILayout.Label("<b>Plan</b>", rich);
+            GUILayout.Label("<b>Plan</b>   <size=11>(rolls per section, D-172)</size>", rich);
             Line(current == RunPlan.LobbyIndex, false, "Hub lobby (connector)");
+            Rolls(RunPlan.LobbyIndex, plan, false, true);
             for (int i = 0; i < plan.PreForkSections.Count; i++)
+            {
                 Line(current == i, false, $"{plan.SectionNumber(i)}. {Describe(plan.PreForkSections[i])}");
+                Rolls(i, plan, false, false);
+            }
             Line(current == plan.ForkIndex, false, $"Fork room: {Describe(plan.ForkRoom)} (connector)");
+            Rolls(plan.ForkIndex, plan, false, false);
 
             DrawBranch(plan, RunPath.Escape, current, active);
             DrawBranch(plan, RunPath.Discover, current, active);
@@ -211,7 +218,31 @@ namespace TWR.Run
             bool dimmed = active != RunPath.None && !isActive;
             GUILayout.Label(dimmed ? $"<color={Dim}>{branch} branch</color>" : $"<b>{branch} branch</b>{(isActive ? " (chosen)" : "")}", rich);
             Line(isActive && current == plan.PathSectionIndex, dimmed, $"   {plan.SectionNumber(plan.PathSectionIndex)}. {Describe(plan.GetPathSection(branch))}");
+            Rolls(plan.PathSectionIndex, plan, dimmed, false);
             Line(isActive && current == plan.BossIndex, dimmed, $"   {plan.SectionNumber(plan.BossIndex)}. {Describe(plan.GetBossArena(branch))}");
+            Rolls(plan.BossIndex, plan, dimmed, false);
+        }
+
+        /// <summary>
+        /// What was rolled at this stop (D-172): the stored report once the section has loaded this run, otherwise
+        /// "curated, fixed" (seed 0) or "not loaded yet". Rolls depend on the scene's authored spots, so unvisited
+        /// sections can't be previewed without loading them.
+        /// </summary>
+        void Rolls(int stopIndex, RunPlan plan, bool otherBranch, bool isLobby)
+        {
+            string text;
+            if (isLobby) text = "rolls: none, the lobby is fixed (D-179)";
+            else if (!otherBranch && manager.RollReports.TryGetValue(stopIndex, out SectionRollReport report))
+            {
+                string head = report.Mode == SectionRollMode.Curated ? "curated, fixed" : "rolled";
+                const string NewLine = "\n      ";
+                text = head + ": " + (report.Lines.Count > 0 ? string.Join(NewLine, report.Lines) : "nothing to roll");
+                if (report.Problems.Count > 0)
+                    text += NewLine + $"<color=#FF7A6A>{report.Problems.Count} fallback(s): {string.Join("; ", report.Problems)}</color>";
+            }
+            else if (plan.IsCurated) text = "curated, fixed (authored defaults)";
+            else text = otherBranch ? "other branch" : "not loaded yet";
+            GUILayout.Label($"<color={Dim}><size=11>      {text}</size></color>", rich);
         }
 
         void Line(bool isCurrent, bool dimmed, string text)

@@ -330,7 +330,7 @@ namespace TWR.EditorTools
             go.AddComponent<TestDamageDummy>();
         }
 
-        static void AmmoPickup(string name, Vector3 position, CombatAssets assets, Material material, Transform parent)
+        static ItemPickup AmmoPickup(string name, Vector3 position, CombatAssets assets, Material material, Transform parent)
         {
             GameObject root = TriggerVolume(name, position, new Vector3(0.8f, 1f, 0.8f), assets, parent);
             var pickup = root.AddComponent<ItemPickup>();
@@ -338,6 +338,7 @@ namespace TWR.EditorTools
             Transform box = GunPart("Box", root.transform, new Vector3(0f, 0.09f, 0f), new Vector3(0.3f, 0.18f, 0.2f), new Vector3(0f, 25f, 0f), material);
             box.gameObject.layer = assets.ignoreRaycastLayer;
             box.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.On;
+            return pickup; // R3: the run scenes put it into a PickupGroup (D-177)
         }
 
         /// Trigger box (feet at "position") on Ignore Raycast, with a kinematic Rigidbody so the

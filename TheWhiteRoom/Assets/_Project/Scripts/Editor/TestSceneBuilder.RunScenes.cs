@@ -39,6 +39,9 @@ namespace TWR.EditorTools
     /// fills SectionData.sceneName / exitCondition, the RunConfig scene names and Build Settings (Core first) and
     /// validates everything with [TWR] logs. Geometry is cheap greybox (D-100). TWR/Build Test Scene is untouched.
     /// Like the other builders, every asset is loaded/created AFTER EditorSceneManager.NewScene.
+    /// R3 (D-172 to D-177, TestSceneBuilder.RunRolls.cs): the R2 spawn points and pickup positions stay as the curated
+    /// defaults; every scene gets stable ids, hidden roll-only spawn spots (with partitions that hide them from the
+    /// entry), pickup groups with candidate spots, and the puzzle room a 4th switch slot, tally dots and a variant pool.
     /// </summary>
     public static partial class TestSceneBuilder
     {
@@ -125,7 +128,7 @@ namespace TWR.EditorTools
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return;
 
-            Debug.Log("[TWR] Building the run scenes (R2, D-161 to D-171) in " + RunScenesFolder + " ...");
+            Debug.Log("[TWR] Building the run scenes (R2 + R3, D-161 to D-179) in " + RunScenesFolder + " ...");
             EnsureFolder(RunScenesFolder);
             seekerPrefabBuiltThisPass = false;
 
@@ -356,10 +359,11 @@ namespace TWR.EditorTools
 
             // The slice puzzle room (x 10.2..22.2): 3 pistol switches, ammo, locked exit door + corridor (D-124 to D-130).
             DoorLock exitLock = BuildPuzzleTest(a.combat, a.puzzle, a.white, a.whiteEmissive, a.offWhite);
-            // Its Seeker on the 4-waypoint patrol (no noise-test props: there is no white room here).
-            BuildSeekerTest(a.seeker, false);
 
             Transform root = new GameObject("Section: Puzzle (D-155, D-165)").transform;
+            // R3: the R2 Seeker (same spawn + patrol, curated only) plus two hidden roll spots; the 4th switch slot,
+            // tally dots, variant pool, puzzle area and the rolled ammo spots (D-172 to D-177).
+            if (!AuthorPuzzleSectionRolls(root, a)) return false;
             // West wall of the puzzle room with the 2.4 x 3 m doorway (was the white room's east wall).
             BuildEastWallWithDoorway(a.whiteEmissive, root);
             // Entry vestibule west of the doorway; the one-way door faces east into it.
@@ -390,18 +394,33 @@ namespace TWR.EditorTools
             Block("Tall Cover W", new Vector3(-9f, 1.1f, 13f), new Vector3(1f, 2.2f, 2f), a.offWhite, cover);
             Block("Tall Cover E", new Vector3(9f, 1.1f, 13f), new Vector3(1f, 2.2f, 2f), a.offWhite, cover);
 
-            // Three Seekers at fixed spawn points (D-170; seeded selection comes later).
-            Transform enemies = new GameObject("Enemies (fixed spawn points, D-170)").transform;
+            // The three R2 Seekers (D-170) stay as the curated layout (seed 0); seeded runs pick 3 of 4 hidden spots (D-176).
+            Transform enemies = new GameObject("Enemies (R2 curated + R3 roll spots, D-170, D-176)").transform;
             enemies.SetParent(root, false);
-            BuildSeekerSpawn(enemies, a, "Seeker A (west loop)", new Vector3(-5f, 0f, 17f), Vector3.back,
+            BuildSeekerSpawn(enemies, a, "Seeker A (west loop)", "combat.enemy.r2_west", true, false, new Vector3(-5f, 0f, 17f), Vector3.back,
                 new[] { new Vector3(-7f, 0f, 10f), new Vector3(-7f, 0f, 17f), new Vector3(-3f, 0f, 17f), new Vector3(-3f, 0f, 10f) });
-            BuildSeekerSpawn(enemies, a, "Seeker B (east loop)", new Vector3(5f, 0f, 17f), Vector3.back,
+            BuildSeekerSpawn(enemies, a, "Seeker B (east loop)", "combat.enemy.r2_east", true, false, new Vector3(5f, 0f, 17f), Vector3.back,
                 new[] { new Vector3(7f, 0f, 10f), new Vector3(7f, 0f, 17f), new Vector3(3f, 0f, 17f), new Vector3(3f, 0f, 10f) });
-            BuildSeekerSpawn(enemies, a, "Seeker C (exit guard)", new Vector3(0f, 0f, 18.5f), Vector3.back,
+            BuildSeekerSpawn(enemies, a, "Seeker C (exit guard)", "combat.enemy.r2_exit", true, false, new Vector3(0f, 0f, 18.5f), Vector3.back,
                 new[] { new Vector3(-2f, 0f, 18.5f), new Vector3(2f, 0f, 18.5f) });
+            AuthorCombatRollSpots(root, enemies, a);
 
-            HealthPickup("Health Pickup (combat, D-171)", new Vector3(-8.5f, 0f, 6f), a, root);
-            AmmoPickup("Ammo Pickup (combat)", new Vector3(8.5f, 0f, 6f), a.combat, a.ammo, root);
+            ItemPickup health = HealthPickup("Health Pickup (combat, D-171)", new Vector3(-8.5f, 0f, 6f), a, root);
+            ItemPickup ammo = AmmoPickup("Ammo Pickup (combat)", new Vector3(8.5f, 0f, 6f), a.combat, a.ammo, root);
+            BuildPickupGroup(root, "combat.health", new[] { health }, "", new[]
+            {
+                ("combat.health.sw", new Vector3(-8.5f, 0f, 6f), true),
+                ("combat.health.se", new Vector3(8.5f, 0f, 10f), false),
+                ("combat.health.n", new Vector3(-1.5f, 0f, 16f), false),
+                ("combat.health.ne", new Vector3(6.5f, 0f, 15f), false),
+            });
+            BuildPickupGroup(root, "combat.ammo", new[] { ammo }, "", new[]
+            {
+                ("combat.ammo.se", new Vector3(8.5f, 0f, 6f), true),
+                ("combat.ammo.w", new Vector3(-6f, 0f, 12.5f), false),
+                ("combat.ammo.mid", new Vector3(2.5f, 0f, 10f), false),
+                ("combat.ammo.nw", new Vector3(-3f, 0f, 18.8f), false),
+            });
             return true;
         }
 
@@ -429,16 +448,32 @@ namespace TWR.EditorTools
             Block("Tall Cover Middle", new Vector3(-1f, 1.1f, 14.5f), new Vector3(1.2f, 2.2f, 1.2f), a.offWhite, cover);
             Block("Tall Cover E", new Vector3(8.5f, 1.1f, 12f), new Vector3(1.2f, 2.2f, 1.2f), a.offWhite, cover);
 
-            // Two patrolling Seekers over the main route (D-169, D-170 fixed spawns). Avoided ones still count as spawned.
-            Transform enemies = new GameObject("Enemies (fixed spawn points, D-170)").transform;
+            // Two patrolling Seekers over the main route (D-169). The R2 pair is the curated layout (seed 0); seeded runs
+            // pick 2 of 3 hidden spots whose patrols all cross the main room, so any pair satisfies D-169 (D-176).
+            Transform enemies = new GameObject("Enemies (R2 curated + R3 roll spots, D-169, D-176)").transform;
             enemies.SetParent(root, false);
-            BuildSeekerSpawn(enemies, a, "Seeker A (big loop)", new Vector3(6f, 0f, 17f), Vector3.left,
+            BuildSeekerSpawn(enemies, a, "Seeker A (big loop)", "stealth.enemy.r2_loop", true, false, new Vector3(6f, 0f, 17f), Vector3.left,
                 new[] { new Vector3(-4f, 0f, 8f), new Vector3(6f, 0f, 8f), new Vector3(6f, 0f, 17f), new Vector3(-4f, 0f, 17f) });
-            BuildSeekerSpawn(enemies, a, "Seeker B (cross patrol)", new Vector3(-6f, 0f, 12f), Vector3.right,
+            BuildSeekerSpawn(enemies, a, "Seeker B (cross patrol)", "stealth.enemy.r2_cross", true, false, new Vector3(-6f, 0f, 12f), Vector3.right,
                 new[] { new Vector3(-6f, 0f, 12f), new Vector3(4f, 0f, 12f) });
+            AuthorStealthRollSpots(root, enemies, a);
 
-            HealthPickup("Health Pickup (stealth route, D-171)", new Vector3(exitX, 0f, 7.5f), a, root);
-            AmmoPickup("Ammo Pickup (stealth)", new Vector3(10.5f, 0f, 6f), a.combat, a.ammo, root);
+            ItemPickup health = HealthPickup("Health Pickup (stealth route, D-171)", new Vector3(exitX, 0f, 7.5f), a, root);
+            ItemPickup ammo = AmmoPickup("Ammo Pickup (stealth)", new Vector3(10.5f, 0f, 6f), a.combat, a.ammo, root);
+            BuildPickupGroup(root, "stealth.health", new[] { health }, "", new[]
+            {
+                ("stealth.health.route_s", new Vector3(exitX, 0f, 7.5f), true),
+                ("stealth.health.route_n", new Vector3(exitX, 0f, 17.5f), false),
+                ("stealth.health.n", new Vector3(4f, 0f, 20.8f), false),
+                ("stealth.health.e", new Vector3(10.5f, 0f, 9f), false),
+            });
+            BuildPickupGroup(root, "stealth.ammo", new[] { ammo }, "", new[]
+            {
+                ("stealth.ammo.se", new Vector3(10.5f, 0f, 6f), true),
+                ("stealth.ammo.sw", new Vector3(-7.5f, 0f, 6f), false),
+                ("stealth.ammo.mid", new Vector3(3f, 0f, 14f), false),
+                ("stealth.ammo.nw", new Vector3(-7f, 0f, 20.8f), false),
+            });
             return true;
         }
 
@@ -534,7 +569,14 @@ namespace TWR.EditorTools
             Assign(fork, "discoverDoor", discover.door.door);
             Assign(fork, "discoverLock", discover.door.doorLock);
 
-            HealthPickup("Health Pickup (fork room, D-171)", new Vector3(5.5f, 0f, 6.5f), a, root);
+            ItemPickup health = HealthPickup("Health Pickup (fork room, D-171)", new Vector3(5.5f, 0f, 6.5f), a, root);
+            BuildPickupGroup(root, "fork.health", new[] { health }, "", new[]
+            {
+                ("fork.health.se", new Vector3(5.5f, 0f, 6.5f), true),
+                ("fork.health.sw", new Vector3(-5.5f, 0f, 6.5f), false),
+                ("fork.health.nw", new Vector3(-6f, 0f, 11f), false),
+                ("fork.health.ne", new Vector3(6f, 0f, 11f), false),
+            });
             return true;
         }
 
@@ -551,8 +593,18 @@ namespace TWR.EditorTools
             // Empty arena x -12..12, z 4..24, 8 m high; the exit unlocks when the boss placeholder is beaten (D-165).
             BuildSectionShell(root, a, 24f, 20f, 8f, a.whiteEmissive, new[] { 0f }, true, SectionExitCondition.BossDefeated);
             BuildBossPlaceholder(root, a, bull ? a.bull : a.preacher, bull);
-            AmmoPickup("Ammo Pickup (arena W)", new Vector3(-9f, 0f, 7f), a.combat, a.ammo, root);
-            AmmoPickup("Ammo Pickup (arena E)", new Vector3(9f, 0f, 7f), a.combat, a.ammo, root);
+            ItemPickup ammoW = AmmoPickup("Ammo Pickup (arena W)", new Vector3(-9f, 0f, 7f), a.combat, a.ammo, root);
+            ItemPickup ammoE = AmmoPickup("Ammo Pickup (arena E)", new Vector3(9f, 0f, 7f), a.combat, a.ammo, root);
+            // D-177: boss arenas always keep exactly 2 ammo pickups; only their spots are rolled.
+            BuildPickupGroup(root, "boss.ammo", new[] { ammoW, ammoE }, "", new[]
+            {
+                ("boss.ammo.sw", new Vector3(-9f, 0f, 7f), true),
+                ("boss.ammo.se", new Vector3(9f, 0f, 7f), true),
+                ("boss.ammo.w", new Vector3(-10f, 0f, 13f), false),
+                ("boss.ammo.e", new Vector3(10f, 0f, 13f), false),
+                ("boss.ammo.nw", new Vector3(-10f, 0f, 20f), false),
+                ("boss.ammo.ne", new Vector3(10f, 0f, 20f), false),
+            });
             return true;
         }
 
@@ -785,8 +837,11 @@ namespace TWR.EditorTools
             go.AddComponent<SectionEntry>();
         }
 
-        /// Spawn point + patrol waypoints (world positions). The Seeker spawns into this scene at runtime (D-135, D-170).
-        static void BuildSeekerSpawn(Transform parent, RunSceneAssets a, string name, Vector3 position, Vector3 facing, Vector3[] route)
+        /// Spawn point + its own patrol waypoints (world positions). The Seeker spawns into this scene at runtime
+        /// (D-135, D-170). R3 (D-172, D-176): spotId = stable id; isDefault = curated layout (seed 0); allowInRolls =
+        /// may be picked by a seeded roll (only spots that pass the D-176 rules; the validation checks them).
+        static SeekerSpawnPoint BuildSeekerSpawn(Transform parent, RunSceneAssets a, string name, string spotId, bool isDefault,
+                                                 bool allowInRolls, Vector3 position, Vector3 facing, Vector3[] route)
         {
             Transform group = new GameObject(name).transform;
             group.SetParent(parent, false);
@@ -803,10 +858,16 @@ namespace TWR.EditorTools
             var spawn = spawnGO.AddComponent<SeekerSpawnPoint>();
             Assign(spawn, "seekerPrefab", a.seeker.prefab);
             AssignArray(spawn, "patrolRoute", waypoints);
+            var so = new SerializedObject(spawn);
+            so.FindProperty("spotId").stringValue = spotId;
+            so.FindProperty("isDefault").boolValue = isDefault;
+            so.FindProperty("allowInRolls").boolValue = allowInRolls;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            return spawn;
         }
 
         /// Walk-over health pickup (D-171): the ItemPickup flow with the health item (heals 25, not used at full HP).
-        static void HealthPickup(string name, Vector3 position, RunSceneAssets a, Transform parent)
+        static ItemPickup HealthPickup(string name, Vector3 position, RunSceneAssets a, Transform parent)
         {
             GameObject root = TriggerVolume(name, position, new Vector3(0.8f, 1f, 0.8f), a.combat, parent);
             var pickup = root.AddComponent<ItemPickup>();
@@ -816,6 +877,7 @@ namespace TWR.EditorTools
             Transform crossB = GunPart("Cross B", root.transform, new Vector3(0f, 0.245f, 0f), new Vector3(0.08f, 0.012f, 0.26f), Vector3.zero, a.healthCross);
             box.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
             foreach (Transform t in new[] { box, crossA, crossB }) t.gameObject.layer = a.combat.ignoreRaycastLayer;
+            return pickup;
         }
 
         /// World-space TextMeshPro label with a LocalizedWorldText (D-084). localPosition is in parent space; the text
@@ -903,13 +965,15 @@ namespace TWR.EditorTools
                     continue;
                 }
                 SectionExitCondition condition = SectionData.DefaultExitCondition(section.type);
-                if (section.sceneName != scene || section.exitCondition != condition)
+                int enemies = SectionData.DefaultEnemyCount(section.type); // D-176: fixed per template
+                if (section.sceneName != scene || section.exitCondition != condition || section.enemyCount != enemies)
                 {
                     section.sceneName = scene;
                     section.exitCondition = condition;
+                    section.enemyCount = enemies;
                     EditorUtility.SetDirty(section);
                 }
-                Debug.Log($"[TWR] {section.name}: scene '{scene}', exit condition {condition} (D-165).", section);
+                Debug.Log($"[TWR] {section.name}: scene '{scene}', exit condition {condition} (D-165), enemy count {enemies} (D-176).", section);
             }
 
             if (config.lobbySceneName != LobbySceneName || config.coreSceneName != CoreSceneName)

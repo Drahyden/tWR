@@ -19,3 +19,4 @@ MonoBehaviour:
   - combat
   sceneName: Section_Combat
   exitCondition: 0
+  enemyCount: 3
