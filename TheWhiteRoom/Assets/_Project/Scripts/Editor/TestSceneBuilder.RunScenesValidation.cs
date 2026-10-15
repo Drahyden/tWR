@@ -27,7 +27,8 @@ namespace TWR.EditorTools
     /// is in it; Core holds the player, HUD-side pieces, RunManager + SectionLoader, PortalRenderManager, ambient bed,
     /// fader, event system and no content; each content scene has exactly one SectionEntry with a permanently locked
     /// door behind it, at least one SectionExit, a gate that matches its SectionData, the fork room both path exits,
-    /// boss arenas a BossDefeated stub, portal pairs at least 200 m apart (D-144), and a baked NavMesh wherever Seekers
+    /// boss arenas a real boss (R4 checks in TestSceneBuilder.BossValidation.cs, D-180 to D-194), portal pairs at least
+    /// 200 m apart (D-144), and a baked NavMesh wherever Seekers
     /// spawn (stealth: at least 2 patrols, D-169). Opens each scene additively and closes it again. Logs with [TWR].
     /// R3 (D-172 to D-177): the seeded-roll checks live in TestSceneBuilder.RunRollsValidation.cs.
     /// </summary>
@@ -193,7 +194,7 @@ namespace TWR.EditorTools
             List<Portal> portals = InScene<Portal>(scene);
             List<SeekerSpawnPoint> spawns = InScene<SeekerSpawnPoint>(scene);
             List<NavMeshSurface> surfaces = InScene<NavMeshSurface>(scene);
-            List<BossPlaceholder> bosses = InScene<BossPlaceholder>(scene);
+            List<BossEncounter> bosses = InScene<BossEncounter>(scene);
             int coreOnly = InScene<PlayerController>(scene).Count + InScene<RunManager>(scene).Count + InScene<AmbientBed>(scene).Count
                            + InScene<PortalRenderManager>(scene).Count;
 
@@ -230,7 +231,7 @@ namespace TWR.EditorTools
                         break;
                     case SectionExitCondition.BossDefeated:
                         bool marked = bosses.Count >= 1 && bosses.All(b => b.GetComponent<BossMarker>() != null);
-                        ok &= Check(report, "boss-defeated stub with BossMarker (D-158, D-165)", marked, bosses.Count.ToString());
+                        ok &= Check(report, "a boss (BossEncounter) with BossMarker for BossDefeated (D-158, D-165)", marked, bosses.Count.ToString());
                         break;
                 }
                 if (section.type == SectionType.Silent)
@@ -276,6 +277,9 @@ namespace TWR.EditorTools
 
             // R3 seeded rolls (D-172 to D-177): stable ids, spawn rules, pickup groups, puzzle slots + variant pool.
             if (!isLobby) ok &= ValidateSectionRolls(report, scene, section, entries.Count == 1 ? entries[0] : null);
+
+            // R4 boss arenas (D-180 to D-194): boss, size, exit, pickups, columns / reachability + cavities.
+            if (section != null && section.type == SectionType.BossArena) ok &= ValidateBossArena(report, scene, section);
 
             if (ok) Debug.Log(report.ToString());
             else Debug.LogError(report.ToString());

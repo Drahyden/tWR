@@ -33,7 +33,7 @@ namespace TWR.Run
         None,
         /// <summary>Every main-path puzzle (PuzzleData.isOptional = false) in the section is solved.</summary>
         MainPuzzlesSolved,
-        /// <summary>The arena's boss is beaten (placeholder stub for now, D-148).</summary>
+        /// <summary>The arena's boss (Bull or Preacher) is beaten (D-148, D-185).</summary>
         BossDefeated
     }
 

@@ -25,7 +25,8 @@ namespace TWR.EditorTools
     ///   (stealth: at least 2 waypoints, D-169); the curated default spots match enemyCount;
     /// - pickups (D-177): every group has at least as many spots as pickups, its default spots are where the pickups
     ///   stand, every spot is on the NavMesh, reachable from the entry and not within 1.5 m of a portal (D-143);
-    ///   puzzle-area groups lie inside the puzzle's area; boss arenas keep exactly 2 ammo pickups;
+    ///   puzzle-area groups lie inside the puzzle's area; boss arenas have exactly 4 ammo + 1 health pickup (D-188, D-194);
+    ///   in arenas with ArenaPlatforms (Preacher) "reachable" means on foot with jumps (D-186 graph), not the NavMesh;
     /// - puzzles (D-173, D-130): main puzzles in a run have a variant pool without Sequence+Toggle, at least 4 slots,
     ///   3 default slots, PuzzleData = AllActive+Latch (seed 0), gun requirements limited to run-start guns, slot roots and
     ///   tally dots assigned, a puzzle area, and at least one ammo group inside that area.
@@ -54,7 +55,9 @@ namespace TWR.EditorTools
             List<GunData> runStartGuns = EditorRunStartGuns();
 
             ok &= CheckEnemySpots(report, t, section, entry, entryPos, vestibule, blockers);
-            ok &= CheckPickupGroups(report, scene, t, section, entry, entryPos, runStartGuns);
+            // R4 (D-183, D-186): arenas with platforms check pickup reachability on foot (jumps), not on the NavMesh.
+            PlatformGraph platforms = InScene<ArenaPlatform>(scene).Count > 0 ? BuildPlatformGraph(scene, ReachabilityTuning()) : null;
+            ok &= CheckPickupGroups(report, scene, t, section, entry, entryPos, runStartGuns, platforms);
             ok &= CheckPuzzleRolls(report, t, section, runStartGuns);
             return ok;
         }
@@ -103,7 +106,7 @@ namespace TWR.EditorTools
                 return true;
             }
             bool ok = true;
-            if (isBoss) ok &= Check(report, "boss arena: no Seeker spawn points (boss placeholders are not rolled)", t.Spawns.Count == 0, t.Spawns.Count.ToString());
+            if (isBoss) ok &= Check(report, "boss arena: no Seeker spawn points (the boss is not a rolled enemy)", t.Spawns.Count == 0, t.Spawns.Count.ToString());
             if (section != null && count != SectionData.DefaultEnemyCount(section.type))
                 report.AppendLine($"  WARNING: enemyCount {count} differs from the template default {SectionData.DefaultEnemyCount(section.type)} (D-176).");
 
@@ -219,8 +222,15 @@ namespace TWR.EditorTools
 
         // ---------- pickups (D-177, D-130, D-143) ----------
 
+        /// The player's movement numbers for the D-186 rules (a default instance if the asset is missing).
+        static TWR.Player.PlayerTuning ReachabilityTuning()
+        {
+            var tuning = AssetDatabase.LoadAssetAtPath<TWR.Player.PlayerTuning>(TuningPath);
+            return tuning != null ? tuning : ScriptableObject.CreateInstance<TWR.Player.PlayerTuning>();
+        }
+
         static bool CheckPickupGroups(StringBuilder report, Scene scene, SceneRollTargets t, SectionData section, SectionEntry entry,
-                                      Vector3 entryPos, List<GunData> runStartGuns)
+                                      Vector3 entryPos, List<GunData> runStartGuns, PlatformGraph platforms)
         {
             bool ok = true;
             List<Portal> portals = InScene<Portal>(scene);
@@ -245,7 +255,8 @@ namespace TWR.EditorTools
                 foreach (PickupSpot s in spots)
                 {
                     Vector3 p = s.transform.position;
-                    bool reachable = entry == null || Reachable(entryPos, p, out _);
+                    // Platform arenas: on foot with jumps (D-186); everywhere else: the NavMesh path from the entry.
+                    bool reachable = entry == null || (platforms != null ? platforms.IsReachable(p, out _) : Reachable(entryPos, p, out _));
                     float portalDistance = portals.Count > 0 ? portals.Min(x => Vector3.Distance(x.transform.position, p)) : float.MaxValue;
                     bool inArea = areaPuzzle == null || !areaPuzzle.HasArea || areaPuzzle.Area.Contains(p + Vector3.up * 0.1f);
                     ok &= Check(report, $"  spot '{s.SpotId}'{(s.IsDefault ? " (default)" : "")}: reachable, away from portals{(areaPuzzle != null ? ", inside the puzzle area (D-130)" : "")}",
@@ -260,7 +271,9 @@ namespace TWR.EditorTools
             if (section != null && section.type == SectionType.BossArena)
             {
                 int ammo = t.Pickups.Count(p => p.Item != null && IsAmmoItem(p.Item, runStartGuns));
-                ok &= Check(report, "boss arena: exactly 2 ammo pickups (D-177)", ammo == 2, ammo.ToString());
+                int health = t.Pickups.Count(p => p.Item is HealthItemData);
+                ok &= Check(report, "boss arena: exactly 4 ammo pickups (D-188, supersedes D-177's 2) and 1 health pickup (D-194)",
+                            ammo == 4 && health == 1, $"ammo {ammo}, health {health}");
             }
             return ok;
         }

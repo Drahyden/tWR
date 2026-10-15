@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using TWR.Player;
+using TWR.Enemies;
 using TWR.Stats;
 
 namespace TWR.Run
@@ -19,6 +20,9 @@ namespace TWR.Run
     /// header shows the loaded content scene, and the pause is re-applied after each transition.
     /// R3 (D-172): under every plan stop it lists what was rolled there (enemy spawn ids, pickup spot ids, puzzle
     /// variant + active switches in order) once the section has loaded this run; seed 0 shows "curated, fixed".
+    /// R4 (D-185): a Boss block: buttons "Go to Bull arena" / "Go to Preacher arena" (through the real SectionLoader,
+    /// RunManager.DebugGoToBossArena), "Set boss HP" (absolute, or a percentage like 50%), "Force next Bull charge fast",
+    /// and the live boss state: HP, phase, attack counter / next fast-charge count, current teleport target.
     /// </summary>
     [DisallowMultipleComponent]
     public class RunDebugOverlay : MonoBehaviour
@@ -28,11 +32,14 @@ namespace TWR.Run
         const string Dim = "#8A8A8A";
 
         // Buttons only record what to do; Update runs it, so the GUI never changes layout mid-event.
-        enum PendingAction { None, NextSection, ChooseEscape, ChooseDiscover, EndAsDeath, Quit, StartWithSeed }
+        enum PendingAction { None, NextSection, ChooseEscape, ChooseDiscover, EndAsDeath, Quit, StartWithSeed, GoToBull, GoToPreacher, SetBossHealth, ForceFastCharge }
 
         RunManager manager;
         PendingAction pending;
         uint pendingSeed;
+        float pendingBossHealth;
+        string bossHealthText = "50%";
+        string bossMessage = "";
         bool open;
         string seedText = "";
         string message = "";
@@ -87,6 +94,10 @@ namespace TWR.Run
                 case PendingAction.EndAsDeath: manager.EndRun(RunEndReason.Death); break;
                 case PendingAction.Quit: manager.QuitRun(); break;
                 case PendingAction.StartWithSeed: manager.StartRunWithSeed(pendingSeed); break;
+                case PendingAction.GoToBull: manager.DebugGoToBossArena(RunPath.Escape); break;      // Escape = Bull (D-148)
+                case PendingAction.GoToPreacher: manager.DebugGoToBossArena(RunPath.Discover); break; // Discover = Preacher (D-148)
+                case PendingAction.SetBossHealth: SetBossHealth(pendingBossHealth); break;
+                case PendingAction.ForceFastCharge: ForceFastCharge(); break;
             }
         }
 
@@ -164,6 +175,8 @@ namespace TWR.Run
                 DrawStats();
                 GUILayout.Space(6f);
                 DrawActions();
+                GUILayout.Space(6f);
+                DrawBoss();
             }
             GUILayout.Space(6f);
             DrawSeedEntry();
@@ -282,6 +295,80 @@ namespace TWR.Run
             if (GUILayout.Button("End run as Death")) pending = PendingAction.EndAsDeath;
             if (GUILayout.Button("Quit run (D-093)")) pending = PendingAction.Quit;
             GUILayout.EndHorizontal();
+        }
+
+        // ---------- boss (R4, D-185) ----------
+
+        void DrawBoss()
+        {
+            GUILayout.Label("<b>Boss (D-185)</b>", rich);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Go to Bull arena (Escape)")) pending = PendingAction.GoToBull;
+            if (GUILayout.Button("Go to Preacher arena (Discover)")) pending = PendingAction.GoToPreacher;
+            GUILayout.EndHorizontal();
+
+            BossEncounter boss = BossEncounter.Active;
+            if (boss == null)
+            {
+                GUILayout.Label($"<color={Dim}>No boss loaded (go to an arena first).</color>", rich);
+                return;
+            }
+
+            BossHealth health = boss.Health;
+            string hp = health != null ? $"{health.Health:0} / {health.MaxHealth:0} ({health.Normalized * 100f:0}%)" : "?";
+            GUILayout.Label($"'{boss.BossId}'   HP <b>{hp}</b>   phase <b>{(health != null ? health.Phase : 0)}</b>   " +
+                            $"started: {(boss.IsStarted ? "yes" : "no")}   defeated: {(boss.IsDefeated ? "yes" : "no")}   " +
+                            $"damage x{(health != null ? health.DamageMultiplier : 1f):0.#}", rich);
+            GUILayout.Label($"Boss stream (D-189): {boss.StreamMode}, seed {RunSeed.Format(boss.StreamSeed)}", rich);
+            if (boss.Brain != null) GUILayout.Label(boss.Brain.DebugState, rich);
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Set HP (e.g. 300 or 25%):", rich, GUILayout.Width(170f));
+            bossHealthText = GUILayout.TextField(bossHealthText, 10, GUILayout.Width(80f));
+            if (GUILayout.Button("Set boss HP"))
+            {
+                if (TryParseBossHealth(bossHealthText, health, out float value))
+                {
+                    pendingBossHealth = value;
+                    pending = PendingAction.SetBossHealth;
+                }
+                else bossMessage = "Not a number: '" + bossHealthText + "'";
+            }
+            GUILayout.EndHorizontal();
+            if (boss.Brain is BullBrain && GUILayout.Button("Force next Bull charge fast")) pending = PendingAction.ForceFastCharge;
+            if (!string.IsNullOrEmpty(bossMessage)) GUILayout.Label(bossMessage, rich);
+        }
+
+        /// "300" = absolute HP, "25%" = share of max HP.
+        static bool TryParseBossHealth(string text, BossHealth health, out float value)
+        {
+            value = 0f;
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            text = text.Trim();
+            bool percent = text.EndsWith("%");
+            if (percent) text = text.Substring(0, text.Length - 1).Trim();
+            if (!float.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float number))
+                return false;
+            value = percent && health != null ? health.MaxHealth * number / 100f : number;
+            return true;
+        }
+
+        void SetBossHealth(float value)
+        {
+            BossEncounter boss = BossEncounter.Active;
+            if (boss == null || boss.Health == null) return;
+            boss.Health.DebugSetHealth(value);
+            bossMessage = $"Boss HP set to {Mathf.Max(0f, value):0}.";
+            Debug.Log($"[Run] Debug: boss '{boss.BossId}' HP set to {Mathf.Max(0f, value):0} (D-185).", boss);
+        }
+
+        void ForceFastCharge()
+        {
+            if (BossEncounter.Active != null && BossEncounter.Active.Brain is BullBrain bull)
+            {
+                bull.ForceNextChargeFast();
+                bossMessage = "Next Bull charge will be FAST.";
+            }
         }
 
         void DrawSeedEntry()

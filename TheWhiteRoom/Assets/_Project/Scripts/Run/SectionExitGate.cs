@@ -10,7 +10,8 @@ namespace TWR.Run
     /// current SectionData (exitCondition), so it is data, not scene wiring; the serialized fallback is only used when
     /// the scene runs outside a run. None = unlocked quietly at load (combat, stealth, silent, impossible geometry;
     /// combat exits never lock on kills). MainPuzzlesSolved = every non-optional PuzzleController in this scene is
-    /// solved (optional puzzles never gate, D-104). BossDefeated = the boss placeholder of this scene is beaten.
+    /// solved (optional puzzles never gate, D-104). BossDefeated = the boss of this scene (Bull or Preacher, BossEncounter) is
+    /// beaten: BossEvents.Defeated from a boss in the same scene (D-165, D-180, D-183, D-185).
     /// Sits on the exit door; it only drives the DoorLock (D-127), the transition is SectionExit's job.
     /// </summary>
     public class SectionExitGate : MonoBehaviour

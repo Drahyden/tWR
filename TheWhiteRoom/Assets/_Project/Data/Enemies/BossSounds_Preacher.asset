@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 114a1cc5b681f27c36990eccce40286b, type: 3}
+  m_Name: BossSounds_Preacher
+  m_EditorClassIdentifier: Assembly-CSharp::TWR.Enemies.BossSoundSet
+  idleLoop: {fileID: 0}
+  telegraph: {fileID: 0}
+  fastTelegraph: {fileID: 0}
+  charge: {fileID: 0}
+  impact: {fileID: 0}
+  stomp: {fileID: 0}
+  hurt: {fileID: 0}
+  death: {fileID: 0}
+  teleportTelegraph: {fileID: 0}
+  teleportArrive: {fileID: 0}
+  volley: {fileID: 0}
+  idleVolume: 0.4
+  effectsVolume: 1
+  usePlaceholdersWhenEmpty: 1

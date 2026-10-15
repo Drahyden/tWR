@@ -31,7 +31,7 @@ namespace TWR.Run
 
         [Header("Seeded content - D-172, D-176")]
         [Tooltip("How many Seekers a seeded run spawns here (fixed per template, D-176): combat 3, stealth 2, puzzle 1, " +
-                 "others 0. Boss placeholders are not counted. The scene needs at least enemyCount + 1 rollable spawn points.")]
+                 "others 0. Bosses are not counted. The scene needs at least enemyCount + 1 rollable spawn points.")]
         [Min(0)] public int enemyCount;
 
         /// <summary>The R3 default enemy count per template (D-176); "TWR/Run/Build Run Scenes" writes it.</summary>

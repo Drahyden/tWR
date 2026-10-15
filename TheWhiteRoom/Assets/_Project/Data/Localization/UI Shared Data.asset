@@ -55,6 +55,14 @@ MonoBehaviour:
     m_Key: run.complete
     m_Metadata:
       m_Items: []
+  - m_Id: 771742384652288
+    m_Key: boss.bull.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 771742485315584
+    m_Key: boss.preacher.name
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

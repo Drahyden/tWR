@@ -58,6 +58,14 @@ MonoBehaviour:
     m_Localized: Run complete
     m_Metadata:
       m_Items: []
+  - m_Id: 771742384652288
+    m_Localized: The Bull
+    m_Metadata:
+      m_Items: []
+  - m_Id: 771742485315584
+    m_Localized: The Preacher
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

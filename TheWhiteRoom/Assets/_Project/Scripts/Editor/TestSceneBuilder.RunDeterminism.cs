@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using TWR.Enemies;
 using TWR.Run;
 
 namespace TWR.EditorTools
@@ -18,7 +19,9 @@ namespace TWR.EditorTools
     /// 3. pure rolls on made-up candidate lists: the same seed + stop gives the same result twice AND whatever order the
     ///    candidates come in (they are sorted by stable id first), without repeats and with the right counts;
     /// 4. real scenes: for every built section scene, the candidates read from the scene roll identically twice and in
-    ///    reversed hierarchy order. Scenes are opened additively and closed again.
+    ///    reversed hierarchy order. Scenes are opened additively and closed again;
+    /// 5. R4 boss stream (D-189, category 3): the same seed gives the same Bull fast-charge count sequence and the same
+    ///    Preacher teleport choices + volley sizes for the same inputs; counts stay within 2-5; seed 0 uses the authored list.
     /// </summary>
     public static partial class TestSceneBuilder
     {
@@ -33,7 +36,8 @@ namespace TWR.EditorTools
             ok &= CheckStreamLayout();
             ok &= CheckSyntheticRolls();
             ok &= CheckSceneRolls();
-            if (ok) Debug.Log("[TWR] Determinism check PASSED: same seed -> same plan and same section rolls, independent of hierarchy order.");
+            ok &= CheckBossStreams();
+            if (ok) Debug.Log("[TWR] Determinism check PASSED: same seed -> same plan, same section rolls (independent of hierarchy order) and same boss stream.");
             else Debug.LogError("[TWR] Determinism check FAILED (see errors above).");
         }
 
@@ -65,7 +69,7 @@ namespace TWR.EditorTools
             bool ok = true;
             for (int branch = 0; branch <= 2; branch++)
                 for (int stop = 0; stop <= SectionRollContext.MaxSectionIndex; stop++)
-                    for (int c = 0; c <= (int)RollCategory.Puzzle; c++)
+                    for (int c = 0; c <= (int)RollCategory.Boss; c++) // categories 0-3 incl. the boss stream (D-189)
                     {
                         uint s = SectionRollContext.StreamFor(branch, stop, (RollCategory)c);
                         if (s <= 2 || !seen.Add(s)) ok = false;
@@ -199,6 +203,117 @@ namespace TWR.EditorTools
                 }
             }
             return ok;
+        }
+
+        // ---------- R4 boss stream (D-189) ----------
+
+        /// A fixed "fight script" of attacks: true = the Bull tries a charge, false = a stomp.
+        static readonly bool[] BullAttackScript = { true, true, false, true, true, true, false, false, true, true, true, true, false, true, true, true, true, true, false, true, true, true, true, true, true, false, true, true, true, true };
+
+        /// <summary>
+        /// Same seed -> same Bull fast-charge counts and the same Preacher choices for the same inputs (D-189); every count
+        /// within the BullData range; seed 0 (curated) and the sandbox follow the authored list. Pure code, no scenes.
+        /// </summary>
+        static bool CheckBossStreams()
+        {
+            var bull = AssetDatabase.LoadAssetAtPath<BullData>(BullDataPath);
+            var preacher = AssetDatabase.LoadAssetAtPath<PreacherData>(PreacherDataPath);
+            int min = bull != null ? bull.fastChargeCountMin : 2, max = bull != null ? bull.fastChargeCountMax : 5;
+            int[] curated = bull != null ? bull.curatedFastChargeCounts : new[] { 3, 4, 2, 5 };
+            int volleyMin = preacher != null ? preacher.volleyCountMin : 3, volleyMax = preacher != null ? preacher.volleyCountMax : 5;
+            int behindChance = preacher != null ? preacher.behindChancePercent : 60;
+
+            bool ok = true;
+            var distinct = new HashSet<string>();
+            foreach (uint seed in DeterminismSeeds)
+                foreach ((int branch, int stop) in new[] { (1, 4), (2, 4), (1, 5), (2, 5) })
+                {
+                    var context = new SectionRollContext(seed, branch, stop, SectionRollMode.Seeded, null);
+                    string first = BullSequence(new FastChargeSchedule(context.CreateRandom(RollCategory.Boss), min, max, curated), min, max, out bool inRange);
+                    string second = BullSequence(new FastChargeSchedule(context.CreateRandom(RollCategory.Boss), min, max, curated), min, max, out _);
+                    string p1 = PreacherSequence(context.CreateRandom(RollCategory.Boss), volleyMin, volleyMax, behindChance, out bool volleysOk);
+                    string p2 = PreacherSequence(context.CreateRandom(RollCategory.Boss), volleyMin, volleyMax, behindChance, out _);
+                    distinct.Add(first);
+                    if (first != second || p1 != p2 || !inRange || !volleysOk)
+                    {
+                        Debug.LogError($"[TWR] Determinism boss stream seed {RunSeed.Format(seed)} branch {branch} stop {stop}: " +
+                                       $"{(first != second ? "Bull DIFFERENT " : "")}{(p1 != p2 ? "Preacher DIFFERENT " : "")}{(!inRange ? $"count outside {min}-{max} " : "")}" +
+                                       $"{(!volleysOk ? "volley size out of range" : "")}\n  bull 1: {first}\n  bull 2: {second}\n  preacher 1: {p1}\n  preacher 2: {p2}");
+                        ok = false;
+                    }
+                    if (seed == DeterminismSeeds[0] && branch == 1 && stop == 4)
+                        Debug.Log($"[TWR] Determinism boss stream example (seed {RunSeed.Format(seed)}, Escape, stop 4): Bull {first} | Preacher {p1}");
+                }
+            if (distinct.Count < 3)
+            {
+                Debug.LogError($"[TWR] Determinism boss stream: only {distinct.Count} distinct Bull sequences over many seeds; the counts look stuck.");
+                ok = false;
+            }
+
+            // Seed 0 / sandbox: no stream, the authored list in order (D-189).
+            var authored = new FastChargeSchedule(null, min, max, curated);
+            var targets = new List<int> { authored.Target };
+            for (int i = 0; i < 40 && targets.Count < curated.Length * 2; i++)
+                if (authored.BeginCharge()) targets.Add(authored.Target);
+            bool followsList = true;
+            for (int i = 0; i < targets.Count; i++)
+                followsList &= targets[i] == Mathf.Clamp(curated[i % curated.Length], min, max);
+            if (!followsList)
+            {
+                Debug.LogError($"[TWR] Determinism boss stream: seed 0 targets {string.Join(",", targets)} don't follow the authored list [{string.Join(",", curated)}].");
+                ok = false;
+            }
+            if (ok) Debug.Log($"[TWR] Determinism boss stream: OK ({distinct.Count} distinct Bull sequences; seed 0 follows [{string.Join(",", curated)}]; stream = category 3, D-189).");
+            return ok;
+        }
+
+        /// Runs the attack script and returns e.g. "t3 C C S F(t4) ..." (t = target, F = fast charge).
+        static string BullSequence(FastChargeSchedule schedule, int countMin, int countMax, out bool inRange)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append('t').Append(schedule.Target);
+            inRange = schedule.Target >= 1;
+            int min = schedule.Target, max = schedule.Target;
+            foreach (bool charge in BullAttackScript)
+            {
+                if (!charge)
+                {
+                    schedule.RegisterStomp();
+                    sb.Append(" S");
+                    continue;
+                }
+                if (schedule.BeginCharge())
+                {
+                    sb.Append(" F(t").Append(schedule.Target).Append(')');
+                    min = Mathf.Min(min, schedule.Target);
+                    max = Mathf.Max(max, schedule.Target);
+                }
+                else sb.Append(" C");
+            }
+            inRange = min >= countMin && max <= countMax;
+            return sb.ToString();
+        }
+
+        /// Made-up candidate lists (phase 1, then phase 2 with "behind" cavities) and volley sizes from one stream.
+        static string PreacherSequence(SeededRandom stream, int volleyMin, int volleyMax, int behindChance, out bool volleysOk)
+        {
+            var sb = new System.Text.StringBuilder();
+            var candidates = new List<int>();
+            var behind = new List<int>();
+            volleysOk = true;
+            for (int i = 0; i < 24; i++)
+            {
+                candidates.Clear();
+                behind.Clear();
+                for (int c = 0; c < 12; c++) if ((c + i) % 3 != 0) candidates.Add(c); // the "player" moves: lists change
+                for (int c = 0; c < 12; c++) if ((c * 7 + i) % 5 == 0) behind.Add(c);
+                bool phaseTwo = i >= 12;
+                int pick = PreacherTeleportPlanner.Choose(stream, candidates, behind, phaseTwo, behindChance, out bool fromBehind);
+                int volley = PreacherTeleportPlanner.VolleySize(stream, volleyMin, volleyMax);
+                volleysOk &= volley >= volleyMin && volley <= volleyMax;
+                sb.Append(pick).Append(fromBehind ? "b" : "").Append('/').Append(volley).Append(' ');
+            }
+            return sb.ToString().TrimEnd();
         }
 
         static SceneRollTargets ReversedTargets(SceneRollTargets t)

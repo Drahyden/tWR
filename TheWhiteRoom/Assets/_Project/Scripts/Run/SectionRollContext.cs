@@ -1,11 +1,15 @@
 namespace TWR.Run
 {
-    /// <summary>What a section roll decides (D-172). The number is part of the random stream, so never renumber.</summary>
+    /// <summary>
+    /// What a section roll decides (D-172). The number is part of the random stream, so never renumber.
+    /// Boss (D-189): the boss fight's own stream (Bull fast-charge counts, Preacher teleport choices and volley sizes).
+    /// </summary>
     public enum RollCategory
     {
         Enemies = 0,
         Pickups = 1,
-        Puzzle = 2
+        Puzzle = 2,
+        Boss = 3
     }
 
     /// <summary>

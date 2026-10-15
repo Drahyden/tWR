@@ -10,6 +10,9 @@ namespace TWR.Player
     /// Built to grow into D-033 abilities: jump COUNT (double jump), AddImpulse (dash/knockback) and
     /// SetIgnoredLayers (phase). Crouch checks headroom before standing; also sets the Head's eye height.
     /// ResetMotion stops all movement (section transitions, D-167); ResetForNewRun also removes item abilities (D-162).
+    /// R4 (D-182, D-191): ApplyKnockback = a planar push (Bull fast charge) moved ONLY through IPlayerMotor.Move, never a
+    /// teleport: its distance is first shortened by a capsule cast to the first wall/obstacle, and it stops at once if the
+    /// motor reports it is blocked. Falling is capped at PlayerTuning.maxFallSpeed (about 40 m/s); there is no fall damage.
     /// </summary>
     public class PlayerLocomotion : MonoBehaviour, IRunResettable
     {
@@ -21,7 +24,9 @@ namespace TWR.Player
         IPlayerMotor motor;
 
         Vector3 planarVelocity;   // from WASD, along the ground plane
-        Vector3 impulseVelocity;  // from AddImpulse (dash, knockback), fades out
+        Vector3 impulseVelocity;  // from AddImpulse (dash, launch pads), fades out
+        Vector3 knockbackVelocity; // from ApplyKnockback (D-182), slows down with tuning.knockbackDeceleration
+        float knockbackRemaining;  // metres of knockback left (clamped by the capsule cast)
         float upSpeed;            // jump/gravity speed along motor.Up
         int jumpsUsed;
         float lastGroundedTime = -10f;
@@ -73,13 +78,90 @@ namespace TWR.Player
             UpdateVertical(dt);
 
             float upSpeedBeforeMove = upSpeed;
-            motor.Move((planarVelocity + impulseVelocity + up * upSpeed) * dt);
+            Vector3 knockStep = KnockbackStep(dt);
+            motor.Move((planarVelocity + impulseVelocity + up * upSpeed) * dt + knockStep);
 
             if (motor.HitCeiling && upSpeed > 0f) upSpeed = 0f; // bonk: stop rising
 
             UpdateGrounded(upSpeedBeforeMove);
             HorizontalSpeed = Vector3.ProjectOnPlane(motor.Velocity, up).magnitude;
             impulseVelocity = Vector3.MoveTowards(impulseVelocity, Vector3.zero, tuning.impulseDrag * dt);
+            UpdateKnockback(dt, knockStep);
+        }
+
+        // ---------- knockback (D-182, D-191) ----------
+
+        /// <summary>
+        /// Push the player along the ground by up to distance metres (Bull fast charge, D-182). Planar only. The distance is
+        /// shortened first by a capsule cast (the player's capsule size) against everything solid except bodies, so the
+        /// push ends at the first wall or column; then it is applied over the next frames through IPlayerMotor.Move with a
+        /// start speed of sqrt(2 x deceleration x distance). Never a teleport; deals no damage itself (D-190).
+        /// </summary>
+        public void ApplyKnockback(Vector3 direction, float distance)
+        {
+            if (motor == null || tuning == null || distance <= 0f) return;
+            Vector3 up = motor.Up;
+            Vector3 flat = Vector3.ProjectOnPlane(direction, up);
+            if (flat.sqrMagnitude < 0.0001f) return;
+            flat.Normalize();
+
+            float allowed = ClampKnockbackDistance(flat, distance, up);
+            if (allowed <= 0.05f)
+            {
+                knockbackVelocity = Vector3.zero;
+                knockbackRemaining = 0f;
+                return;
+            }
+            knockbackRemaining = allowed;
+            knockbackVelocity = flat * Mathf.Sqrt(2f * tuning.knockbackDeceleration * allowed);
+        }
+
+        /// <summary>True while a knockback is still pushing the player.</summary>
+        public bool IsKnockedBack => knockbackRemaining > 0f;
+
+        float ClampKnockbackDistance(Vector3 direction, float distance, Vector3 up)
+        {
+            float radius = Mathf.Max(0.05f, tuning.controllerRadius * 0.95f);
+            float height = Mathf.Max(motor.Height, radius * 2f + 0.4f);
+            Vector3 feet = transform.position;
+            // Bottom sphere lifted above step height, so small floor bumps don't stop the push.
+            Vector3 bottom = feet + up * (radius + 0.35f);
+            Vector3 top = feet + up * Mathf.Max(radius + 0.35f, height - radius);
+            int mask = GameLayers.WithoutActors(tuning.obstacleMask);
+            if (Physics.CapsuleCast(bottom, top, radius, direction, out RaycastHit hit, distance, mask, QueryTriggerInteraction.Ignore))
+                return Mathf.Max(0f, hit.distance - 0.05f);
+            return distance;
+        }
+
+        Vector3 KnockbackStep(float dt)
+        {
+            if (knockbackRemaining <= 0f) return Vector3.zero;
+            Vector3 step = knockbackVelocity * dt;
+            float length = step.magnitude;
+            if (length > knockbackRemaining) step *= knockbackRemaining / length;
+            return step;
+        }
+
+        void UpdateKnockback(float dt, Vector3 intended)
+        {
+            if (knockbackRemaining <= 0f) return;
+            float intendedLength = intended.magnitude;
+            knockbackRemaining -= intendedLength;
+
+            // Blocked by something the cast didn't see (a moving body, a corner): stop at once (D-191).
+            if (dt > 0f && intendedLength > 0.0001f)
+            {
+                float intendedSpeed = intendedLength / dt;
+                float achieved = Vector3.Dot(motor.Velocity, intended / intendedLength);
+                if (intendedSpeed > 1f && achieved < intendedSpeed * tuning.knockbackBlockedRatio) knockbackRemaining = 0f;
+            }
+
+            knockbackVelocity = Vector3.MoveTowards(knockbackVelocity, Vector3.zero, tuning.knockbackDeceleration * dt);
+            if (knockbackRemaining <= 0f || knockbackVelocity.sqrMagnitude < 0.0001f)
+            {
+                knockbackRemaining = 0f;
+                knockbackVelocity = Vector3.zero;
+            }
         }
 
         void UpdateCrouch(float dt)
@@ -138,6 +220,7 @@ namespace TWR.Player
                 TryJump();
 
             upSpeed += tuning.gravity * dt;
+            if (upSpeed < -tuning.maxFallSpeed) upSpeed = -tuning.maxFallSpeed; // D-191: capped fall, no fall damage
         }
 
         /// <summary>Jump if allowed. First jump needs ground (or coyote time); extra jumps use MaxJumps (D-033).</summary>
@@ -193,6 +276,8 @@ namespace TWR.Player
         {
             planarVelocity = Vector3.zero;
             impulseVelocity = Vector3.zero;
+            knockbackVelocity = Vector3.zero;
+            knockbackRemaining = 0f;
             upSpeed = 0f;
             jumpsUsed = 0;
             HorizontalSpeed = 0f;
@@ -220,6 +305,7 @@ namespace TWR.Player
             Quaternion turn = Quaternion.AngleAxis(yawDelta, motor.Up);
             planarVelocity = turn * planarVelocity;
             impulseVelocity = turn * impulseVelocity;
+            knockbackVelocity = turn * knockbackVelocity;
         }
     }
 }

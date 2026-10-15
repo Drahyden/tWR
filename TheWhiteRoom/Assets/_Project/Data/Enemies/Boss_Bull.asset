@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf9c858b78fabb96435c67522584916f, type: 3}
+  m_Name: Boss_Bull
+  m_EditorClassIdentifier: Assembly-CSharp::TWR.Enemies.BullData
+  bossId: boss.bull
+  displayName:
+    m_TableReference:
+      m_TableCollectionName: UI
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: boss.bull.name
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  maxHealth: 1000
+  phaseTwoThreshold: 0.5
+  vanishSeconds: 1.5
+  hurtSoundInterval: 0.35
+  decisionsPerSecond: 5
+  environmentMask:
+    serializedVersion: 2
+    m_Bits: 1
+  ammoRespawnSeconds: 20
+  sounds: {fileID: 11400000, guid: 722ae1f0f5573854c9a1973aaf9706a0, type: 2}
+  walkSpeed: 4.5
+  angularSpeed: 240
+  aimTurnSpeed: 180
+  repathsPerSecond: 3
+  chargeTelegraphSeconds: 1
+  aimLockFraction: 0.75
+  chargeSpeed: 16
+  chargeDamage: 30
+  maxChargeDistance: 60
+  minChargeDistance: 8
+  maxChargeStartDistance: 45
+  skidDistance: 3
+  recoverSeconds: 1
+  chargeHalfExtents: {x: 1.2, y: 1, z: 2.2}
+  chargeSweepHeight: 1.4
+  fastTelegraphSeconds: 1
+  fastChargeSpeed: 26
+  fastChargeDamage: 45
+  knockbackDistance: 20
+  fastChargeCountMin: 2
+  fastChargeCountMax: 5
+  curatedFastChargeCounts: 03000000040000000200000005000000
+  stunSeconds: 3
+  stunnedDamageMultiplier: 2
+  columnHitsToBreak: 2
+  stompTriggerDistance: 5
+  stompRadius: 4
+  stompMaxHeightDifference: 2.5
+  stompDamage: 20
+  stompWindUpSeconds: 0.7
+  stompCooldown: 4
+  references:
+    version: 2
+    RefIds: []

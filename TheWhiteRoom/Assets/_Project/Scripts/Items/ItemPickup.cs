@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using TWR.Core;
 
@@ -8,6 +9,8 @@ namespace TWR.Items
     /// touches the trigger, as much as fits is added (D-120: ammo +12, capped at 99 per D-037);
     /// any leftover stays in the pickup, and a full stack means nothing happens. Collecting emits a quiet
     /// Pickup noise (D-079) and ItemEvents.PickedUp (D-080).
+    /// When it is empty it raises Depleted and is destroyed, or, if KeepWhenEmpty is set (boss-arena ammo respawn,
+    /// D-188), it only switches itself off so Refill can bring it back at the same spot.
     /// Setup (done by TWR > Build Test Scene): trigger collider on the "Ignore Raycast" layer so it never
     /// blocks movement, bullets or the interaction ray, plus a kinematic Rigidbody so trigger events fire.
     /// </summary>
@@ -19,15 +22,23 @@ namespace TWR.Items
         [SerializeField, Min(0)] int amountOverride;
 
         int remaining;
+        int fullAmount;
         Collider lastOther;          // cache: GetComponentInParent only runs for a NEW collider
         Inventory lastInventory;
 
         public ItemData Item => item;
         public int Remaining => remaining;
 
+        /// <summary>The pickup was emptied (before it is destroyed or switched off).</summary>
+        public event Action<ItemPickup> Depleted;
+
+        /// <summary>Switch off instead of being destroyed when empty, so Refill can bring it back (D-188).</summary>
+        public bool KeepWhenEmpty { get; set; }
+
         void Awake()
         {
-            remaining = amountOverride > 0 ? amountOverride : (item != null ? item.pickupAmount : 0);
+            fullAmount = amountOverride > 0 ? amountOverride : (item != null ? item.pickupAmount : 0);
+            remaining = fullAmount;
             var trigger = GetComponent<Collider>();
             if (!trigger.isTrigger)
             {
@@ -61,7 +72,19 @@ namespace TWR.Items
             NoiseSystem.Emit(transform.position, item.pickupNoiseRadius, NoiseType.Pickup, collector);
             ItemEvents.RaisePickedUp(collector, item, taken);
 
-            if (remaining <= 0) Destroy(gameObject);
+            if (remaining > 0) return;
+            Depleted?.Invoke(this);
+            if (KeepWhenEmpty) gameObject.SetActive(false);
+            else Destroy(gameObject);
+        }
+
+        /// <summary>Full again and visible at its current spot (boss-arena respawn, D-188).</summary>
+        public void Refill()
+        {
+            remaining = fullAmount;
+            lastOther = null;
+            lastInventory = null;
+            gameObject.SetActive(true);
         }
     }
 }

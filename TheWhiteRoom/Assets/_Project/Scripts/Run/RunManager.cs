@@ -28,6 +28,8 @@ namespace TWR.Run
     /// in Start), through SectionRoller. Seed 0 (curated) applies the authored defaults. The result is kept per plan stop
     /// as a SectionRollReport for the debug overlay and logged as "[Run] Rolls for ..." (D-172: overlay/log only).
     /// The lobby is never rolled (D-179).
+    /// R4 (D-185, D-189): TryGetRollContext hands the loaded section's context to the boss (its boss stream = category 3),
+    /// and DebugGoToBossArena lets the F1 overlay jump straight to either boss arena.
     /// </summary>
     [DefaultExecutionOrder(-200)]
     [DisallowMultipleComponent]
@@ -90,6 +92,9 @@ namespace TWR.Run
         public event Action<int, SectionRollReport> SectionRolled;
 
         readonly Dictionary<int, SectionRollReport> rollReports = new Dictionary<int, SectionRollReport>();
+        bool hasRollContext;
+        SectionRollContext rollContext;
+        string rollContextScene;
         readonly List<GunData> runStartGuns = new List<GunData>(5);
         SectionLoader loader;
         string homeSceneName;
@@ -191,12 +196,26 @@ namespace TWR.Run
             int branch = SectionRollContext.BranchOf(Plan, CurrentStopIndex, ActivePath);
             var context = new SectionRollContext(Plan.Seed, branch, CurrentStopIndex, mode, section);
 
+            hasRollContext = true;
+            rollContext = context;
+            rollContextScene = scene.name;
+
             SectionRollReport report = SectionRoller.Apply(scene, context, CurrentStopIndex, RunStartGuns());
             rollReports[CurrentStopIndex] = report;
             foreach (string problem in report.Problems)
                 Debug.LogError($"[Run] Roll fallback in {section.DisplayId}: {problem}.", this);
             Log(report.OneLine());
             SectionRolled?.Invoke(CurrentStopIndex, report);
+        }
+
+        /// <summary>
+        /// The roll context of the section scene that is loaded right now (D-172), e.g. for the boss stream (category 3,
+        /// D-189). False outside Core mode, in the lobby, or if this scene is not the current plan stop.
+        /// </summary>
+        public bool TryGetRollContext(Scene scene, out SectionRollContext context)
+        {
+            context = rollContext;
+            return hasRollContext && Plan != null && scene.IsValid() && scene.name == rollContextScene;
         }
 
         /// <summary>The player's run-start guns (D-120), read once from the persistent player's WeaponInventory.</summary>
@@ -257,6 +276,7 @@ namespace TWR.Run
 
             Plan = plan;
             rollReports.Clear(); // rolls belong to one run (D-172)
+            hasRollContext = false;
             CurrentStopIndex = RunPlan.LobbyIndex;
             ActivePath = RunPath.None;
             RunNumber++;
@@ -433,6 +453,45 @@ namespace TWR.Run
             ActivePath = path;
             Log($"Path chosen: {path} -> {RunPlan.Name(Plan.GetPathSection(path))} then {RunPlan.Name(Plan.GetBossArena(path))}");
             PathChosen?.Invoke(path);
+            return true;
+        }
+
+        /// <summary>
+        /// Debug only (F1 overlay, D-185): go straight to the boss arena of a path through the real SectionLoader. The plan
+        /// stays consistent: the active path becomes that path (overriding an earlier choice) and the current stop becomes
+        /// the plan's boss stop, so the arena's rolls (and the boss stream, D-189) are the ones this seed would give there.
+        /// The stops in between are skipped and logged. Core mode only.
+        /// </summary>
+        public bool DebugGoToBossArena(RunPath path)
+        {
+            if (!IsRunActive || path == RunPath.None) return false;
+            if (!IsCoreMode)
+            {
+                Debug.LogWarning("[Run] Debug boss jump needs the Core scene (sections are only tracked in the sandbox).", this);
+                return false;
+            }
+            if (IsTransitioning)
+            {
+                Log("A section transition is already running; debug boss jump ignored.");
+                return false;
+            }
+            SectionData arena = Plan.GetBossArena(path);
+            if (arena == null || !CanLoad(arena.sceneName))
+            {
+                Debug.LogError($"[Run] Debug: the {path} boss arena '{RunPlan.Name(arena)}' has no loadable scene. Run TWR > Run > Build Run Scenes.", this);
+                return false;
+            }
+
+            string from = CurrentStopIndex == RunPlan.LobbyIndex ? "hub lobby" : RunPlan.Name(CurrentSection);
+            RunPath oldPath = ActivePath;
+            RaiseSectionEnded();
+            ActivePath = path;
+            if (oldPath == RunPath.None) PathChosen?.Invoke(path);
+            CurrentStopIndex = Plan.BossIndex;
+            Log($"Debug: jumped from {from} to {RunPlan.Name(arena)} (stop {Plan.BossIndex}, path {path}" +
+                $"{(oldPath != RunPath.None && oldPath != path ? ", was " + oldPath : "")}); the stops in between are skipped (D-185).");
+            SectionChanged?.Invoke(CurrentStopIndex, arena);
+            loader.Load(arena.sceneName, onSectionLoaded);
             return true;
         }
 

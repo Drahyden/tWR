@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 899b35d825e817aa4f818b8abcba6623, type: 3}
+  m_Name: Boss_Preacher
+  m_EditorClassIdentifier: Assembly-CSharp::TWR.Enemies.PreacherData
+  bossId: boss.preacher
+  displayName:
+    m_TableReference:
+      m_TableCollectionName: UI
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: boss.preacher.name
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  maxHealth: 750
+  phaseTwoThreshold: 0.5
+  vanishSeconds: 1.5
+  hurtSoundInterval: 0.35
+  decisionsPerSecond: 5
+  environmentMask:
+    serializedVersion: 2
+    m_Bits: 1
+  ammoRespawnSeconds: 20
+  sounds: {fileID: 11400000, guid: 3fa940ac457fc2546b8a1361aa38394b, type: 2}
+  teleportIntervalPhaseOne: 6
+  teleportIntervalPhaseTwo: 3.5
+  teleportTelegraphSeconds: 1
+  noFireAfterArrivalSeconds: 1
+  retryTeleportSeconds: 1
+  maxHorizontalDistance: 40
+  maxVerticalDistance: 20
+  minTeleportDistance: 8
+  behindChancePercent: 60
+  playerViewConeAngle: 100
+  behindHeightBand: 5
+  behindMinDistance: 6
+  volleyCountMin: 3
+  volleyCountMax: 5
+  projectileDamage: 10
+  projectileSpeed: 15
+  projectileRadius: 0.3
+  projectileLifetime: 6
+  spreadDegrees: 4
+  shotInterval: 0.15
+  volleyCooldown: 2.2
+  volleyWindUpSeconds: 0.35
+  maxFireDistance: 70
+  references:
+    version: 2
+    RefIds: []

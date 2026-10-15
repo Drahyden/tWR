@@ -41,6 +41,9 @@ namespace TWR.EditorTools
             ("sign.exit", "EXIT"),
             ("sign.basement", "BASEMENT"),
             ("run.complete", "Run complete"),
+            // Run Structure R4: boss names on the HUD boss bar (D-185, D-193). Placeholder names (GDD §14).
+            ("boss.bull.name", "The Bull"),
+            ("boss.preacher.name", "The Preacher"),
         };
 
         const string SubtitlesTable = "Subtitles";

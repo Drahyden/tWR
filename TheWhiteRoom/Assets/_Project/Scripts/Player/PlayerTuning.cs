@@ -6,6 +6,7 @@ namespace TWR.Player
     /// All tunable numbers for the first-person player in one asset (D-032 moveset, D-079 noises).
     /// Named "PlayerTuning" to avoid clashing with UnityEditor.PlayerSettings.
     /// Values marked "OPEN" are placeholder defaults for GDD items that are not decided yet.
+    /// R4 (D-182, D-191): fall-speed cap (no fall damage anywhere) and the knockback deceleration of a Bull fast charge.
     /// Create via: Project window > right-click > Create > TWR > Player Tuning.
     /// </summary>
     [CreateAssetMenu(fileName = "PlayerTuning", menuName = "TWR/Player Tuning")]
@@ -28,8 +29,16 @@ namespace TWR.Player
         public float gravity = -20f;
         [Tooltip("Grace time after walking off a ledge where a jump still counts as a ground jump.")]
         public float coyoteTime = 0.1f;
-        [Tooltip("How quickly impulses from AddImpulse (dash, knockback) fade, m/s per second.")]
+        [Tooltip("How quickly impulses from AddImpulse (dash, launch pads) fade, m/s per second.")]
         public float impulseDrag = 12f;
+        [Tooltip("Fastest fall speed (m/s, D-191: about 40). There is no fall damage anywhere (D-191); landing noise stays capped by landNoiseMax.")]
+        [Min(5f)] public float maxFallSpeed = 40f;
+
+        [Header("Knockback - D-182, D-191")]
+        [Tooltip("How quickly a knockback slows down (m/s per second). Start speed = sqrt(2 x this x distance), so it slides exactly the distance.")]
+        [Min(1f)] public float knockbackDeceleration = 20f;
+        [Tooltip("A knockback stops at once when the motor moves less than this share of the intended push (blocked by a wall).")]
+        [Range(0.05f, 0.9f)] public float knockbackBlockedRatio = 0.3f;
 
         [Header("Body heights (m)")]
         public float standingHeight = 1.8f;

@@ -33,7 +33,8 @@ namespace TWR.EditorTools
     /// - Section_Puzzle (existing puzzle room + Seeker, exit gated by MainPuzzlesSolved), Section_Combat (3 Seekers,
     ///   cover, health), Section_Stealth (D-169: 2 patrols, crouch/cover route, health), Section_ImpossibleGeometry
     ///   (D-164: own portal pair, exit inside the hall), Section_Silent (D-168), Fork (D-150, D-166: EXIT door +
-    ///   black BASEMENT door, health), Boss_Escape / Boss_Discover (placeholder bull / preacher, D-148).
+    ///   black BASEMENT door, health), Boss_Escape / Boss_Discover (R4: the Bull and Preacher arenas, built in
+    ///   TestSceneBuilder.BossArenas.cs, D-180 to D-194).
     /// Every content scene: entry vestibule with a one-way locked door behind the SectionEntry, an exit door with a
     /// SectionExitGate and a SectionExit trigger in the corridor behind it, and its own baked + saved NavMesh. Then it
     /// fills SectionData.sceneName / exitCondition, the RunConfig scene names and Build Settings (Core first) and
@@ -50,8 +51,6 @@ namespace TWR.EditorTools
         const string LobbySceneName = "Lobby";
         const string HealthItemPath = Root + "/Data/Items/Item_Health.asset";
         const string SoundscapeSettingsPath = Root + "/Data/Audio/SoundscapeSettings.asset";
-        const string BossBullDataPath = Root + "/Data/Enemies/BossStub_Bull.asset";
-        const string BossPreacherDataPath = Root + "/Data/Enemies/BossStub_Preacher.asset";
 
         // Every run door (entry, exit, fork) has this opening: same as the slice puzzle exit door (D-127).
         const float RunDoorWidth = 1.6f;
@@ -95,9 +94,12 @@ namespace TWR.EditorTools
             public RunConfig config;
             public HealthItemData health;
             public SoundscapeSettings soundscape;
-            public BossStubData bull, preacher;
+            public BullData bull;
+            public PreacherData preacher;
+            public BossSoundSet bullSounds, preacherSounds;
             public Material white, whiteEmissive, offWhite, glow, door, blackDoor, lockLight, dark, ammo, wood, plant, target;
             public Material healthBox, healthCross, signPlate, exitSign, skin, eye;
+            public Material cracked, orb, horn;
         }
 
         struct RunDoor
@@ -128,7 +130,7 @@ namespace TWR.EditorTools
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return;
 
-            Debug.Log("[TWR] Building the run scenes (R2 + R3, D-161 to D-179) in " + RunScenesFolder + " ...");
+            Debug.Log("[TWR] Building the run scenes (R2 to R4, D-161 to D-194) in " + RunScenesFolder + " ...");
             EnsureFolder(RunScenesFolder);
             seekerPrefabBuiltThisPass = false;
 
@@ -196,11 +198,9 @@ namespace TWR.EditorTools
                 h.healAmount = 25f;        // D-171 default
             });
             a.soundscape = LoadOrCreate<SoundscapeSettings>(SoundscapeSettingsPath, null);
-            a.bull = LoadOrCreate<BossStubData>(BossBullDataPath, d => { d.bossId = "boss.bull"; d.maxHealth = 150f; });
-            a.preacher = LoadOrCreate<BossStubData>(BossPreacherDataPath, d => { d.bossId = "boss.preacher"; d.maxHealth = 150f; });
-            if (a.health == null || a.soundscape == null || a.bull == null || a.preacher == null)
+            if (a.health == null || a.soundscape == null || !PrepareBossAssets(ref a)) // R4 BossData (TestSceneBuilder.BossArenas.cs)
             {
-                Debug.LogError("[TWR] Could not create the R2 assets (health item, soundscape settings, boss stubs).");
+                Debug.LogError("[TWR] Could not create the run assets (health item, soundscape settings, boss data).");
                 return false;
             }
             if (a.health.displayName == null || a.health.displayName.IsEmpty)
@@ -227,6 +227,9 @@ namespace TWR.EditorTools
             a.exitSign = GetOrCreateMaterial("M_ExitSignBox", new Color(0.04f, 0.07f, 0.05f), Color.black);
             a.skin = GetOrCreateMaterial("M_SeekerSkin", new Color(0.93f, 0.86f, 0.78f), Color.black);
             a.eye = GetOrCreateMaterial("M_SeekerEye", new Color(0.01f, 0.01f, 0.01f), Color.black);
+            a.cracked = GetOrCreateMaterial("M_ColumnCracked", new Color(0.8f, 0.78f, 0.74f), Color.black);   // D-190 breakable columns
+            a.orb = GetOrCreateMaterial("M_PreacherOrb", new Color(0.04f, 0.02f, 0.02f), new Color(0.6f, 0.04f, 0.04f)); // D-184 projectiles
+            a.horn = GetOrCreateMaterial("M_BoneHorn", new Color(0.9f, 0.88f, 0.8f), Color.black);
             AssetDatabase.SaveAssets();
             return true;
         }
@@ -263,6 +266,7 @@ namespace TWR.EditorTools
             player.transform.SetPositionAndRotation(new Vector3(0f, 0.05f, 0f), Quaternion.identity); // moved to each SectionEntry at runtime
             GameObject hud = BuildHud(player.GetComponent<PlayerInteractor>());
             BuildCombatHud(hud, player);
+            BuildBossHud(hud);                          // R4: boss HP bar, hidden until a fight starts (D-185)
             BuildPortalRuntime(a.portal, player);      // PortalRenderManager: portals come and go with the sections
             BuildAmbientBedObject();                    // keeps playing across section loads (D-167)
             ScreenFader fader = BuildScreenFader();
@@ -578,92 +582,6 @@ namespace TWR.EditorTools
                 ("fork.health.ne", new Vector3(6f, 0f, 11f), false),
             });
             return true;
-        }
-
-        // ---------- Boss arenas (D-148, D-165 BossDefeated stub) ----------
-
-        static bool BuildBossEscapeScene() => BuildBossScene(true);
-        static bool BuildBossDiscoverScene() => BuildBossScene(false);
-
-        static bool BuildBossScene(bool bull)
-        {
-            if (!PrepareRunSceneAssets(out RunSceneAssets a, false)) return false;
-            Transform root = new GameObject(bull ? "Boss Arena: Escape / bull (D-148)" : "Boss Arena: Discover / preacher (D-148)").transform;
-
-            // Empty arena x -12..12, z 4..24, 8 m high; the exit unlocks when the boss placeholder is beaten (D-165).
-            BuildSectionShell(root, a, 24f, 20f, 8f, a.whiteEmissive, new[] { 0f }, true, SectionExitCondition.BossDefeated);
-            BuildBossPlaceholder(root, a, bull ? a.bull : a.preacher, bull);
-            ItemPickup ammoW = AmmoPickup("Ammo Pickup (arena W)", new Vector3(-9f, 0f, 7f), a.combat, a.ammo, root);
-            ItemPickup ammoE = AmmoPickup("Ammo Pickup (arena E)", new Vector3(9f, 0f, 7f), a.combat, a.ammo, root);
-            // D-177: boss arenas always keep exactly 2 ammo pickups; only their spots are rolled.
-            BuildPickupGroup(root, "boss.ammo", new[] { ammoW, ammoE }, "", new[]
-            {
-                ("boss.ammo.sw", new Vector3(-9f, 0f, 7f), true),
-                ("boss.ammo.se", new Vector3(9f, 0f, 7f), true),
-                ("boss.ammo.w", new Vector3(-10f, 0f, 13f), false),
-                ("boss.ammo.e", new Vector3(10f, 0f, 13f), false),
-                ("boss.ammo.nw", new Vector3(-10f, 0f, 20f), false),
-                ("boss.ammo.ne", new Vector3(10f, 0f, 20f), false),
-            });
-            return true;
-        }
-
-        /// A primitive stand-in (no AI): shoot it until its BossStubData HP runs out. Enemy layer, BossMarker (D-158).
-        static void BuildBossPlaceholder(Transform parent, RunSceneAssets a, BossStubData data, bool bull)
-        {
-            var go = new GameObject(bull ? "Boss Placeholder - Bull (D-048, D-069)" : "Boss Placeholder - Preacher (D-047, D-068)");
-            go.transform.SetParent(parent, false);
-            go.transform.SetPositionAndRotation(new Vector3(0f, 0f, 16f), Quaternion.LookRotation(Vector3.back));
-            var box = go.AddComponent<BoxCollider>(); // what bullets hit
-
-            if (bull)
-            {
-                box.size = new Vector3(1.8f, 2.1f, 3.6f);
-                box.center = new Vector3(0f, 1.05f, 0.2f);
-                BossPart("Body", PrimitiveType.Capsule, go.transform, new Vector3(0f, 1.15f, 0f), new Vector3(1.5f, 1.5f, 1.5f), new Vector3(90f, 0f, 0f), a.skin);
-                BossPart("Head", PrimitiveType.Sphere, go.transform, new Vector3(0f, 1.35f, 1.75f), Vector3.one * 0.9f, Vector3.zero, a.skin);
-                BossPart("Horn L", PrimitiveType.Cylinder, go.transform, new Vector3(-0.45f, 1.85f, 1.85f), new Vector3(0.08f, 0.35f, 0.08f), new Vector3(0f, 0f, 40f), a.offWhite);
-                BossPart("Horn R", PrimitiveType.Cylinder, go.transform, new Vector3(0.45f, 1.85f, 1.85f), new Vector3(0.08f, 0.35f, 0.08f), new Vector3(0f, 0f, -40f), a.offWhite);
-                BossPart("Eye L", PrimitiveType.Sphere, go.transform, new Vector3(-0.25f, 1.5f, 2.15f), Vector3.one * 0.16f, Vector3.zero, a.eye);
-                BossPart("Eye R", PrimitiveType.Sphere, go.transform, new Vector3(0.25f, 1.5f, 2.15f), Vector3.one * 0.16f, Vector3.zero, a.eye);
-                for (int i = 0; i < 4; i++)
-                {
-                    float x = i % 2 == 0 ? -0.5f : 0.5f, z = i < 2 ? -0.9f : 0.9f;
-                    BossPart("Leg " + (i + 1), PrimitiveType.Cylinder, go.transform, new Vector3(x, 0.35f, z), new Vector3(0.25f, 0.35f, 0.25f), Vector3.zero, a.skin);
-                }
-            }
-            else
-            {
-                box.size = new Vector3(1.4f, 3.7f, 1.2f);
-                box.center = new Vector3(0f, 1.85f, 0f);
-                BossPart("Body", PrimitiveType.Capsule, go.transform, new Vector3(0f, 1.6f, 0f), new Vector3(0.8f, 1.6f, 0.8f), Vector3.zero, a.skin);
-                BossPart("Head", PrimitiveType.Sphere, go.transform, new Vector3(0f, 3.4f, 0f), Vector3.one * 0.55f, Vector3.zero, a.skin);
-                BossPart("Eye", PrimitiveType.Sphere, go.transform, new Vector3(0f, 3.45f, 0.24f), new Vector3(0.3f, 0.15f, 0.1f), Vector3.zero, a.eye);
-                // Four long arms (D-068).
-                BossPart("Arm Upper L", PrimitiveType.Cylinder, go.transform, new Vector3(-0.65f, 2.3f, 0.1f), new Vector3(0.1f, 0.75f, 0.1f), new Vector3(0f, 0f, -25f), a.skin);
-                BossPart("Arm Upper R", PrimitiveType.Cylinder, go.transform, new Vector3(0.65f, 2.3f, 0.1f), new Vector3(0.1f, 0.75f, 0.1f), new Vector3(0f, 0f, 25f), a.skin);
-                BossPart("Arm Lower L", PrimitiveType.Cylinder, go.transform, new Vector3(-0.6f, 1.6f, 0.1f), new Vector3(0.1f, 0.75f, 0.1f), new Vector3(0f, 0f, -10f), a.skin);
-                BossPart("Arm Lower R", PrimitiveType.Cylinder, go.transform, new Vector3(0.6f, 1.6f, 0.1f), new Vector3(0.1f, 0.75f, 0.1f), new Vector3(0f, 0f, 10f), a.skin);
-            }
-
-            int enemyLayer = LayerMask.NameToLayer(EnemyLayerName);
-            if (enemyLayer >= 0) SetLayerRecursively(go, enemyLayer); // shootable, never baked into the NavMesh
-            go.AddComponent<BossMarker>();
-            var boss = go.AddComponent<BossPlaceholder>();
-            Assign(boss, "data", data);
-        }
-
-        static void BossPart(string name, PrimitiveType shape, Transform parent, Vector3 localPosition, Vector3 localScale,
-                             Vector3 localEuler, Material material)
-        {
-            GameObject go = GameObject.CreatePrimitive(shape);
-            go.name = name;
-            Object.DestroyImmediate(go.GetComponent<Collider>()); // the root's box is the only collider
-            go.transform.SetParent(parent, false);
-            go.transform.localPosition = localPosition;
-            go.transform.localRotation = Quaternion.Euler(localEuler);
-            go.transform.localScale = localScale;
-            go.GetComponent<MeshRenderer>().sharedMaterial = material;
         }
 
         // ---------- shared section pieces ----------
