@@ -6,7 +6,7 @@ namespace TWR.Core
     /// <summary>
     /// Development stand-in for the inner-voice player (D-080): writes every VoiceEvents cue to the Console
     /// with its subtitle key, so voice triggers can be tested before any line is recorded (D-031).
-    /// Covers section start/end (D-167), fork doors (D-166), puzzle family hints (D-178) and boss fight cues (D-185).
+    /// Covers section start/end (D-167), fork doors (D-166), puzzle family hints (D-178) and boss fight cues (D-185) and ending lines (D-199).
     /// Lives in the Core scene. Logs only; never shown to the player.
     /// </summary>
     public class VoiceEventLogger : MonoBehaviour
@@ -18,6 +18,7 @@ namespace TWR.Core
             VoiceEvents.ForkDoorSeen += HandleForkDoorSeen;
             VoiceEvents.PuzzleHint += HandlePuzzleHint;
             VoiceEvents.BossCue += HandleBossCue;
+            VoiceEvents.EndingLine += HandleEndingLine;
         }
 
         void OnDisable()
@@ -27,6 +28,7 @@ namespace TWR.Core
             VoiceEvents.ForkDoorSeen -= HandleForkDoorSeen;
             VoiceEvents.PuzzleHint -= HandlePuzzleHint;
             VoiceEvents.BossCue -= HandleBossCue;
+            VoiceEvents.EndingLine -= HandleEndingLine;
         }
 
         void HandleBossCue(string bossId, string cue) => Debug.Log($"[Voice] boss {cue}: {bossId} (no line yet, D-185)", this);
@@ -39,6 +41,9 @@ namespace TWR.Core
 
         void HandlePuzzleHint(string puzzleId, LocalizedString subtitle) =>
             Debug.Log($"[Voice] puzzle hint: {puzzleId} | subtitle {Key(subtitle)} (no audio yet)", this);
+
+        void HandleEndingLine(string endingId, LocalizedString subtitle) =>
+            Debug.Log($"[Voice] ending line: {endingId} | subtitle {Key(subtitle)} (no audio yet, D-199)", this);
 
         static string Key(LocalizedString subtitle) => subtitle == null || subtitle.IsEmpty
             ? "(none)"

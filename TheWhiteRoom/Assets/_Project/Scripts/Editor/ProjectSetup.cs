@@ -14,6 +14,7 @@ namespace TWR.EditorTools
     /// Editor menu "TWR/Setup Project": one-click project setup so nothing has to be clicked by hand.
     /// Imports TMP Essentials, creates/activates Localization Settings, the English locale (project locale
     /// + Specific Locale Selector), and the "UI" string table with its starter entries (D-084).
+    /// R5 (D-199 to D-202): ending titles, end-of-run screen patterns, main menu labels (UI) and the ending lines (Subtitles).
     /// Through TestSceneBuilder.PrepareSharedAssets it also creates the layers and sets up the
     /// draw-the-gun-on-top renderer features (WeaponRenderSetup, D-123).
     /// Safe to run any time: it only creates or fixes what is missing. "TWR/Build Test Scene" runs it first.
@@ -44,6 +45,31 @@ namespace TWR.EditorTools
             // Run Structure R4: boss names on the HUD boss bar (D-185, D-193). Placeholder names (GDD §14).
             ("boss.bull.name", "The Bull"),
             ("boss.preacher.name", "The Preacher"),
+            // Run Structure R5: ending titles (D-195 to D-198), end-of-run screen (D-200), main menu (D-202).
+            // Patterns use {0}/{1}/{2} placeholders filled by code (plain string.Format, not Smart Strings).
+            ("ending.clock_out.title", "Clock Out"),
+            ("ending.overtime.title", "Overtime"),
+            ("ending.floor_plan.title", "Floor Plan"),
+            ("ending.absorbed.title", "Absorbed"),
+            ("endscreen.path.escape", "Path: Escape"),
+            ("endscreen.path.discover", "Path: Discover"),
+            ("endscreen.score.good", "Score: {0} / 100 - Good"),
+            ("endscreen.score.poor", "Score: {0} / 100 - Poor"),
+            ("endscreen.kills", "Enemies killed: {0} / {1} ({2} pts)"),
+            ("endscreen.puzzles", "Optional puzzles: {0} / {1} ({2} pts)"),
+            ("endscreen.time", "Run time: {0}"),
+            ("endscreen.seed", "Seed {0}"),
+            ("endscreen.endings_found", "Endings found: {0} / {1}"),
+            ("endscreen.slot.locked", "???"),
+            ("endscreen.new_run", "New run"),
+            ("endscreen.main_menu", "Main menu"),
+            ("menu.title", "THE WHITE ROOM"),
+            ("menu.new_run", "New run"),
+            ("menu.settings", "Settings"),
+            ("menu.quit", "Quit"),
+            ("menu.settings.title", "Settings"),
+            ("menu.settings.placeholder", "Nothing to set yet."),
+            ("menu.back", "Back"),
         };
 
         const string SubtitlesTable = "Subtitles";
@@ -58,6 +84,10 @@ namespace TWR.EditorTools
             ("hint.puzzle.allactive_latch", "(placeholder) Three switches. Light them all up."),
             ("hint.puzzle.sequence_latch", "(placeholder) They lit up in an order. Maybe that order matters."),
             ("hint.puzzle.allactive_toggle", "(placeholder) Hit one twice and it goes dark again. Careful."),
+            // R5 (D-199): the one inner-voice line of each scripted ending. Overtime (D-196) has none.
+            ("ending.clock_out.line", "(placeholder) My desk. My coworkers. The door is still behind me."),
+            ("ending.floor_plan.line", "(placeholder) So that's what it is. I think I'll stay."),
+            ("ending.absorbed.line", "(placeholder) I found it. Too late. I'm part of the room now."),
         };
 
         [MenuItem("TWR/Setup Project", priority = 0)]
@@ -228,6 +258,14 @@ namespace TWR.EditorTools
             }
             EditorUtility.SetDirty(table);
             EditorUtility.SetDirty(collection.SharedData);
+        }
+
+        /// <summary>True if the string table collection has this key (used by the [TWR] validation, D-084).</summary>
+        internal static bool TableHasKey(string tableName, string key)
+        {
+            if (string.IsNullOrEmpty(tableName) || string.IsNullOrEmpty(key)) return false;
+            StringTableCollection collection = LocalizationEditorSettings.GetStringTableCollection(tableName);
+            return collection != null && collection.SharedData != null && collection.SharedData.GetEntry(key) != null;
         }
 
         static void EnsureFolder(string path)

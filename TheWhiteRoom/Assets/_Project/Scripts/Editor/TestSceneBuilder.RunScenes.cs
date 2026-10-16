@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using TMPro;
 using Unity.AI.Navigation;
@@ -15,6 +16,7 @@ using UnityEngine.UI;
 using TWR.Audio;
 using TWR.Core;
 using TWR.Enemies;
+using TWR.Endings;
 using TWR.Items;
 using TWR.Player;
 using TWR.Portals;
@@ -43,6 +45,9 @@ namespace TWR.EditorTools
     /// R3 (D-172 to D-177, TestSceneBuilder.RunRolls.cs): the R2 spawn points and pickup positions stay as the curated
     /// defaults; every scene gets stable ids, hidden roll-only spawn spots (with partitions that hide them from the
     /// entry), pickup groups with candidate spots, and the puzzle room a 4th switch slot, tally dots and a variant pool.
+    /// R5 (D-195 to D-212, TestSceneBuilder.Endings.cs): Core also gets the end-of-run screen, the subtitle line and the
+    /// EndingSequence; the four ending scenes and the MainMenu scene are built too, and Build Settings become
+    /// MainMenu (index 0), Core, content scenes, ending scenes (D-210).
     /// </summary>
     public static partial class TestSceneBuilder
     {
@@ -130,7 +135,7 @@ namespace TWR.EditorTools
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return;
 
-            Debug.Log("[TWR] Building the run scenes (R2 to R4, D-161 to D-194) in " + RunScenesFolder + " ...");
+            Debug.Log("[TWR] Building the run scenes (R2 to R5, D-161 to D-212) in " + RunScenesFolder + " ...");
             EnsureFolder(RunScenesFolder);
             seekerPrefabBuiltThisPass = false;
 
@@ -145,16 +150,20 @@ namespace TWR.EditorTools
             built &= BuildRunScene("Fork", BuildForkScene, true);
             built &= BuildRunScene("Boss_Escape", BuildBossEscapeScene, true);
             built &= BuildRunScene("Boss_Discover", BuildBossDiscoverScene, true);
+            built &= BuildEndingScenesAndMenu(); // R5: endings + main menu (D-195 to D-202)
 
             bool configured = ConfigureRunAssetsForScenes();
+            configured &= ConfigureEndingAssets(); // ending catalog + main menu in the RunConfig (D-203, D-210)
             ConfigureRunBuildSettings();
 
             EditorSceneManager.OpenScene(RunScenePath(CoreSceneName), OpenSceneMode.Single);
             bool valid = ValidateRunSetup();
             valid &= ValidateRunScenes();
+            valid &= ValidateEndings();
 
             if (built && configured && valid)
-                Debug.Log("[TWR] Run scenes built and valid. Open " + RunScenePath(CoreSceneName) + " (already open) and press Play.");
+                Debug.Log("[TWR] Run scenes built and valid. Press Play in " + RunScenePath(CoreSceneName) + " (open) for a run, or in " +
+                          RunScenePath(MainMenuSceneName) + " for the full game flow.");
             else
                 Debug.LogError("[TWR] Run scenes built with problems (see errors above).");
         }
@@ -270,6 +279,8 @@ namespace TWR.EditorTools
             BuildPortalRuntime(a.portal, player);      // PortalRenderManager: portals come and go with the sections
             BuildAmbientBedObject();                    // keeps playing across section loads (D-167)
             ScreenFader fader = BuildScreenFader();
+            BuildSubtitleUi();                          // R5: subtitle line, on by default (D-089)
+            EndOfRunScreen endScreen = BuildEndOfRunScreen(); // R5: end-of-run screen (D-200)
             BuildEventSystem();
 
             RunManager manager = BuildRunBootstrap(a.config);
@@ -277,6 +288,10 @@ namespace TWR.EditorTools
             Assign(loader, "player", player.GetComponent<PlayerController>());
             Assign(loader, "fader", fader);
             manager.gameObject.AddComponent<VoiceEventLogger>();
+            var endings = manager.gameObject.AddComponent<EndingSequence>(); // R5: player mode, fade, end screen (D-207)
+            Assign(endings, "endScreen", endScreen);
+            Assign(endings, "hudCanvas", hud.GetComponent<Canvas>());
+            AssignArray(endings, "gameplayHud", GameplayHudGroups(hud));
             // RunStats and the debug overlay (F1/F2) are added by the RunManager at runtime.
             return true;
         }
@@ -319,6 +334,7 @@ namespace TWR.EditorTools
             var fader = canvasGO.AddComponent<ScreenFader>();
             Assign(fader, "group", group);
             Assign(fader, "messageLabel", label);
+            Assign(fader, "background", image); // R5: endings fade to white/black/tint (D-196, D-199)
             return fader;
         }
 
@@ -326,7 +342,7 @@ namespace TWR.EditorTools
         {
             var go = new GameObject("EventSystem");
             go.AddComponent<EventSystem>();
-            go.AddComponent<InputSystemUIInputModule>(); // New Input System UI module (D-038)
+            go.AddComponent<InputSystemUIInputModule>(); // New Input System UI module (D-038); default UI actions are assigned on enable
         }
 
         // ---------- Lobby (D-163) ----------
@@ -905,12 +921,18 @@ namespace TWR.EditorTools
             return ok;
         }
 
-        /// Core first, then every content scene; scenes that were already listed (sandbox, ...) stay after them.
+        /// MainMenu first (index 0, D-210), then Core, every content scene and the ending scenes; scenes that were already
+        /// listed (sandbox, ...) stay after them.
         static void ConfigureRunBuildSettings()
         {
-            var ordered = new List<EditorBuildSettingsScene> { new EditorBuildSettingsScene(RunScenePath(CoreSceneName), true) };
+            var ordered = new List<EditorBuildSettingsScene>();
+            if (File.Exists(RunScenePath(MainMenuSceneName))) ordered.Add(new EditorBuildSettingsScene(RunScenePath(MainMenuSceneName), true));
+            else Debug.LogWarning("[TWR] MainMenu scene not built yet; Core is index 0 for now. Run TWR > Run > Build Endings + Main Menu.");
+            ordered.Add(new EditorBuildSettingsScene(RunScenePath(CoreSceneName), true));
             foreach (string sceneName in RunContentScenes)
                 ordered.Add(new EditorBuildSettingsScene(RunScenePath(sceneName), true));
+            foreach (EndingSpec spec in EndingSpecs)
+                if (File.Exists(RunScenePath(spec.scene))) ordered.Add(new EditorBuildSettingsScene(RunScenePath(spec.scene), true));
             var runPaths = new HashSet<string>(ordered.Select(s => s.path));
             foreach (EditorBuildSettingsScene existing in EditorBuildSettings.scenes)
                 if (!runPaths.Contains(existing.path)) ordered.Add(existing);

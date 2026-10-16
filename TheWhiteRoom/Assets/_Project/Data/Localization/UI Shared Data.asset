@@ -63,6 +63,98 @@ MonoBehaviour:
     m_Key: boss.preacher.name
     m_Metadata:
       m_Items: []
+  - m_Id: 1122274185969664
+    m_Key: ending.clock_out.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274274050048
+    m_Key: ending.overtime.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274274050049
+    m_Key: ending.floor_plan.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274274050050
+    m_Key: ending.absorbed.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274274050051
+    m_Key: endscreen.path.escape
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274274050052
+    m_Key: endscreen.path.discover
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244352
+    m_Key: endscreen.score.good
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244353
+    m_Key: endscreen.score.poor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244354
+    m_Key: endscreen.kills
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244355
+    m_Key: endscreen.puzzles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244356
+    m_Key: endscreen.time
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244357
+    m_Key: endscreen.seed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244358
+    m_Key: endscreen.endings_found
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244359
+    m_Key: endscreen.slot.locked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244360
+    m_Key: endscreen.new_run
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244361
+    m_Key: endscreen.main_menu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244362
+    m_Key: menu.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244363
+    m_Key: menu.new_run
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244364
+    m_Key: menu.settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244365
+    m_Key: menu.quit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244366
+    m_Key: menu.settings.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244367
+    m_Key: menu.settings.placeholder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244368
+    m_Key: menu.back
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

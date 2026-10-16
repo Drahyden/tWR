@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19bd13d9f6d20b3409b0ff1f8b3809d6, type: 3}
+  m_Name: Ending_ClockOut
+  m_EditorClassIdentifier: Assembly-CSharp::TWR.Endings.EndingData
+  id: ending.clock_out
+  title:
+    m_TableReference:
+      m_TableCollectionName: UI
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: ending.clock_out.title
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  presentation: 0
+  sceneName: Ending_ClockOut
+  voiceLine:
+    m_TableReference:
+      m_TableCollectionName: Subtitles
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: ending.clock_out.line
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  graphic: {fileID: 21300000, guid: 7aa91a4930ebd3c4782f27489c2416c7, type: 3}
+  finishFadeColour: {r: 1, g: 1, b: 1, a: 1}
+  finishFadeSeconds: 1.5
+  isSecret: 0
+  priority: 10
+  rule:
+    path: 1
+    performance: 1
+    minScore: 0
+    requiredFoundEndings: []
+  references:
+    version: 2
+    RefIds: []

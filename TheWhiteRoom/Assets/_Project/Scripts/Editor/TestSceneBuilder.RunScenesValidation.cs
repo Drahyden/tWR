@@ -12,6 +12,7 @@ using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using TWR.Audio;
 using TWR.Enemies;
+using TWR.Endings;
 using TWR.Items;
 using TWR.Player;
 using TWR.Portals;
@@ -31,6 +32,8 @@ namespace TWR.EditorTools
     /// 200 m apart (D-144), and a baked NavMesh wherever Seekers
     /// spawn (stealth: at least 2 patrols, D-169). Opens each scene additively and closes it again. Logs with [TWR].
     /// R3 (D-172 to D-177): the seeded-roll checks live in TestSceneBuilder.RunRollsValidation.cs.
+    /// R5 (D-200, D-207, D-210): MainMenu is build index 0 and Core index 1; Core has the end-of-run screen, subtitles and the
+    /// EndingSequence. Ending scenes + main menu are checked in TestSceneBuilder.EndingsValidation.cs.
     /// </summary>
     public static partial class TestSceneBuilder
     {
@@ -67,16 +70,22 @@ namespace TWR.EditorTools
         {
             EditorBuildSettingsScene[] scenes = EditorBuildSettings.scenes;
             var enabledNames = new HashSet<string>(scenes.Where(s => s.enabled).Select(s => Path.GetFileNameWithoutExtension(s.path)));
-            bool coreFirst = scenes.Length > 0 && scenes[0].enabled && scenes[0].path == RunScenePath(CoreSceneName);
-            bool ok = coreFirst;
+            bool menuFirst = scenes.Length > 0 && scenes[0].enabled && scenes[0].path == RunScenePath(MainMenuSceneName);
+            bool coreSecond = scenes.Length > 1 && scenes[1].enabled && scenes[1].path == RunScenePath(CoreSceneName);
+            bool ok = menuFirst && coreSecond;
 
             var report = new StringBuilder();
-            report.AppendLine($"[TWR] Run Build Settings: Core first: {(coreFirst ? "yes" : "NO")} ({scenes.Length} scenes)");
+            report.AppendLine($"[TWR] Run Build Settings: MainMenu index 0: {(menuFirst ? "yes" : "NO")}, Core index 1: {(coreSecond ? "yes" : "NO")} " +
+                              $"({scenes.Length} scenes, D-210)");
             var required = new List<(string what, string scene)>
             {
                 ("core scene", config.coreSceneName),
                 ("lobby scene", config.lobbySceneName),
+                ("main menu scene", config.mainMenuSceneName),
             };
+            if (config.endingCatalog != null && config.endingCatalog.endings != null)
+                foreach (EndingData ending in config.endingCatalog.endings)
+                    if (ending != null) required.Add(("ending " + ending.DisplayId, ending.sceneName));
             foreach (var (asset, _) in SectionScenes)
             {
                 var section = AssetDatabase.LoadAssetAtPath<SectionData>(RunSectionsFolder + "/" + asset + ".asset");
@@ -171,6 +180,28 @@ namespace TWR.EditorTools
             ok &= Check(report, "event system", eventSystems == 1, eventSystems.ToString());
             ok &= Check(report, "global volume (Bloom, D-141)", globalVolumes >= 1, globalVolumes.ToString());
             ok &= Check(report, "no section content in Core", content == 0, content + " entries/exits/NavMesh surfaces");
+
+            // R5 (D-089, D-200, D-207).
+            List<EndingSequence> sequences = InScene<EndingSequence>(scene);
+            bool sequenceOk = sequences.Count == 1 && managers.Count == 1 && sequences[0].gameObject == managers[0].gameObject;
+            string sequenceDetail = sequences.Count + " found";
+            if (sequences.Count == 1)
+            {
+                var so = new SerializedObject(sequences[0]);
+                bool screen = so.FindProperty("endScreen").objectReferenceValue != null;
+                bool hudCanvas = so.FindProperty("hudCanvas").objectReferenceValue != null;
+                int groups = so.FindProperty("gameplayHud").arraySize;
+                sequenceOk &= screen && hudCanvas && groups >= 3;
+                sequenceDetail = $"end screen {(screen ? "OK" : "MISSING")}, HUD canvas {(hudCanvas ? "OK" : "MISSING")}, {groups} hidden HUD parts";
+            }
+            ok &= Check(report, "EndingSequence on the RunManager (D-207)", sequenceOk, sequenceDetail);
+            int endScreens = InScene<EndOfRunScreen>(scene).Count;
+            ok &= Check(report, "end-of-run screen (D-200)", endScreens == 1, endScreens.ToString());
+            int subtitles = InScene<SubtitleUI>(scene).Count;
+            ok &= Check(report, "subtitle line (D-089)", subtitles == 1, subtitles.ToString());
+            List<ScreenFader> faderList = InScene<ScreenFader>(scene);
+            bool faderColour = faderList.Count == 1 && new SerializedObject(faderList[0]).FindProperty("background").objectReferenceValue != null;
+            ok &= Check(report, "fader can change colour (D-196, D-199)", faderColour, "");
 
             if (ok) Debug.Log(report.ToString());
             else Debug.LogError(report.ToString());

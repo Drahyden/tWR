@@ -75,7 +75,11 @@ namespace TWR.EditorTools
         {
             bool ok = ValidateRunSetup();
             // R2 (D-161): the run scenes, if they have been built.
-            if (File.Exists(RunScenePath(CoreSceneName))) ok &= ValidateRunScenes();
+            if (File.Exists(RunScenePath(CoreSceneName)))
+            {
+                ok &= ValidateRunScenes();
+                ok &= ValidateEndings(); // R5 (D-195 to D-212)
+            }
             else Debug.LogWarning("[TWR] The run scenes are not built yet. Run TWR > Run > Build Run Scenes (R2).");
 
             if (ok)

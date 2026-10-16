@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/_Project/Scenes/Run/MainMenu.unity
+    guid: 6394749c820315546a2ccbfd5bc33301
+  - enabled: 1
     path: Assets/_Project/Scenes/Run/Core.unity
     guid: 829e452196d734a4f907b89833426fe8
   - enabled: 1
@@ -35,6 +38,18 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/Run/Boss_Discover.unity
     guid: 6509fc1bf69aaae4b9fd14336975d10b
+  - enabled: 1
+    path: Assets/_Project/Scenes/Run/Ending_ClockOut.unity
+    guid: 17ac4ffcd26d7664f9496f51e94e50c4
+  - enabled: 1
+    path: Assets/_Project/Scenes/Run/Ending_Overtime.unity
+    guid: d5fdd384c999fb740942901ab04ac6ed
+  - enabled: 1
+    path: Assets/_Project/Scenes/Run/Ending_FloorPlan.unity
+    guid: fed581815ce79164b845b4f509be7e06
+  - enabled: 1
+    path: Assets/_Project/Scenes/Run/Ending_Absorbed.unity
+    guid: 5a3a20288ae905e43a4188abbfb1d893
   - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05

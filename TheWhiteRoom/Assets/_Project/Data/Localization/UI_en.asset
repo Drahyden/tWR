@@ -66,6 +66,98 @@ MonoBehaviour:
     m_Localized: The Preacher
     m_Metadata:
       m_Items: []
+  - m_Id: 1122274185969664
+    m_Localized: Clock Out
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274274050048
+    m_Localized: Overtime
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274274050049
+    m_Localized: Floor Plan
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274274050050
+    m_Localized: Absorbed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274274050051
+    m_Localized: 'Path: Escape'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274274050052
+    m_Localized: 'Path: Discover'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244352
+    m_Localized: 'Score: {0} / 100 - Good'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244353
+    m_Localized: 'Score: {0} / 100 - Poor'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244354
+    m_Localized: 'Enemies killed: {0} / {1} ({2} pts)'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244355
+    m_Localized: 'Optional puzzles: {0} / {1} ({2} pts)'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244356
+    m_Localized: 'Run time: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244357
+    m_Localized: Seed {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244358
+    m_Localized: 'Endings found: {0} / {1}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244359
+    m_Localized: ???
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244360
+    m_Localized: New run
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244361
+    m_Localized: Main menu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244362
+    m_Localized: THE WHITE ROOM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244363
+    m_Localized: New run
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244364
+    m_Localized: Settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244365
+    m_Localized: Quit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244366
+    m_Localized: Settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244367
+    m_Localized: Nothing to set yet.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1122274278244368
+    m_Localized: Back
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

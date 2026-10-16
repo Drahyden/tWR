@@ -17,7 +17,10 @@ namespace TWR.Run
     /// teleport the player to the new scene's SectionEntry through PlayerController.Teleport (IPlayerMotor, D-113),
     /// wait one frame so the new scene's Start runs (Seekers spawn, exit gates read the section), fade in, unfreeze.
     /// The ambient bed lives in Core and keeps playing. Each section scene brings its own baked NavMesh (NavMeshSurface),
-    /// which Unity adds and removes with the scene. Also plays the placeholder "run complete" screen (D-092).
+    /// which Unity adds and removes with the scene. Also plays the placeholder "run complete" screen (D-092), now only a
+    /// fallback when no ending can be loaded (D-199 supersedes it).
+    /// R5 (D-199, D-207): HoldFreezeAfterLoad keeps the player frozen after a load (scripted endings: no control at all);
+    /// Freeze/Unfreeze are public so the ending sequence can stop the player before the end-of-run screen.
     /// Lives on the RunManager object in Core; its presence switches the RunManager into "Core mode".
     /// </summary>
     [DefaultExecutionOrder(-210)]
@@ -50,6 +53,8 @@ namespace TWR.Run
         /// <summary>Name of the loaded content scene, null while none is loaded.</summary>
         public string CurrentContentScene { get; private set; }
         public Scene CoreScene => coreScene;
+        /// <summary>True = the next loads leave the player frozen (scripted endings, D-199). Set by the ending sequence.</summary>
+        public bool HoldFreezeAfterLoad { get; set; }
 
         /// <summary>The screen starts fading to white.</summary>
         public event Action TransitionStarted;
@@ -144,7 +149,7 @@ namespace TWR.Run
                 fader.HideMessage();
                 yield return fader.FadeTo(0f, FadeInSeconds);
             }
-            Unfreeze();
+            if (!HoldFreezeAfterLoad) Unfreeze();
             IsBusy = false;
             TransitionFinished?.Invoke();
             RunQueued();
@@ -226,7 +231,7 @@ namespace TWR.Run
         }
 
         /// <summary>No input, no movement, no portal crossing while the screen is white (D-167).</summary>
-        void Freeze()
+        public void Freeze()
         {
             if (frozen) return;
             frozen = true;
@@ -239,7 +244,8 @@ namespace TWR.Run
             if (input != null) input.enabled = false;
         }
 
-        void Unfreeze()
+        /// <summary>Give movement, portal crossing and (if alive) input back.</summary>
+        public void Unfreeze()
         {
             if (!frozen) return;
             frozen = false;

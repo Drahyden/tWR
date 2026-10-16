@@ -15,6 +15,7 @@ namespace TWR.Player
     /// Death = full restart of the run, no checkpoints (D-034).
     /// HP carries over between sections and is never refilled automatically (D-162); only health pickups heal
     /// (IHealable, D-171). ResetForNewRun (IRunResettable) restores full HP at every run start.
+    /// Invulnerable (D-207): set by the ending sequence while an ending plays; damage is ignored. Cleared at run start.
     /// Later the low-HP heartbeat (D-079) and inner-voice mood (D-030) can listen to Changed.
     /// </summary>
     public class PlayerHealth : MonoBehaviour, IDamageable, IHealable, IRunResettable
@@ -32,6 +33,8 @@ namespace TWR.Player
         public float Max => tuning != null ? Mathf.Max(1f, tuning.maxHealth) : 100f;
         public float Normalized => current / Max;
         public bool IsAlive => current > 0f;
+        /// <summary>True while an ending plays (D-207): TakeDamage does nothing.</summary>
+        public bool Invulnerable { get; set; }
         /// <summary>Alive and below max HP: a health pickup would do something (D-171).</summary>
         public bool NeedsHealing => IsAlive && current < Max;
 
@@ -47,7 +50,7 @@ namespace TWR.Player
 
         public void TakeDamage(in DamageInfo damage)
         {
-            if (!IsAlive || damage.Amount <= 0f) return;
+            if (!IsAlive || Invulnerable || damage.Amount <= 0f) return;
 
             current = Mathf.Max(0f, current - damage.Amount);
             Changed?.Invoke(current, Max);
@@ -69,6 +72,7 @@ namespace TWR.Player
         public void ResetForNewRun()
         {
             StopAllCoroutines();
+            Invulnerable = false;
             current = Max;
             Changed?.Invoke(current, Max);
         }

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Localization;
+using TWR.Endings;
 
 namespace TWR.Run
 {
@@ -10,6 +11,8 @@ namespace TWR.Run
     /// a run returns to when it ends (D-157), and (R2) the persistent Core scene plus the section-transition
     /// timings and the placeholder end-screen text (D-161, D-167, D-092). Validate() is shared by the RunManager and
     /// the editor menu "TWR/Run/Validate Run Setup". Create via: Create > TWR > Run > Run Config.
+    /// R5 (D-199, D-202, D-203, D-210): the ending catalog (endings as data) and the main menu scene name; the old
+    /// placeholder end screen is only a fallback now.
     /// </summary>
     [CreateAssetMenu(fileName = "RunConfig", menuName = "TWR/Run/Run Config")]
     public class RunConfig : ScriptableObject
@@ -26,7 +29,13 @@ namespace TWR.Run
         [Tooltip("Fade back in once the player stands at the new entry spawn (seconds).")]
         [Min(0f)] public float fadeInSeconds = 0.4f;
 
-        [Header("Run complete (placeholder end screen) - D-092, D-167")]
+        [Header("Endings + main menu - D-199, D-202, D-203, D-210")]
+        [Tooltip("Every ending; the run's end picks one from it (D-204).")]
+        public EndingCatalog endingCatalog;
+        [Tooltip("The main menu scene, build index 0, loaded alone without Core (D-202, D-210).")]
+        public string mainMenuSceneName = "MainMenu";
+
+        [Header("Run complete FALLBACK (old placeholder end screen) - D-092, D-167; only if no ending can load")]
         [Tooltip("How long the white 'run complete' screen stays before the lobby loads with a new run.")]
         [Min(0f)] public float runCompleteHoldSeconds = 3f;
         [Tooltip("Localized title on the placeholder end screen (table 'UI', key 'run.complete', D-084).")]
@@ -86,6 +95,10 @@ namespace TWR.Run
                 }
             if (!escapeBoss) errors.Add("No boss arena tagged Escape.");
             if (!discoverBoss) errors.Add("No boss arena tagged Discover.");
+
+            if (endingCatalog == null) warnings.Add("No ending catalog: the boss exit falls back to the placeholder end screen. Run TWR > Run > Build Endings + Main Menu.");
+            else endingCatalog.Validate(errors, warnings);
+            if (string.IsNullOrEmpty(mainMenuSceneName)) warnings.Add("Main menu scene name is empty (D-202).");
 
             if (curatedPlan == null) errors.Add("Curated run plan is not assigned (needed for the first run, D-154).");
             else if (!curatedPlan.IsValid(out string problem)) errors.Add("Curated run plan is invalid: " + problem + ".");

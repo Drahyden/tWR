@@ -3,7 +3,7 @@
 > Source of truth for every chat in the "tWR Game Development" project.
 > Each definition gets an ID (D-###). Links between definitions use `→ D-###`.
 > Status: 🟢 locked · 🟡 tentative · ⚪ open
-> Interview complete (Q1–110). New decisions continue from D-195.
+> Interview complete (Q1–116). New decisions continue from D-213.
 
 ## 0. Index of sections
 1. Core identity · 2. Story & world · 3. Player & controls · 4. Combat · 5. Puzzles · 6. Enemies & AI · 7. Level design · 8. Art direction · 9. Audio · 10. UI/UX · 11. Progression & systems · 12. Technical (Unity) · 13. Production & pipeline · 14. Open questions
@@ -42,6 +42,11 @@
 - **D-026** 🟢 Storytelling: environmental details + dialogue exposition through the inner voice → D-024, D-020
 - **D-028** 🟢 Ending matrix (2×2): path {Escape, Discover} × performance {Good, Poor} → D-023, D-025, D-029, D-060
 - **D-030** 🟢 Inner-voice evolution: starts honest and confused; over the run becomes either clear and resolute, or contradictory and erratic. Drivers: current HP and chosen path → D-024, D-014, D-034, D-060, D-071 (exact mapping ⚪)
+- **D-195** 🟢 Ending Escape + Good, "Clock Out" (bittersweet): Daniel walks through the EXIT into his ordinary office, but everything is slightly wrong and the black door is still behind him; his coworkers are aberrations wearing office attire (placeholder: capsules with a tie/ID-badge marker) → D-021, D-028, D-067, D-150, D-152
+- **D-196** 🟢 Ending Escape + Poor, "Overtime" (bleak): the EXIT opens onto an empty big white room with no exit, just a button. Interactive: the player keeps control until pressing the button; then the screen goes black, the Overtime end-of-run screen shows, and New run returns Daniel to the lobby → D-028, D-064, D-112, D-152, D-157
+- **D-197** 🟢 Ending Discover + Good, "Floor Plan" (revelation): in the basement Daniel finds what the White Room is (kept mysterious) and stays by choice → D-022, D-028, D-150, D-152
+- **D-198** 🟢 Ending Discover + Poor, "Absorbed" (horror): Daniel finds the truth too late and becomes part of the room as one of the aberrations → D-028, D-041, D-067, D-152
+- **D-199** 🟢 Ending presentation (all except Overtime, D-196): a short in-engine scene (10–30 s), the player loses control, one placeholder inner-voice line raised through voice events with a localized subtitle key, then fade to white, then the end-of-run screen (D-200). Each ending has its own scene/section so it can be expanded later. Supersedes the "placeholder end screen" clause of D-167 → D-024, D-064, D-080, D-084, D-089, D-161, D-167, D-200
 
 ## 3. Player & controls
 - **D-032** 🟢 Base moveset: walk, sprint, crouch, jump, lean, interact, shoot → D-052, D-079
@@ -152,15 +157,15 @@
 - **D-183** 🟢 Boss 1 arena (Preacher, Discover): 20× taller, 2× longer, 2× wider than the placeholder = 160 m tall × 40 m long × 48 m wide; vertical traversal on platforms of varying sizes; some platforms hold dark cavities (D-065) used as teleport points; exit door on the opposite side from the entrance, at the entrance's height; every platform reachable with base movement only (walk, sprint, single jump; D-061); editor validation of jump gaps/heights with a [TWR] warning if unreachable; the player can always get back up after falling; no fall damage → D-047, D-061, D-065, D-148
 - **D-184** 🟢 Preacher behaviour: teleports between dark-cavity points with a ≈1 s telegraph (flicker + sound at the destination); ranged projectile volleys that can be dodged or blocked by platforms/cover; phase 2 at 50% HP: shorter teleport intervals and can appear behind the player → D-047, D-068
 - **D-185** 🟢 Both bosses: boss HP bar on the HUD with a localized name; BossStarted / BossPhaseChanged / BossDefeated events for music and voice; exit unlocks only on BossDefeated; enough ammo always reachable; bosses excluded from score; death restarts the run; 60 FPS with a NavMesh baked per arena and no expensive per-frame searches; all tunables in BossData ScriptableObjects; F1 debug: jump to either arena, set boss HP, force the next Bull charge fast; placeholder visuals and sounds OK → D-034, D-075, D-080, D-084, D-086, D-100, D-130, D-157, D-158, D-159, D-161, D-165
-- **D-186** 🟡 Base-movement reachability (validator, values read from PlayerTuning): step-up ≤ 0.3 m is walkable; jump step-up ≤ 0.9 m; horizontal gap ≤ 0.75 × sprintSpeed × airtime(rise) (flat ≈ 3.0 m, +0.9 m rise ≈ 2.1 m); ramps ≤ 40°; headroom ≥ 2.0 m; drops always allowed; every platform has a route back up from the floor → D-061, D-183
-- **D-187** 🟡 Preacher fairness: climbing is never required to win; teleport targets are cavities within 40 m and ±20 m vertically of the player; every cavity has a reachable standing spot within 35 m with line of sight (validated); phase-2 "behind the player" = a cavity outside the player's view cone (shared ViewCone helper, D-132/D-045/D-053), same height band ±5 m, ≥ 6 m away; telegraph kept and no firing for 1 s after arrival; ≥ 12 cavities → D-053, D-132, D-184
-- **D-188** 🟡 Boss arena ammo (supersedes the boss-arena clause of D-177): 4 ammo pickups per boss arena, positions rolled per D-177; while the boss is alive, a collected pickup respawns after ≈ 20 s, which guarantees the fight can be finished (extends D-130 to boss fights) → D-121, D-130, D-162, D-177
-- **D-189** 🟡 Boss stream: D-172 category 3 = boss (fast-charge counts 2–5 inclusive, re-rolled after each fast charge; Preacher teleport choices); charges and stomps both count as attacks, and the fast charge is the next charge once the count is reached; seed 0 uses an authored count sequence in BossData → D-160, D-172, D-182
-- **D-190** 🟡 Bull columns and charge resolution: ≥ 50% of columns (min 4) are unbreakable, and walls never break; breakable columns look cracked and break on the 2nd charge hit, leaving non-stunning rubble with their NavMeshObstacle disabled; a charge damages the player once and then ends in a ≈ 3 m skid with no stun; knockback adds no damage; fast-charge damage < player max HP → D-181, D-182
-- **D-191** 🟡 Knockback and falling: knockback is a locomotion-level planar impulse moved only through IPlayerMotor.Move (no interface change); its distance is clamped by a capsule cast before applying, and the impulse is zeroed when blocked; no fall damage anywhere in the game; fall speed capped at ≈ 40 m/s; landing noise stays capped per D-114 → D-113, D-114, D-182, D-183
-- **D-192** 🟡 Placeholder BossData values: Bull 1000 HP, charge 30 / fast 45 / stomp 20 (4 m), stun 3 s with ×2 damage taken; Preacher 750 HP, volley of 3–5 projectiles × 10 dmg at 15 m/s, teleport every 6 s (phase 1) / 3.5 s (phase 2); Bull arena height 12 m → D-119, D-180, D-184
-- **D-193** 🟡 Boss arena performance and hooks: emissive lighting only, no realtime shadows beyond ≈ 50 m, camera far clip ≥ 250 m; projectiles pooled (≤ 30); candidate checks ≈ 5 Hz; a NavMesh is baked in both arenas (the Preacher doesn't use it); BossEvents.Started / PhaseChanged / Defeated; localization keys boss.bull.name and boss.preacher.name; music uses the combat state (D-075) until a boss state is decided → D-075, D-084, D-100, D-161
-- **D-194** 🟡 Boss arena health: one health pickup (D-171 amount) per boss arena, position rolled per D-177, no respawn → D-162, D-171, D-177, D-185
+- **D-186** 🟢 Base-movement reachability (validator, values read from PlayerTuning): step-up ≤ 0.3 m is walkable; jump step-up ≤ 0.9 m; horizontal gap ≤ 0.75 × sprintSpeed × airtime(rise) (flat ≈ 3.0 m, +0.9 m rise ≈ 2.1 m); ramps ≤ 40°; headroom ≥ 2.0 m; drops always allowed; every platform has a route back up from the floor → D-061, D-183
+- **D-187** 🟢 Preacher fairness: climbing is never required to win; teleport targets are cavities within 40 m and ±20 m vertically of the player; every cavity has a reachable standing spot within 35 m with line of sight (validated); phase-2 "behind the player" = a cavity outside the player's view cone (shared ViewCone helper, D-132/D-045/D-053), same height band ±5 m, ≥ 6 m away; telegraph kept and no firing for 1 s after arrival; ≥ 12 cavities → D-053, D-132, D-184
+- **D-188** 🟢 Boss arena ammo (supersedes the boss-arena clause of D-177): 4 ammo pickups per boss arena, positions rolled per D-177; while the boss is alive, a collected pickup respawns after ≈ 20 s, which guarantees the fight can be finished (extends D-130 to boss fights) → D-121, D-130, D-162, D-177
+- **D-189** 🟢 Boss stream: D-172 category 3 = boss (fast-charge counts 2–5 inclusive, re-rolled after each fast charge; Preacher teleport choices); charges and stomps both count as attacks, and the fast charge is the next charge once the count is reached; seed 0 uses an authored count sequence in BossData → D-160, D-172, D-182
+- **D-190** 🟢 Bull columns and charge resolution: ≥ 50% of columns (min 4) are unbreakable, and walls never break; breakable columns look cracked and break on the 2nd charge hit, leaving non-stunning rubble with their NavMeshObstacle disabled; a charge damages the player once and then ends in a ≈ 3 m skid with no stun; knockback adds no damage; fast-charge damage < player max HP → D-181, D-182
+- **D-191** 🟢 Knockback and falling: knockback is a locomotion-level planar impulse moved only through IPlayerMotor.Move (no interface change); its distance is clamped by a capsule cast before applying, and the impulse is zeroed when blocked; no fall damage anywhere in the game; fall speed capped at ≈ 40 m/s; landing noise stays capped per D-114 → D-113, D-114, D-182, D-183
+- **D-192** 🟢 Placeholder BossData values: Bull 1000 HP, charge 30 / fast 45 / stomp 20 (4 m), stun 3 s with ×2 damage taken; Preacher 750 HP, volley of 3–5 projectiles × 10 dmg at 15 m/s, teleport every 6 s (phase 1) / 3.5 s (phase 2); Bull arena height 12 m → D-119, D-180, D-184
+- **D-193** 🟢 Boss arena performance and hooks: emissive lighting only, no realtime shadows beyond ≈ 50 m, camera far clip ≥ 250 m; projectiles pooled (≤ 30); candidate checks ≈ 5 Hz; a NavMesh is baked in both arenas (the Preacher doesn't use it); BossEvents.Started / PhaseChanged / Defeated; localization keys boss.bull.name and boss.preacher.name; music uses the combat state (D-075) until a boss state is decided → D-075, D-084, D-100, D-161
+- **D-194** 🟢 Boss arena health: one health pickup (D-171 amount) per boss arena, position rolled per D-177, no respawn → D-162, D-171, D-177, D-185
 - Silent rooms are part of the level palette → D-082
 
 ## 8. Art direction
@@ -202,6 +207,8 @@
 - **D-092** 🟢 End-of-run screen: run stats + a unique graphic per ending → D-025, D-028, D-029
 - **D-093** 🟢 Quitting mid-run exits and resets the run → D-034, D-039
 - **D-122** 🟢 Slice HUD: HP bar (PlayerHealth, max HP in PlayerTuning; death = scene reload per D-034), ammo "mag / reserve" via localized format string, current gun name via string table, centre crosshair dot, hit marker (stronger on kill). No damage direction indicator yet → D-086, D-091, D-084, D-034
+- **D-200** 🟢 End-of-run screen (implements D-092): ending title + placeholder graphic (a replaceable image per ending), path chosen, score with kill and optional-puzzle breakdown and Good/Poor (D-152), run time, seed (D-153), "Endings found: X / 4" with unseen endings shown as locked silhouettes; buttons New run (→ hub lobby with a new plan, D-157) and Main menu (D-202). All text localized → D-084, D-092, D-152, D-153, D-157, D-158, D-201
+- **D-202** 🟢 Main menu (implements D-085): minimal classic menu in its own scene with New run, Settings (placeholder screen until D-090 is built) and Quit; the game now starts at the main menu → D-085, D-090, D-093, D-157, D-161
 
 ## 11. Progression & systems
 - **D-029** 🟢 Performance metric = optional-puzzle completeness (D-104) + enemies killed (avoided enemies don't count, D-052) → D-028, D-092 (formula → D-152)
@@ -211,6 +218,17 @@
 - **D-137** 🟢 RunStats (minimal, scene-scoped): counts player-credited kills of real enemies (CombatEvents.Killed, attacker = player), registered enemies, and puzzles solved/total incl. optional (PuzzleEvents.Solved); resets on reload; debug log only, no score formula yet → D-029, D-052, D-092, D-104, D-126, D-129
 - **D-152** 🟢 Performance score (0–100) = (kills ÷ enemies spawned in the run) × 50 + (optional puzzles solved ÷ optional puzzles available) × 50; Good ≥ 60, otherwise Poor (D-028 ending matrix). Resolves the D-029 weighting question; computed from RunStats (D-137) → D-028, D-029, D-052, D-092, D-104, D-137
 - **D-153** 🟢 Run seed: every run has a seed that drives its randomization (D-058); shown small on the end-of-run screen (D-092); a seed can be entered only in a debug menu → D-058, D-092, D-147, D-154
+- **D-201** 🟢 Endings save (implements D-099 for endings): which endings were found is stored in a simple local save file; it only affects meta things — the endings counter (D-200), curated first run vs random seeds (D-154, D-159; implements the endings-record interface) and a hook for the inner voice to react on later runs (D-039). No gameplay advantages (D-039). F1 debug option to clear saved endings → D-039, D-099, D-154, D-159, D-200
+- **D-203** 🟢 Endings are data: each ending is an EndingData ScriptableObject (id, localized title/line keys, graphic, scene, selection rule) chosen by rules (path × performance for the four launch endings, D-028), so a secret 5th ending can be added later without code changes; F1 debug shortcuts trigger each ending directly → D-025, D-028, D-152, D-159, D-199, D-201
+- **D-204** 🟡 Run end snapshot: crossing the boss arena exit trigger ends the run; path, kills/spawned, optional solved/available, score, Good/Poor (D-152), run time and seed are frozen into a RunResult, and the ending is selected from it (D-203). Ending scenes register no enemies or puzzles and never change the result; ending "coworkers"/aberrations are props, not Seekers; the Overtime button is a plain IInteractable, not a puzzle → D-152, D-158, D-165, D-167, D-200, D-203
+- **D-205** 🟡 Ending "found": recorded and saved the moment the ending is selected (before its scene loads), so quitting or crashing during the ending still counts; F1 debug triggers also record (F1 clear undoes) → D-093, D-201, D-203
+- **D-206** 🟡 Run time: unpaused play time from passing the lobby run door (section 1 start) to the boss arena exit trigger; pause time excluded, section transitions included; shown as m:ss (h:mm:ss past one hour) → D-087, D-157, D-163, D-167, D-200
+- **D-207** 🟡 Ending scenes: player invulnerable, no enemies, HUD (HP/ammo/boss bar) and gun hidden. Scripted endings (D-199) freeze all input including Esc (≤ 30 s). Overtime (D-196): move, look, crouch, interact only; Esc pause works as normal → D-070, D-086, D-087, D-110, D-196, D-199
+- **D-208** 🟡 Endings counter: "X / 4" counts launch endings only; an EndingData isSecret flag hides a secret ending (no silhouette) until found, then it shows as an extra slot → D-025, D-200, D-203
+- **D-209** 🟡 Menu input: end-of-run screen and main menu are mouse-driven (cursor unlocked and visible, D-038); Esc does nothing on the end screen; the cursor re-locks when gameplay starts → D-038, D-110, D-200, D-202
+- **D-210** 🟡 Scene flow (extends D-161): MainMenu is build index 0 and loads alone (no Core); New run loads Core, then the Lobby additively; Main menu from the end screen unloads Core. Ending_ClockOut / Ending_Overtime / Ending_FloorPlan / Ending_Absorbed join the D-161 content-scene list. Playing Core directly in the editor still starts a run (dev convenience) → D-161, D-199, D-202
+- **D-211** 🟡 Quitting: Quit on the main menu exits the application (no run exists, so D-093 does not apply); closing the game mid-run discards the run (D-093, D-157); the endings save is written only when an ending is recorded → D-093, D-099, D-157, D-201
+- **D-212** 🟡 Save file: one versioned JSON file in Application.persistentDataPath holding found ending ids (EndingData id) and later settings (D-099); written via temp file then replace; missing or unreadable file = no endings (curated first run, D-154); unknown ids are kept → D-099, D-154, D-159, D-201, D-203
 
 ## 12. Technical (Unity)
 - **D-073** 🟢 Graphics target: standard (non-4K), mid-range PCs → D-016, D-100
@@ -358,6 +376,12 @@
 | 108 | Seed | Each run has a seed; shown small on the end screen; enterable only in a debug menu | D-153 |
 | 109 | First run | Very first run is fixed and curated; randomization from run 2 | D-154 |
 | 110 | Section templates | Puzzle, combat, stealth, impossible-geometry (portal), silent room; fork room; two boss arenas | D-155 |
+| 111 | The four endings | Clock Out (Escape+Good), Overtime (Escape+Poor, interactive button room), Floor Plan (Discover+Good), Absorbed (Discover+Poor) | D-195, D-196, D-197, D-198 |
+| 112 | Ending presentation | 10–30 s in-engine scene, no control, one inner-voice line with subtitle key, fade to white, end screen; own scene per ending; Overtime is the interactive exception | D-199, D-196 |
+| 113 | End-of-run screen | Title + graphic, path, score breakdown + Good/Poor, run time, seed, "Endings found X / 4" with locked silhouettes; New run / Main menu; localized | D-200 |
+| 114 | Saving endings | Local save of endings found; meta only (counter, curated first run, inner-voice hook); no gameplay advantages; F1 clear | D-201 |
+| 115 | Main menu | Minimal classic: New run, Settings (placeholder), Quit; the game starts there | D-202 |
+| 116 | Ending extensibility | EndingData ScriptableObjects selected by rules; a secret 5th ending needs no code; F1 triggers each ending | D-203 |
 
 ## 14. Open questions
 - Exact HP/path → inner-voice mapping (D-030)
@@ -372,3 +396,5 @@
 - Boss display names: boss.bull.name / boss.preacher.name are placeholders ("The Bull", "The Preacher") (D-185, D-193)
 - A dedicated boss music state (D-075); the bosses use the combat state for now (D-193)
 - Does "no fall damage" stay global for the whole game? D-191 assumes yes
+- Subtitles default ON until the Settings toggle (D-089, D-090) exists? R5 assumes ON
+- Final ending scenes, art, VO and what the White Room actually is (D-195–D-199 are placeholders)

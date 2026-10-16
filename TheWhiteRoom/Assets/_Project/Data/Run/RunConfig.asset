@@ -16,6 +16,8 @@ MonoBehaviour:
   coreSceneName: Core
   fadeOutSeconds: 0.4
   fadeInSeconds: 0.4
+  endingCatalog: {fileID: 11400000, guid: 585501848470e5c4b8fa82c493fe0e2a, type: 2}
+  mainMenuSceneName: MainMenu
   runCompleteHoldSeconds: 3
   runCompleteMessage:
     m_TableReference:

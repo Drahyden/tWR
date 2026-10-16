@@ -1,0 +1,92 @@
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using TWR.Core;
+using TWR.Run;
+
+namespace TWR.UI
+{
+    /// <summary>
+    /// The minimal classic main menu (D-085, D-202) in its own scene, build index 0, loaded alone without Core (D-210).
+    /// New run loads the Core scene (single), whose RunManager then loads the hub lobby additively and starts a run
+    /// (curated first run while no endings are saved, D-154). Settings opens a placeholder panel with Back until the
+    /// real settings menu exists (D-090). Quit exits the application (D-211; in the editor it stops Play mode).
+    /// Mouse-driven with a free, visible cursor (D-209); the cursor re-locks when the player's input turns on in the run.
+    /// Labels are localized through LocalizedWorldText on each TMP label (D-084).
+    /// </summary>
+    public class MainMenuController : MonoBehaviour
+    {
+        [Tooltip("Gives the Core scene name.")]
+        [SerializeField] RunConfig config;
+        [SerializeField] GameObject mainPanel;
+        [SerializeField] GameObject settingsPanel;
+        [SerializeField] Button newRunButton;
+        [SerializeField] Button settingsButton;
+        [SerializeField] Button quitButton;
+        [SerializeField] Button backButton;
+
+        bool loading;
+
+        string CoreScene => config != null && !string.IsNullOrEmpty(config.coreSceneName) ? config.coreSceneName : "Core";
+
+        void Awake()
+        {
+            if (newRunButton != null) newRunButton.onClick.AddListener(HandleNewRun);
+            if (settingsButton != null) settingsButton.onClick.AddListener(ShowSettings);
+            if (quitButton != null) quitButton.onClick.AddListener(HandleQuit);
+            if (backButton != null) backButton.onClick.AddListener(ShowMain);
+        }
+
+        void Start()
+        {
+            Time.timeScale = 1f;
+            PauseLock.SetBlocked(false);
+            Cursor.lockState = CursorLockMode.None; // mouse-driven menu (D-209)
+            Cursor.visible = true;
+            ShowMain();
+        }
+
+        void HandleNewRun()
+        {
+            if (loading) return;
+            if (!Application.CanStreamedLevelBeLoaded(CoreScene))
+            {
+                Debug.LogError($"[Menu] Core scene '{CoreScene}' is not in Build Settings. Run TWR > Run > Build Endings + Main Menu.", this);
+                return;
+            }
+            loading = true;
+            SetInteractable(false);
+            Debug.Log("[Menu] New run: loading Core (it loads the lobby next, D-210).", this);
+            SceneManager.LoadSceneAsync(CoreScene, LoadSceneMode.Single);
+        }
+
+        void ShowSettings()
+        {
+            if (mainPanel != null) mainPanel.SetActive(false);
+            if (settingsPanel != null) settingsPanel.SetActive(true);
+        }
+
+        void ShowMain()
+        {
+            if (settingsPanel != null) settingsPanel.SetActive(false);
+            if (mainPanel != null) mainPanel.SetActive(true);
+        }
+
+        void HandleQuit()
+        {
+            Debug.Log("[Menu] Quit (D-211).", this);
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
+        }
+
+        void SetInteractable(bool value)
+        {
+            if (newRunButton != null) newRunButton.interactable = value;
+            if (settingsButton != null) settingsButton.interactable = value;
+            if (quitButton != null) quitButton.interactable = value;
+        }
+    }
+}

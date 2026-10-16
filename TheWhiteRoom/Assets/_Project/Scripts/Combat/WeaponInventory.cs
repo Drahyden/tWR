@@ -15,6 +15,7 @@ namespace TWR.Combat
     /// (D-120), adds the camera kick through PlayerLook (D-123) and relays HUD events.
     /// Guns, magazines and reserve ammo carry over between sections (D-162); ResetForNewRun (IRunResettable) puts
     /// everything back to the run-start state: inventory emptied, every magazine full, starting reserve, slot 1.
+    /// SetHolstered (D-207): endings hide the gun and ignore all weapon input until the ending sequence lets go.
     /// </summary>
     [DefaultExecutionOrder(40)]
     public class WeaponInventory : MonoBehaviour, IRunResettable
@@ -45,6 +46,8 @@ namespace TWR.Combat
         public Gun Current => currentIndex >= 0 ? slots[currentIndex] : null;
         public int CurrentSlot => currentIndex;
         public Inventory Inventory => inventory;
+        /// <summary>Gun hidden and weapon input ignored (endings, D-207).</summary>
+        public bool IsHolstered { get; private set; }
 
         void Awake()
         {
@@ -125,7 +128,7 @@ namespace TWR.Combat
 
         void Update()
         {
-            if (input == null) return;
+            if (input == null || IsHolstered) return;
 
             int slot = input.WeaponSlotPressedThisFrame;
             if (slot >= 0) Equip(slot);
@@ -160,10 +163,18 @@ namespace TWR.Combat
             gun.AmmoChanged += onGunAmmoChanged;
             gun.Fired += onGunFired;
             gun.HitLanded += onGunHit;
-            gun.gameObject.SetActive(true);
+            gun.gameObject.SetActive(!IsHolstered);
 
             CurrentGunChanged?.Invoke(gun);
             AmmoChanged?.Invoke();
+        }
+
+        /// <summary>Hide the equipped gun and ignore weapon input (true), or show it again (false). Endings only (D-207).</summary>
+        public void SetHolstered(bool holstered)
+        {
+            IsHolstered = holstered;
+            Gun gun = Current;
+            if (gun != null) gun.gameObject.SetActive(!holstered); // OnDisable cancels a running reload
         }
 
         /// <summary>Step +1/-1 through the slots, skipping empty ones and wrapping around (D-088).</summary>

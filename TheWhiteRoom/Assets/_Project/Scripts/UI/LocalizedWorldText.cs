@@ -5,8 +5,8 @@ using UnityEngine.Localization;
 namespace TWR.UI
 {
     /// <summary>
-    /// Puts a localized string on a world-space TextMeshPro label (D-084), e.g. the fork room's "EXIT" sign and the
-    /// "BASEMENT" plate on the black door (D-150, D-166). Uses the same safe LocalizedTextBinding as the HUD:
+    /// Puts a localized string on a TextMeshPro label (D-084): world-space signs like the fork room's "EXIT" sign and the
+    /// "BASEMENT" plate on the black door (D-150, D-166), and (R5) fixed UI labels such as menu and end-screen buttons. Uses the same safe LocalizedTextBinding as the HUD:
     /// if localization isn't set up it shows the key once instead of logging errors. Event-driven, no per-frame work.
     /// </summary>
     public class LocalizedWorldText : MonoBehaviour

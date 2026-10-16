@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using TWR.Combat;
 using TWR.Core;
+using TWR.Endings;
+using TWR.Save;
 using TWR.Stats;
 
 namespace TWR.Run
@@ -30,6 +32,14 @@ namespace TWR.Run
     /// The lobby is never rolled (D-179).
     /// R4 (D-185, D-189): TryGetRollContext hands the loaded section's context to the boss (its boss stream = category 3),
     /// and DebugGoToBossArena lets the F1 overlay jump straight to either boss arena.
+    /// R5 (D-199 to D-212): the boss arena exit no longer shows the placeholder end screen. It freezes a RunResult
+    /// (path, kills/spawned, optional solved/available, score, Good/Poor, run time, seed; D-204, D-206), picks the ending
+    /// from the RunConfig's EndingCatalog (D-203), records it as found in the endings save at once (D-205), then loads the
+    /// ending's own content scene next to Core (D-161, D-210) through the EndingSequence (player mode, fade, end screen).
+    /// The end screen's New run starts a fresh run in the lobby (random seed once an ending is saved, D-154, D-157);
+    /// Main menu loads the MainMenu scene alone, which unloads Core (D-210). The run clock runs from the lobby run door
+    /// to the boss exit in scaled game time, so a future pause (Time.timeScale = 0) is excluded (D-206).
+    /// The endings record is the real save file (TWR.Save.EndingsSave, D-201, D-212).
     /// </summary>
     [DefaultExecutionOrder(-200)]
     [DisallowMultipleComponent]
@@ -58,7 +68,17 @@ namespace TWR.Run
         public RunPath ActivePath { get; private set; } = RunPath.None;
         public SectionData CurrentSection => Plan != null ? Plan.GetStop(CurrentStopIndex, ActivePath) : null;
         public bool IsAtFork => Plan != null && CurrentStopIndex == Plan.ForkIndex;
-        public bool IsRunActive => Plan != null && !isEnding;
+        public bool IsRunActive => Plan != null && !isEnding && !inEnding;
+        /// <summary>An ending scene (or the end-of-run screen) is up (D-199, D-200). The run is over; the result is frozen.</summary>
+        public bool IsInEnding => inEnding;
+        /// <summary>The frozen result of the last finished run (D-204). Null before the first run end.</summary>
+        public RunResult LastResult { get; private set; }
+        /// <summary>The ending playing now (null outside endings).</summary>
+        public EndingData CurrentEnding { get; private set; }
+        /// <summary>Unpaused play time of this run so far (D-206): 0 until the lobby run door, frozen at the boss exit.</summary>
+        public float RunTimeSeconds => !clockStarted ? 0f : clockStopped ? frozenRunTime : Time.time - clockStart;
+        /// <summary>True while player input must stay off (scripted ending, final fade, end screen; D-207, D-209).</summary>
+        public bool BlocksPlayerInput => endingSequence != null && endingSequence.BlocksPlayerInput;
         /// <summary>How many runs started since Play began (debug only).</summary>
         public int RunNumber { get; private set; }
         public RunStats Stats { get; private set; }
@@ -70,8 +90,8 @@ namespace TWR.Run
         /// <summary>A section transition or the end screen is running.</summary>
         public bool IsTransitioning => loader != null && (loader.IsBusy || completing);
 
-        /// <summary>Who tells us whether endings are saved (D-159). A stub until D-099 save data exists.</summary>
-        public IEndingsRecord EndingsRecord { get; set; } = new StubEndingsRecord();
+        /// <summary>Who tells us which endings are saved (D-159, D-201). Set to the save file (EndingsSave.Shared) in Awake.</summary>
+        public IEndingsRecord EndingsRecord { get; set; }
 
         /// <summary>A new run began (plan, seed and stats are ready).</summary>
         public event Action<RunManager> RunStarted;
@@ -85,6 +105,8 @@ namespace TWR.Run
         public event Action<RunPath> PathChosen;
         /// <summary>The run is over; the lobby loads next and a new run starts.</summary>
         public event Action<RunEndReason> RunEnded;
+        /// <summary>The boss exit was crossed: (frozen result, selected ending). Raised after the ending was recorded (D-205).</summary>
+        public event Action<RunResult, EndingData> RunCompleted;
 
         /// <summary>Section rolls of this run, by plan stop (D-172). Debug overlay only.</summary>
         public IReadOnlyDictionary<int, SectionRollReport> RollReports => rollReports;
@@ -106,6 +128,11 @@ namespace TWR.Run
         bool sceneLoadSeen;
         bool hasSeedOverride;
         uint seedOverride;
+        EndingSequence endingSequence;
+        Action onEndingLoaded;
+        bool inEnding;
+        bool clockStarted, clockStopped;
+        float clockStart, frozenRunTime;
 
         // ---------- lifetime ----------
 
@@ -124,6 +151,9 @@ namespace TWR.Run
             loader = GetComponent<SectionLoader>();
             onSectionLoaded = HandleSectionLoaded;
             onRunCompleteFinished = FinishRunComplete;
+            onEndingLoaded = HandleEndingLoaded;
+            endingSequence = GetComponent<EndingSequence>();
+            if (EndingsRecord == null) EndingsRecord = EndingsSave.Shared; // the real save (D-201, D-212)
 
             if (!IsCoreMode)
             {
@@ -166,6 +196,7 @@ namespace TWR.Run
         void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             sceneLoadSeen = true;
+            if (inEnding) return; // ending scenes are never rolled or counted (D-204)
             if (pendingNewRun)
             {
                 pendingNewRun = false;
@@ -238,6 +269,8 @@ namespace TWR.Run
         public void StartNewRun()
         {
             completing = false;
+            clockStarted = false;
+            clockStopped = false;
             if (config == null)
             {
                 Debug.LogError("[Run] RunManager has no RunConfig. Run TWR > Run > Create Run Assets.", this);
@@ -314,6 +347,13 @@ namespace TWR.Run
             if (!string.IsNullOrEmpty(requested) && config != null &&
                 requested != config.lobbySceneName && requested != config.coreSceneName)
             {
+                EndingData editorEnding = config.endingCatalog != null ? config.endingCatalog.FindByScene(requested) : null;
+                if (editorEnding != null)
+                {
+                    // Editor convenience (D-210): Play in an ending scene plays that ending with a fake result, NOT recorded,
+                    // so iterating on an ending never switches off the curated first run.
+                    if (DebugTriggerEnding(editorEnding, false)) return;
+                }
                 if (JumpToSectionScene(requested)) first = requested;
                 else Debug.LogWarning($"[Run] Editor: scene '{requested}' is not part of this run's plan; starting in the lobby instead.", this);
             }
@@ -345,6 +385,7 @@ namespace TWR.Run
 
         bool JumpTo(int stopIndex, RunPath path)
         {
+            StartRunClock();
             CurrentStopIndex = stopIndex;
             ActivePath = path;
             Log($"Editor start: jumped straight to {RunPlan.Name(CurrentSection)}{(path != RunPath.None ? " on path " + path : "")}.");
@@ -376,7 +417,7 @@ namespace TWR.Run
             {
                 if (IsCoreMode)
                 {
-                    BeginRunComplete();
+                    CompleteRun();
                     return true;
                 }
                 Log("Boss arena finished -> run complete (end screen D-092 comes later).");
@@ -394,6 +435,7 @@ namespace TWR.Run
             }
 
             if (IsCoreMode) RaiseSectionEnded();
+            if (CurrentStopIndex == RunPlan.LobbyIndex) StartRunClock(); // passing the lobby run door (D-206)
             CurrentStopIndex = nextIndex;
             if (CurrentStopIndex == Plan.ForkIndex)
                 Log($"Fork room: {RunPlan.Name(section)} (connector) - choose Escape or Discover");
@@ -485,6 +527,7 @@ namespace TWR.Run
             string from = CurrentStopIndex == RunPlan.LobbyIndex ? "hub lobby" : RunPlan.Name(CurrentSection);
             RunPath oldPath = ActivePath;
             RaiseSectionEnded();
+            StartRunClock();
             ActivePath = path;
             if (oldPath == RunPath.None) PathChosen?.Invoke(path);
             CurrentStopIndex = Plan.BossIndex;
@@ -513,11 +556,195 @@ namespace TWR.Run
 
         // ---------- run end ----------
 
-        /// <summary>Core mode: the boss arena exit shows the placeholder end screen (D-092), then ends the run.</summary>
+        // ---------- run clock (D-206) ----------
+
+        /// <summary>Start the run clock once per run (the lobby run door, or a debug/editor jump past the lobby).</summary>
+        void StartRunClock()
+        {
+            if (clockStarted) return;
+            clockStarted = true;
+            clockStopped = false;
+            clockStart = Time.time; // scaled time: a paused game (timeScale 0) adds nothing (D-206)
+        }
+
+        void StopRunClock()
+        {
+            if (!clockStarted || clockStopped) return;
+            frozenRunTime = Time.time - clockStart;
+            clockStopped = true;
+        }
+
+        // ---------- run complete -> ending (R5, D-199 to D-212) ----------
+
+        /// <summary>
+        /// Core mode, the boss arena exit was crossed (D-204): freeze the result, pick the ending (D-203), record it as found
+        /// right now (D-205), then load the ending scene (D-199, D-210). Without a usable ending it falls back to the old
+        /// placeholder end screen (D-167) so the game never gets stuck.
+        /// </summary>
+        void CompleteRun()
+        {
+            StopRunClock();
+            RunPath path = ActivePath;
+            if (path == RunPath.None)
+            {
+                Debug.LogWarning("[Run] Run complete without a chosen path; treating it as Escape.", this);
+                path = RunPath.Escape;
+            }
+            RunResult result = RunResult.Capture(path, Stats, RunTimeSeconds, Plan.Seed, Plan.IsCurated);
+            EndingCatalog catalog = config != null ? config.endingCatalog : null;
+            EndingData ending = catalog != null ? catalog.Select(result, EndingsRecord) : null;
+
+            if (ending == null || !CanLoad(ending.sceneName))
+            {
+                Debug.LogError($"[Run] No playable ending for this result ({result.Describe()}): " +
+                               (ending == null ? "no ending matches (or no EndingCatalog in the RunConfig)" : $"scene '{ending.sceneName}' is not in Build Settings") +
+                               ". Using the placeholder end screen. Run TWR > Run > Build Endings + Main Menu.", this);
+                BeginRunComplete();
+                return;
+            }
+
+            Log($"Run #{RunNumber} complete | {result.Describe()} -> ending '{ending.id}' (priority {ending.priority}, rule {ending.rule}).");
+            LastResult = result;
+            RecordEnding(ending, "run complete");
+            RaiseSectionEnded();
+            RunEnded?.Invoke(RunEndReason.Completed);
+            RunCompleted?.Invoke(result, ending);
+            BeginEnding(result, ending);
+        }
+
+        /// <summary>Save the ending as found (D-201, D-205). Before its scene loads, so quitting during it still counts.</summary>
+        void RecordEnding(EndingData ending, string why)
+        {
+            if (EndingsRecord == null || ending == null) return;
+            bool isNew = EndingsRecord.RecordFound(ending.id);
+            Log($"Ending '{ending.id}' recorded as found ({why}, {(isNew ? "new" : "already saved")}); endings saved: {EndingsRecord.SeenEndingCount} (D-201, D-205).");
+        }
+
+        void BeginEnding(RunResult result, EndingData ending)
+        {
+            inEnding = true;
+            LastResult = result;
+            CurrentEnding = ending;
+            if (endingSequence != null) endingSequence.Enter(ending);
+            else Debug.LogError("[Run] No EndingSequence on the RunManager: the ending can't hide the HUD or show the end screen. Run TWR > Run > Build Endings + Main Menu.", this);
+            loader.Load(ending.sceneName, onEndingLoaded);
+        }
+
+        void HandleEndingLoaded()
+        {
+            if (endingSequence != null) endingSequence.HandleSceneReady();
+            if (CurrentEnding != null) Log($"Ending scene '{CurrentEnding.sceneName}' loaded ({CurrentEnding.presentation}).");
+        }
+
+        /// <summary>
+        /// The ending is over (scripted timer ran out, D-199, or the Overtime button was pressed, D-196): fade, then the
+        /// end-of-run screen (D-200). Called by the ending scene's EndingDirector. False if nothing happened.
+        /// </summary>
+        public bool FinishEnding()
+        {
+            if (!inEnding || CurrentEnding == null) return false;
+            if (loader != null && loader.IsBusy)
+            {
+                Log("FinishEnding ignored: the ending scene is still loading.");
+                return false;
+            }
+            if (endingSequence == null)
+            {
+                StartNewRunAfterEnding();
+                return false;
+            }
+            return endingSequence.Finish(CurrentEnding, LastResult, config != null ? config.endingCatalog : null, EndingsRecord);
+        }
+
+        /// <summary>End screen "New run" (D-157, D-200): back to the hub lobby with a new plan (random once an ending is saved).</summary>
+        public void StartNewRunAfterEnding()
+        {
+            if (!inEnding) return;
+            if (endingSequence != null) endingSequence.Leave();
+            inEnding = false;
+            CurrentEnding = null;
+            Plan = null;
+            isEnding = true;
+            pendingNewRun = true;
+            Log("End screen: New run -> hub lobby with a new plan (D-157).");
+            LoadLobby();
+        }
+
+        /// <summary>End screen "Main menu" (D-200, D-210): load the MainMenu scene alone, which unloads Core and the ending.</summary>
+        public void ReturnToMainMenu()
+        {
+            string menu = config != null ? config.mainMenuSceneName : null;
+            if (!CanLoad(menu))
+            {
+                Debug.LogError($"[Run] Main menu scene '{menu}' is not in Build Settings; starting a new run instead. Run TWR > Run > Build Endings + Main Menu.", this);
+                StartNewRunAfterEnding();
+                return;
+            }
+            if (endingSequence != null) endingSequence.Leave();
+            inEnding = false;
+            CurrentEnding = null;
+            Plan = null;
+            pendingNewRun = false;
+            Time.timeScale = 1f;
+            Log($"End screen: Main menu -> loading '{menu}' alone (Core unloads, D-210).");
+            SceneManager.LoadScene(menu, LoadSceneMode.Single);
+        }
+
+        /// <summary>
+        /// Debug (F1, D-203) and editor start: play this ending now with a believable fake RunResult (path from its rule,
+        /// Good 87.5 / Poor 12.5, this run's seed). record = save it as found like a real run end (D-205; F1 "clear" undoes
+        /// it). Works mid-run and from inside another ending. Core mode only.
+        /// </summary>
+        public bool DebugTriggerEnding(EndingData ending, bool record)
+        {
+            if (ending == null) return false;
+            if (!IsCoreMode)
+            {
+                Debug.LogWarning("[Run] Endings need the Core scene (D-161).", this);
+                return false;
+            }
+            if (loader.IsBusy || completing)
+            {
+                Log("A transition is running; debug ending ignored.");
+                return false;
+            }
+            if (Plan == null)
+            {
+                Debug.LogWarning("[Run] No run plan yet; debug ending ignored.", this);
+                return false;
+            }
+            if (!CanLoad(ending.sceneName))
+            {
+                Debug.LogError($"[Run] Ending scene '{ending.sceneName}' is not in Build Settings. Run TWR > Run > Build Endings + Main Menu.", this);
+                return false;
+            }
+
+            if (inEnding)
+            {
+                if (endingSequence != null) endingSequence.Leave();
+            }
+            else
+            {
+                StopRunClock();
+                RaiseSectionEnded();
+                RunEnded?.Invoke(RunEndReason.Debug);
+            }
+
+            RunPath path = ending.rule.path != RunPath.None ? ending.rule.path : ActivePath != RunPath.None ? ActivePath : RunPath.Escape;
+            bool good = ending.rule.performance != EndingPerformance.Poor;
+            float seconds = RunTimeSeconds > 0f ? RunTimeSeconds : 754f; // 12:34 when nothing was played
+            RunResult result = RunResult.CreateDebug(path, good, ending.rule.minScore, seconds, Plan.Seed, Plan.IsCurated);
+            Log($"Debug: playing ending '{ending.id}' with a fake result ({result.Describe()}){(record ? "" : ", NOT recorded (editor start)")}.");
+            if (record) RecordEnding(ending, "debug trigger");
+            BeginEnding(result, ending);
+            return true;
+        }
+
+        /// <summary>Fallback (no ending available): the old placeholder end screen (D-092, D-167), then a new run.</summary>
         void BeginRunComplete()
         {
             completing = true;
-            Log("Boss arena finished -> run complete (placeholder end screen, D-092).");
+            Log("Boss arena finished -> run complete (placeholder end screen fallback, D-092).");
             loader.PlayRunComplete(config.runCompleteMessage, config.runCompleteHoldSeconds, onRunCompleteFinished);
         }
 

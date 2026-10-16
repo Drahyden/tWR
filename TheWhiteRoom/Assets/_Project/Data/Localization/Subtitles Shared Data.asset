@@ -35,6 +35,18 @@ MonoBehaviour:
     m_Key: hint.puzzle.allactive_toggle
     m_Metadata:
       m_Items: []
+  - m_Id: 703148724453376
+    m_Key: ending.clock_out.line
+    m_Metadata:
+      m_Items: []
+  - m_Id: 703148778979328
+    m_Key: ending.floor_plan.line
+    m_Metadata:
+      m_Items: []
+  - m_Id: 703148778979329
+    m_Key: ending.absorbed.line
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

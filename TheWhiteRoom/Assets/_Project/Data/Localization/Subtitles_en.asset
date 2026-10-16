@@ -38,6 +38,18 @@ MonoBehaviour:
     m_Localized: (placeholder) Hit one twice and it goes dark again. Careful.
     m_Metadata:
       m_Items: []
+  - m_Id: 703148724453376
+    m_Localized: (placeholder) My desk. My coworkers. The door is still behind me.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 703148778979328
+    m_Localized: (placeholder) So that's what it is. I think I'll stay.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 703148778979329
+    m_Localized: (placeholder) I found it. Too late. I'm part of the room now.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

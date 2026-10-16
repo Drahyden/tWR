@@ -12,12 +12,15 @@ namespace TWR.EditorTools
     /// is open, Play starts from Core instead (EditorSceneManager.playModeStartScene), and the RunManager jumps the
     /// run straight to the stop that uses that scene (curated plan: every scene is in it). Opening any other scene
     /// (e.g. the Test_PlayerController sandbox) clears the override again, so nothing else changes.
+    /// R5 (D-202, D-210): MainMenu is not a content scene: Play in MainMenu starts there (the full game flow). Play in an
+    /// ending scene starts from Core and plays that ending with a fake result (not saved as found).
     /// </summary>
     [InitializeOnLoad]
     static class RunScenePlayModeStart
     {
         const string RunScenesFolder = "Assets/_Project/Scenes/Run/";
         const string CorePath = RunScenesFolder + "Core.unity";
+        const string MainMenuPath = RunScenesFolder + "MainMenu.unity";
 
         static RunScenePlayModeStart()
         {
@@ -65,6 +68,7 @@ namespace TWR.EditorTools
                 Scene scene = SceneManager.GetSceneAt(i);
                 if (!scene.isLoaded || string.IsNullOrEmpty(scene.path)) continue;
                 if (scene.path == CorePath) { coreOpen = true; continue; }
+                if (scene.path == MainMenuPath) continue; // the menu runs on its own (D-210)
                 if (!scene.path.StartsWith(RunScenesFolder)) continue;
                 if (found == null || scene == active) found = scene.name;
             }

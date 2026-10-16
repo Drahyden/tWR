@@ -8,6 +8,8 @@ namespace TWR.Player
     /// Reads actions by name from our TWR_Controls asset, so no generated C# class is needed.
     /// ControlsInverted flips move and look for future reversed-control rooms (D-053d).
     /// Also locks and hides the cursor while playing.
+    /// LimitedControls (D-207, Overtime ending): only move, look, crouch and interact work; sprint, jump, lean and
+    /// every weapon input read as "not pressed".
     /// </summary>
     [DefaultExecutionOrder(-100)]
     public class PlayerInputReader : MonoBehaviour
@@ -25,6 +27,9 @@ namespace TWR.Player
 
         /// <summary>Reversed controls (D-053d). Room scripts set this on enter/exit.</summary>
         public bool ControlsInverted { get; set; }
+
+        /// <summary>Overtime ending (D-196, D-207): move, look, crouch, interact only. Set by the ending sequence.</summary>
+        public bool LimitedControls { get; set; }
 
         /// <summary>WASD as x = strafe, y = forward. Already inverted if ControlsInverted.</summary>
         public Vector2 Move
@@ -48,22 +53,23 @@ namespace TWR.Player
             }
         }
 
-        public bool SprintHeld => sprintAction != null && sprintAction.IsPressed();
+        public bool SprintHeld => !LimitedControls && sprintAction != null && sprintAction.IsPressed();
         public bool CrouchHeld => crouchAction != null && crouchAction.IsPressed();
-        public bool JumpPressedThisFrame => jumpAction != null && jumpAction.WasPressedThisFrame();
+        public bool JumpPressedThisFrame => !LimitedControls && jumpAction != null && jumpAction.WasPressedThisFrame();
         public bool InteractPressedThisFrame => interactAction != null && interactAction.WasPressedThisFrame();
 
         // ---- Weapons (D-110: LMB shoot, R reload, 1-5 / wheel switch gun; D-088) ----
-        public bool ShootPressedThisFrame => shootAction != null && shootAction.WasPressedThisFrame();
+        public bool ShootPressedThisFrame => !LimitedControls && shootAction != null && shootAction.WasPressedThisFrame();
         /// <summary>Held trigger, for automatic guns later (AK, D-049).</summary>
-        public bool ShootHeld => shootAction != null && shootAction.IsPressed();
-        public bool ReloadPressedThisFrame => reloadAction != null && reloadAction.WasPressedThisFrame();
+        public bool ShootHeld => !LimitedControls && shootAction != null && shootAction.IsPressed();
+        public bool ReloadPressedThisFrame => !LimitedControls && reloadAction != null && reloadAction.WasPressedThisFrame();
 
         /// <summary>Slot index 0-4 if a number key 1-5 was pressed this frame, otherwise -1.</summary>
         public int WeaponSlotPressedThisFrame
         {
             get
             {
+                if (LimitedControls) return -1;
                 for (int i = 0; i < weaponSlotActions.Length; i++)
                     if (weaponSlotActions[i] != null && weaponSlotActions[i].WasPressedThisFrame()) return i;
                 return -1;
@@ -75,7 +81,7 @@ namespace TWR.Player
         {
             get
             {
-                if (weaponScrollAction == null) return 0;
+                if (weaponScrollAction == null || LimitedControls) return 0;
                 float y = weaponScrollAction.ReadValue<Vector2>().y;
                 return y > 0.01f ? 1 : y < -0.01f ? -1 : 0;
             }
@@ -87,6 +93,7 @@ namespace TWR.Player
             get
             {
                 float axis = 0f;
+                if (LimitedControls) return axis;
                 if (leanLeftAction != null && leanLeftAction.IsPressed()) axis -= 1f;
                 if (leanRightAction != null && leanRightAction.IsPressed()) axis += 1f;
                 return axis;

@@ -44,12 +44,16 @@ namespace TWR.Stats
         /// count (0 enemies, or 0 optional puzzles) gives its full 50 (D-158). Ratios are clamped to 0..1.
         /// Examples: 2/4 kills + 1/2 puzzles = 25 + 25 = 50 (Poor); 0/0 + 0/0 = 100 (Good); 0/3 + 0/0 = 50 (Poor).
         /// </summary>
-        public static float ComputeScore(int kills, int spawned, int optionalSolved, int optionalAvailable)
-        {
-            float killPart = spawned > 0 ? Mathf.Clamp01((float)kills / spawned) : 1f;
-            float puzzlePart = optionalAvailable > 0 ? Mathf.Clamp01((float)optionalSolved / optionalAvailable) : 1f;
-            return killPart * 50f + puzzlePart * 50f;
-        }
+        public static float ComputeScore(int kills, int spawned, int optionalSolved, int optionalAvailable) =>
+            KillPoints(kills, spawned) + PuzzlePoints(optionalSolved, optionalAvailable);
+
+        /// <summary>The kill half of the score, 0-50 (D-152); 50 when no enemies spawned (D-158). End screen breakdown (D-200).</summary>
+        public static float KillPoints(int kills, int spawned) =>
+            (spawned > 0 ? Mathf.Clamp01((float)kills / spawned) : 1f) * 50f;
+
+        /// <summary>The optional-puzzle half of the score, 0-50 (D-152); 50 when none were available (D-158).</summary>
+        public static float PuzzlePoints(int optionalSolved, int optionalAvailable) =>
+            (optionalAvailable > 0 ? Mathf.Clamp01((float)optionalSolved / optionalAvailable) : 1f) * 50f;
 
         void OnEnable()
         {

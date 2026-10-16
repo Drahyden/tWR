@@ -4,6 +4,8 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using TWR.Player;
 using TWR.Enemies;
+using TWR.Endings;
+using TWR.Save;
 using TWR.Stats;
 
 namespace TWR.Run
@@ -23,6 +25,10 @@ namespace TWR.Run
     /// R4 (D-185): a Boss block: buttons "Go to Bull arena" / "Go to Preacher arena" (through the real SectionLoader,
     /// RunManager.DebugGoToBossArena), "Set boss HP" (absolute, or a percentage like 50%), "Force next Bull charge fast",
     /// and the live boss state: HP, phase, attack counter / next fast-charge count, current teleport target.
+    /// R5 (D-201, D-203, D-205): an Endings block: one button per ending in the catalog that plays it at once with a fake
+    /// RunResult and records it as found (like a real run end), "Finish ending now", the saved endings and "Clear saved
+    /// endings" (next run is the curated first run again). Closing the overlay never gives input back during a scripted
+    /// ending or on the end screen (D-207).
     /// </summary>
     [DisallowMultipleComponent]
     public class RunDebugOverlay : MonoBehaviour
@@ -32,11 +38,13 @@ namespace TWR.Run
         const string Dim = "#8A8A8A";
 
         // Buttons only record what to do; Update runs it, so the GUI never changes layout mid-event.
-        enum PendingAction { None, NextSection, ChooseEscape, ChooseDiscover, EndAsDeath, Quit, StartWithSeed, GoToBull, GoToPreacher, SetBossHealth, ForceFastCharge }
+        enum PendingAction { None, NextSection, ChooseEscape, ChooseDiscover, EndAsDeath, Quit, StartWithSeed, GoToBull, GoToPreacher, SetBossHealth, ForceFastCharge,
+                             TriggerEnding, FinishEnding, ClearEndings }
 
         RunManager manager;
         PendingAction pending;
         uint pendingSeed;
+        EndingData pendingEnding;
         float pendingBossHealth;
         string bossHealthText = "50%";
         string bossMessage = "";
@@ -98,6 +106,9 @@ namespace TWR.Run
                 case PendingAction.GoToPreacher: manager.DebugGoToBossArena(RunPath.Discover); break; // Discover = Preacher (D-148)
                 case PendingAction.SetBossHealth: SetBossHealth(pendingBossHealth); break;
                 case PendingAction.ForceFastCharge: ForceFastCharge(); break;
+                case PendingAction.TriggerEnding: manager.DebugTriggerEnding(pendingEnding, true); break; // records (D-205)
+                case PendingAction.FinishEnding: manager.FinishEnding(); break;
+                case PendingAction.ClearEndings: if (manager.EndingsRecord != null) manager.EndingsRecord.ClearAll(); break;
             }
         }
 
@@ -136,7 +147,9 @@ namespace TWR.Run
             {
                 // Don't wake a dead player's input (PlayerHealth turned it off on purpose).
                 PlayerHealth health = pausedReader.GetComponent<PlayerHealth>();
-                if (health == null || health.IsAlive) pausedReader.enabled = true; // OnEnable locks the cursor again
+                // ...nor during a scripted ending / the end screen (D-207, D-209).
+                if ((health == null || health.IsAlive) && (manager == null || !manager.BlocksPlayerInput))
+                    pausedReader.enabled = true; // OnEnable locks the cursor again
             }
             pausedReader = null;
         }
@@ -177,6 +190,8 @@ namespace TWR.Run
                 DrawActions();
                 GUILayout.Space(6f);
                 DrawBoss();
+                GUILayout.Space(6f);
+                DrawEndings();
             }
             GUILayout.Space(6f);
             DrawSeedEntry();
@@ -201,7 +216,10 @@ namespace TWR.Run
             }
             else if (manager.EndingsRecord != null)
             {
-                GUILayout.Label($"Endings saved: {manager.EndingsRecord.SeenEndingCount}", rich);
+                string ids = manager.EndingsRecord is EndingsSave save ? string.Join(", ", save.FoundIds) : "";
+                GUILayout.Label($"Endings saved: <b>{manager.EndingsRecord.SeenEndingCount}</b> {(ids.Length > 0 ? "(" + ids + ")" : "")}" +
+                                $"  -> next run: {(manager.EndingsRecord.SeenEndingCount == 0 ? "curated" : "random")}", rich);
+                if (GUILayout.Button("Clear saved endings (D-201)")) pending = PendingAction.ClearEndings;
             }
         }
 
@@ -280,7 +298,7 @@ namespace TWR.Run
         void DrawActions()
         {
             GUILayout.Label("<b>Actions</b>", rich);
-            if (GUILayout.Button(manager.CurrentStopIndex == manager.Plan.BossIndex ? "Finish boss arena -> run complete (F2)" : "Next section (F2)"))
+            if (GUILayout.Button(manager.CurrentStopIndex == manager.Plan.BossIndex ? "Finish boss arena -> run complete + ending (F2)" : "Next section (F2)"))
                 pending = PendingAction.NextSection;
 
             if (manager.IsAtFork && manager.ActivePath == RunPath.None)
@@ -295,6 +313,35 @@ namespace TWR.Run
             if (GUILayout.Button("End run as Death")) pending = PendingAction.EndAsDeath;
             if (GUILayout.Button("Quit run (D-093)")) pending = PendingAction.Quit;
             GUILayout.EndHorizontal();
+        }
+
+        // ---------- endings (R5, D-203, D-205) ----------
+
+        void DrawEndings()
+        {
+            GUILayout.Label("<b>Endings (D-203)</b>   <size=11>trigger = fake result + recorded as found</size>", rich);
+            if (manager.IsInEnding)
+            {
+                RunResult r = manager.LastResult;
+                GUILayout.Label($"In ending <b>{(manager.CurrentEnding != null ? manager.CurrentEnding.id : "?")}</b>: {(r != null ? r.Describe() : "no result")}", rich);
+                if (GUILayout.Button("Finish ending now (fade + end screen)")) pending = PendingAction.FinishEnding;
+            }
+            EndingCatalog catalog = manager.Config != null ? manager.Config.endingCatalog : null;
+            if (catalog == null || catalog.endings == null)
+            {
+                GUILayout.Label($"<color={Dim}>No EndingCatalog in the RunConfig (TWR > Run > Build Endings + Main Menu).</color>", rich);
+                return;
+            }
+            foreach (EndingData e in catalog.endings)
+            {
+                if (e == null) continue;
+                bool seen = manager.EndingsRecord != null && manager.EndingsRecord.HasFound(e.id);
+                if (GUILayout.Button($"Trigger '{e.id}' ({e.rule}){(e.isSecret ? " [secret]" : "")}{(seen ? "  - found" : "")}"))
+                {
+                    pendingEnding = e;
+                    pending = PendingAction.TriggerEnding;
+                }
+            }
         }
 
         // ---------- boss (R4, D-185) ----------
