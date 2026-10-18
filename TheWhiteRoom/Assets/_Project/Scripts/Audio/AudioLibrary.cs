@@ -10,7 +10,9 @@ namespace TWR.Audio
     /// several clips (one is picked at random) plus a volume and pitch range. Enemy and boss sounds stay in their own
     /// sound set assets (D-138). Lives in Resources (Data/Resources/AudioLibrary) and is loaded once; lookups use a
     /// dictionary built on first use, so playing a sound allocates nothing (D-100).
-    /// Filled with the generated placeholders by TWR > Audio > Build Audio (A1); every clip needs a LICENSES.md row (D-218).
+    /// Filled by TWR > Audio > Build Audio (A1): real files where they exist (fluorescent hum, violin stinger), else the
+    /// generated placeholders; clips you assign by hand are never replaced (D-228). It may hold clips nothing plays yet
+    /// (the stinger, A5). Every clip needs a LICENSES.md row (D-218).
     /// </summary>
     [CreateAssetMenu(fileName = "AudioLibrary", menuName = "TWR/Audio/Audio Library")]
     public class AudioLibrary : ScriptableObject
@@ -28,6 +30,9 @@ namespace TWR.Audio
             [Range(0f, 1f)] public float volumeMax = 1f;
             [Range(0.5f, 2f)] public float pitchMin = 1f;
             [Range(0.5f, 2f)] public float pitchMax = 1f;
+            [Tooltip("These clips are loops. The AudioSource that plays them sets looping itself; this flag tells " +
+                     "TWR > Audio > Check Loops to measure the loop seam (D-228). Set by the builder for AudioIds.Loops.")]
+            public bool loop;
 
             public bool HasClips
             {

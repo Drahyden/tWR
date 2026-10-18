@@ -9,7 +9,8 @@ namespace TWR.Audio
     /// snapshots, plus the snapshot transition times. Lives in a Resources folder (Data/Resources/AudioRoutingSettings)
     /// so code-created AudioSources (pools, the bootstrap's UI source) can be routed without scene references (D-161).
     /// "TWR > Audio > Build Audio (A1)" fills the references by NAME from the mixer; you only tune the times.
-    /// If a group reference is empty at runtime it is looked up once by name (AudioMixer.FindMatchingGroups).
+    /// If a group reference is empty at runtime it is looked up once by name (AudioMixer.FindMatchingGroups); if a state
+    /// group doesn't exist at all, AudioRouting falls back to its parent user group and warns once.
     /// </summary>
     [CreateAssetMenu(fileName = "AudioRoutingSettings", menuName = "TWR/Audio/Audio Routing Settings")]
     public class AudioRoutingSettings : ScriptableObject
@@ -42,17 +43,47 @@ namespace TWR.Audio
         [Min(0f)] public float toPausedSeconds = 0.2f;
 
         [NonSerialized] AudioMixerGroup[] foundByName;
+        [NonSerialized] bool[] searchedByName;
+        [NonSerialized] AudioMixerGroup[] userGroups;
+        [NonSerialized] bool[] searchedUserGroups;
 
-        /// <summary>The state group of a bus (the serialized reference, else found once by name). Null if missing.</summary>
+        /// <summary>The state group of a bus (the serialized reference, else looked up ONCE by name). Null if missing.</summary>
         public AudioMixerGroup GetStateGroup(AudioBus bus)
         {
             AudioMixerGroup group = SerializedGroup(bus);
             if (group != null || mixer == null) return group;
 
-            if (foundByName == null) foundByName = new AudioMixerGroup[AudioRouting.BusCount];
+            if (foundByName == null)
+            {
+                foundByName = new AudioMixerGroup[AudioRouting.BusCount];
+                searchedByName = new bool[AudioRouting.BusCount];
+            }
             int index = (int)bus;
-            if (foundByName[index] == null) foundByName[index] = AudioRouting.FindGroup(mixer, AudioRouting.StateGroupName(bus));
+            if (!searchedByName[index])
+            {
+                searchedByName[index] = true;
+                foundByName[index] = AudioRouting.FindGroup(mixer, AudioRouting.StateGroupName(bus));
+            }
             return foundByName[index];
+        }
+
+        /// <summary>The user group of a bus (e.g. "SFX"), looked up once by name. Only the fallback while a state group is
+        /// missing (D-219). Null if missing.</summary>
+        public AudioMixerGroup GetUserGroup(AudioBus bus)
+        {
+            if (mixer == null) return null;
+            if (userGroups == null)
+            {
+                userGroups = new AudioMixerGroup[AudioRouting.BusCount];
+                searchedUserGroups = new bool[AudioRouting.BusCount];
+            }
+            int index = (int)bus;
+            if (!searchedUserGroups[index])
+            {
+                searchedUserGroups[index] = true;
+                userGroups[index] = AudioRouting.FindGroup(mixer, AudioRouting.UserGroupName(bus));
+            }
+            return userGroups[index];
         }
 
         /// <summary>The snapshot of this kind (the serialized reference, else found by name). Null if missing.</summary>
@@ -68,6 +99,15 @@ namespace TWR.Audio
             }
             if (snapshot == null && mixer != null) snapshot = mixer.FindSnapshot(AudioRouting.SnapshotName(kind));
             return snapshot;
+        }
+
+        /// Edited (or re-filled by the builder): look the groups up again next time.
+        void OnValidate()
+        {
+            foundByName = null;
+            searchedByName = null;
+            userGroups = null;
+            searchedUserGroups = null;
         }
 
         AudioMixerGroup SerializedGroup(AudioBus bus)

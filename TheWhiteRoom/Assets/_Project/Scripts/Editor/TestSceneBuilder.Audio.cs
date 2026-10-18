@@ -13,13 +13,16 @@ using TWR.UI;
 namespace TWR.EditorTools
 {
     /// <summary>
-    /// Audio step A1 (D-213 to D-227), menu "TWR/Audio/Build Audio (A1)" (also part of "TWR/Run/Build Run Scenes"):
+    /// Audio step A1 (D-213 to D-228), menu "TWR/Audio/Build Audio (A1)" (also part of "TWR/Run/Build Run Scenes"):
     /// - Placeholder WAVs in Audio/Placeholder (hum loop, phone, printer, keyboard, UI click; AudioPlaceholderWav), each
-    ///   listed in docs/audio/LICENSES.md (D-218).
+    ///   listed in docs/audio/LICENSES.md (D-218). The hum placeholder is still written (it is the fallback and has a row).
+    /// - Import settings of Audio/Ambience and Audio/SFX checked and fixed only where they break the rule
+    ///   (AudioImportRules, D-228). Audio/Music is not touched and no music is loaded (A2).
     /// - Data/Resources/AudioRoutingSettings: TWR_Mixer, its five STATE groups and four snapshots, found BY NAME (the
-    ///   developer-made .mixer file is never edited). Missing groups/snapshots are reported with [TWR] errors that say what
-    ///   to add by hand (D-219, D-220).
-    /// - Data/Resources/AudioLibrary: every AudioIds ID, filled with the placeholders where empty (D-227).
+    ///   developer-made .mixer file is never edited). Missing parts give ONE [TWR] warning per build; the validation
+    ///   report lists the steps. Until a state group exists, sources go to its parent group (D-219, D-220).
+    /// - Data/Resources/AudioLibrary: every AudioIds ID; real files where they exist (fluorescent hum, violin stinger),
+    ///   placeholders where empty; clips you assigned by hand are kept (EnsureAudioLibrary, D-227, D-228).
     /// - Data/Audio/AmbientBedSettings and Data/Audio/ReverbPresets (D-223, D-224).
     /// - Then it rebuilds the sandbox and the run scenes, which route every AudioSource they make through RouteAudio
     ///   (player/gun/enemy/boss/doors = SFXState, ambient bed = AmbienceState, D-219), add the reverb zones per section
@@ -89,6 +92,7 @@ namespace TWR.EditorTools
             EnsureFolder(ResourcesDataFolder);
 
             Dictionary<string, AudioClip> placeholders = EnsurePlaceholderClips();
+            AudioImportRules.EnsureProjectAudio(); // Ambience = Streaming loops, SFX = one-shots; Music untouched (D-228)
             audio.routing = EnsureAudioRouting();
             audio.library = EnsureAudioLibrary(placeholders);
             audio.ambient = LoadOrCreate<AmbientBedSettings>(AmbientBedSettingsPath, null);
@@ -148,22 +152,26 @@ namespace TWR.EditorTools
             }
             if (routing.mixer != mixer) { routing.mixer = mixer; changed = true; }
 
+            var missing = new List<string>();
             for (int i = 0; i < AudioRouting.BusCount; i++)
             {
                 var bus = (AudioBus)i;
                 AudioMixerGroup group = AudioRouting.FindGroup(mixer, AudioRouting.StateGroupName(bus));
-                if (group == null) ReportMissingStateGroup(bus);
+                if (group == null) missing.Add(AudioRouting.StateGroupName(bus));
                 changed |= SetStateGroup(routing, bus, group);
             }
             for (int i = 0; i < AudioRouting.SnapshotCount; i++)
             {
                 var kind = (AudioSnapshotKind)i;
                 AudioMixerSnapshot snapshot = mixer.FindSnapshot(AudioRouting.SnapshotName(kind));
-                if (snapshot == null)
-                    ReportAudioProblemOnce("snapshot." + kind, $"[TWR] TWR_Mixer has no snapshot '{AudioRouting.SnapshotName(kind)}'. In the Audio Mixer " +
-                                                             "window: Snapshots '+', name it exactly like that (D-220).");
+                if (snapshot == null) missing.Add("snapshot " + AudioRouting.SnapshotName(kind));
                 changed |= SetSnapshot(routing, kind, snapshot);
             }
+            // One message per build pass; the step-by-step list is in the [TWR] Audio validation report (D-219, D-220).
+            if (missing.Count > 0)
+                ReportAudioProblemOnce("mixer.missing", "[TWR] TWR_Mixer is missing " + string.Join(", ", missing) + ". Until the state " +
+                                       "groups exist, sources are routed to their parent group (Music, Ambience, SFX, Voice, UI). The [TWR] Audio " +
+                                       "validation report at the end lists what to add by hand (D-219, D-220).");
             if (changed)
             {
                 EditorUtility.SetDirty(routing);
@@ -182,14 +190,6 @@ namespace TWR.EditorTools
                 if (mixer != null) return mixer;
             }
             return null;
-        }
-
-        static void ReportMissingStateGroup(AudioBus bus)
-        {
-            string user = AudioRouting.UserGroupName(bus), state = AudioRouting.StateGroupName(bus);
-            ReportAudioProblemOnce("group." + state,
-                $"[TWR] TWR_Mixer has no group '{state}' (child of '{user}'). Open the mixer (double-click TWR_Mixer), in Groups " +
-                $"right-click '{user}' > Add child group, rename it '{state}'. Sources meant for it stay unrouted until then (D-219).");
         }
 
         static bool SetStateGroup(AudioRoutingSettings routing, AudioBus bus, AudioMixerGroup group)
@@ -215,16 +215,21 @@ namespace TWR.EditorTools
             }
         }
 
-        /// Default volume/pitch per ID, and which placeholder fills it while it has no clips.
+        /// The real file for an ID, used when it exists (D-228). Paths are under Assets/_Project/Audio.
+        const string RealHumPath = AudioFolder + "/Ambience/amb_fluorescent_hum_01.ogg";
+        const string RealStingerPath = AudioFolder + "/SFX/sfx_stinger_violin_01.wav.ogg";
+
+        /// Default volume/pitch per ID, its real file (if any) and the placeholder that fills it while it has no clips.
         struct LibraryDefault
         {
-            public string id, placeholder;
+            public string id, placeholder, realFile;
             public float volumeMin, volumeMax, pitchMin, pitchMax;
         }
 
         static readonly LibraryDefault[] LibraryDefaults =
         {
-            new LibraryDefault { id = AudioIds.AmbienceHum, placeholder = AudioPlaceholderWav.HumFile, volumeMin = 1f, volumeMax = 1f, pitchMin = 1f, pitchMax = 1f },
+            new LibraryDefault { id = AudioIds.AmbienceHum, realFile = RealHumPath, placeholder = AudioPlaceholderWav.HumFile, volumeMin = 1f, volumeMax = 1f, pitchMin = 1f, pitchMax = 1f },
+            new LibraryDefault { id = AudioIds.StingerViolin, realFile = RealStingerPath, volumeMin = 1f, volumeMax = 1f, pitchMin = 1f, pitchMax = 1f },
             new LibraryDefault { id = AudioIds.OfficePhone, placeholder = AudioPlaceholderWav.PhoneFile, volumeMin = 0.8f, volumeMax = 1f, pitchMin = 0.95f, pitchMax = 1.03f },
             new LibraryDefault { id = AudioIds.OfficePrinter, placeholder = AudioPlaceholderWav.PrinterFile, volumeMin = 0.8f, volumeMax = 1f, pitchMin = 0.92f, pitchMax = 1.05f },
             new LibraryDefault { id = AudioIds.OfficeKeyboard, placeholder = AudioPlaceholderWav.KeyboardFile, volumeMin = 0.6f, volumeMax = 0.9f, pitchMin = 0.92f, pitchMax = 1.08f },
@@ -232,7 +237,10 @@ namespace TWR.EditorTools
             new LibraryDefault { id = AudioIds.UiBack, placeholder = AudioPlaceholderWav.UiClickFile, volumeMin = 0.55f, volumeMax = 0.55f, pitchMin = 0.8f, pitchMax = 0.8f },
         };
 
-        /// Data/Resources/AudioLibrary: adds every missing AudioIds ID; fills EMPTY entries with their placeholder.
+        /// Data/Resources/AudioLibrary: adds every missing AudioIds ID, then fills clips by this rule (D-228):
+        /// 1. The entry is empty, or holds ONLY builder placeholders (files in Audio/Placeholder), and the ID's real file
+        ///    exists -> the real file. 2. Still empty -> its placeholder (if it has one). 3. Anything else is a clip you
+        ///    chose -> never touched. IDs in AudioIds.Loops always get "loop" ticked (the code plays them looping).
         static AudioLibrary EnsureAudioLibrary(Dictionary<string, AudioClip> placeholders)
         {
             var library = LoadOrCreate<AudioLibrary>(AudioLibraryPath, null);
@@ -260,11 +268,27 @@ namespace TWR.EditorTools
                     entries.Add(entry);
                     changed = true;
                 }
-                if (!entry.HasClips && defaults.id == id && placeholders.TryGetValue(defaults.placeholder, out AudioClip clip))
+                bool hasDefaults = defaults.id == id;
+                AudioClip real = hasDefaults && !string.IsNullOrEmpty(defaults.realFile)
+                    ? AssetDatabase.LoadAssetAtPath<AudioClip>(defaults.realFile) : null;
+                if (real != null && (!entry.HasClips || OnlyPlaceholderClips(entry)))
+                {
+                    entry.clips = new[] { real };
+                    changed = true;
+                    Debug.Log($"[TWR] AudioLibrary: '{id}' uses {defaults.realFile} (D-228).", library);
+                }
+                else if (!entry.HasClips && hasDefaults && !string.IsNullOrEmpty(defaults.placeholder) &&
+                         placeholders.TryGetValue(defaults.placeholder, out AudioClip clip))
                 {
                     entry.clips = new[] { clip };
                     changed = true;
                     Debug.Log($"[TWR] AudioLibrary: '{id}' uses the placeholder {defaults.placeholder} (swap it in {AudioLibraryPath}, D-227).", library);
+                }
+
+                if (System.Array.IndexOf(AudioIds.Loops, id) >= 0 && !entry.loop)
+                {
+                    entry.loop = true;
+                    changed = true;
                 }
             }
             if (changed)
@@ -274,6 +298,19 @@ namespace TWR.EditorTools
                 AssetDatabase.SaveAssets();
             }
             return library;
+        }
+
+        /// True if every assigned clip of the entry is a builder placeholder (so a real file may replace it).
+        static bool OnlyPlaceholderClips(AudioLibrary.Entry entry)
+        {
+            bool any = false;
+            foreach (AudioClip clip in entry.clips)
+            {
+                if (clip == null) continue;
+                any = true;
+                if (!AssetDatabase.GetAssetPath(clip).StartsWith(PlaceholderAudioFolder + "/")) return false;
+            }
+            return any;
         }
 
         /// Adds a default preset for any space the asset doesn't list yet (your values are kept).
@@ -293,26 +330,29 @@ namespace TWR.EditorTools
             EditorUtility.SetDirty(presets);
         }
 
+        /// A warning, not an error: the build itself works; the audio validation at the end errors with the full list.
         static void ReportAudioProblemOnce(string key, string message)
         {
-            if (reportedAudioProblems.Add(key)) Debug.LogError(message);
+            if (reportedAudioProblems.Add(key)) Debug.LogWarning(message);
         }
 
         // ---------- routing helpers (used by every builder that makes an AudioSource, D-219) ----------
 
-        /// Send a builder-made AudioSource to the bus's STATE group. Reports a missing group once per build.
+        /// Send a builder-made AudioSource to the bus's STATE group; while that group doesn't exist yet, to its parent
+        /// user group (so the volume slider still works). The missing groups are reported once per build (EnsureAudioRouting).
         static void RouteAudio(AudioSource source, AudioBus bus)
         {
             if (source == null) return;
             var routing = AssetDatabase.LoadAssetAtPath<AudioRoutingSettings>(AudioRoutingPath);
             if (routing == null || routing.mixer == null) routing = EnsureAudioRouting();
-            AudioMixerGroup group = routing != null ? routing.GetStateGroup(bus) : null;
+            if (routing == null || routing.mixer == null) return; // "mixer not found" already reported
+            AudioMixerGroup group = routing.GetStateGroup(bus);
             if (group == null)
             {
-                ReportMissingStateGroup(bus);
-                return;
+                if (!reportedAudioProblems.Contains("mixer.missing")) EnsureAudioRouting(); // reports the missing parts once per pass
+                group = AudioRouting.FindGroup(routing.mixer, AudioRouting.UserGroupName(bus));
             }
-            source.outputAudioMixerGroup = group;
+            if (group != null) source.outputAudioMixerGroup = group;
         }
 
         /// A 3D sound effect source (mechanisms, D-219): no play on awake, no doppler, bounded distance (< 100 m, D-227).

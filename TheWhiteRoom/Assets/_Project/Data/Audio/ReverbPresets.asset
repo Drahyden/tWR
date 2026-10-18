@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ca98e49f06db5f498d2a79981107c87, type: 3}
+  m_Name: ReverbPresets
+  m_EditorClassIdentifier: Assembly-CSharp::TWR.Audio.ReverbPresets
+  presets:
+  - space: 0
+    useCustomValues: 1
+    unityPreset: 3
+    room: -1000
+    roomHF: -450
+    decayTime: 1.4
+    decayHFRatio: 0.8
+    reflections: -900
+    reflectionsDelay: 0.008
+    reverb: -200
+    reverbDelay: 0.012
+    diffusion: 100
+    density: 100
+    fadeMargin: 2
+  - space: 1
+    useCustomValues: 1
+    unityPreset: 3
+    room: -1000
+    roomHF: -350
+    decayTime: 2.4
+    decayHFRatio: 0.8
+    reflections: -1100
+    reflectionsDelay: 0.015
+    reverb: 0
+    reverbDelay: 0.02
+    diffusion: 100
+    density: 100
+    fadeMargin: 3
+  - space: 2
+    useCustomValues: 1
+    unityPreset: 3
+    room: -1000
+    roomHF: -300
+    decayTime: 4.2
+    decayHFRatio: 0.75
+    reflections: -1300
+    reflectionsDelay: 0.025
+    reverb: 200
+    reverbDelay: 0.035
+    diffusion: 100
+    density: 100
+    fadeMargin: 4
+  - space: 3
+    useCustomValues: 1
+    unityPreset: 3
+    room: -900
+    roomHF: -350
+    decayTime: 6.5
+    decayHFRatio: 0.7
+    reflections: -1500
+    reflectionsDelay: 0.04
+    reverb: 300
+    reverbDelay: 0.05
+    diffusion: 100
+    density: 100
+    fadeMargin: 6

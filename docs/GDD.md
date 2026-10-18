@@ -3,7 +3,7 @@
 > Source of truth for every chat in the "tWR Game Development" project.
 > Each definition gets an ID (D-###). Links between definitions use `→ D-###`.
 > Status: 🟢 locked · 🟡 tentative · ⚪ open
-> Interview complete (Q1–116). New decisions continue from D-228.
+> Interview complete (Q1–116). New decisions continue from D-230.
 
 ## 0. Index of sections
 1. Core identity · 2. Story & world · 3. Player & controls · 4. Combat · 5. Puzzles · 6. Enemies & AI · 7. Level design · 8. Art direction · 9. Audio · 10. UI/UX · 11. Progression & systems · 12. Technical (Unity) · 13. Production & pipeline · 14. Open questions
@@ -210,6 +210,8 @@
 - **D-225** 🟡 Sound settings (part of D-090): five sliders 0–100 (stored 0–1, dB = 20·log10(max(v, 0.0001)), 0 = −80 dB), default 100; applied live, saved when leaving the screen; reachable from the main menu Settings (D-202) for now, built as a panel the future pause menu reuses. A startup bootstrap outside Core applies the saved volumes (after Awake) so they work from MainMenu and when Core is played directly → D-090, D-099, D-202, D-210
 - **D-226** 🟡 Settings in the save file (amends D-211, extends D-212): settings are stored in the D-212 file, format version 2 (v1 or missing values = defaults); the file is also written when settings are saved, read-modify-write so found endings and unknown ids are kept; the F1 clear (D-201) clears endings only → D-099, D-201, D-211, D-212
 - **D-227** 🟡 Audio data and checks: an AudioLibrary SO maps sound IDs → clips for global/UI/mechanism/ambience/player sounds (enemy and boss sets stay in their per-type SOs, D-138); a [TWR] validation scans scenes and prefabs for AudioSources with no mixer group or 3D maxDistance ≥ 100 m; AudioSource.PlayClipAtPoint is not used; every clip, placeholders included, gets a LICENSES.md row (D-218) → D-138, D-144, D-218, D-219
+- **D-228** 🟡 Audio library checks (extends D-227): the [TWR] validation also reports AudioLibrary IDs with no clip; a [TWR] loop check measures leading/trailing silence and the sample jump at the seam of loop clips (starting with amb_fluorescent_hum_01). Loop clips import as Streaming (or Compressed In Memory), Vorbis ≈ 70, Preserve sample rate; looping is set on the AudioSource. The library may hold clips that nothing plays yet (the jump-scare stinger is registered now, played from A5, D-081); music IDs are added in A2 → D-081, D-213, D-218, D-223, D-227
+- **D-229** 🟡 Credits (proposal, amends 🟢 D-202 — needs the developer’s approval; not built yet): a Credits entry in the main menu opens a scrolling list generated from docs/audio/LICENSES.md rows with attribution = y (plus fixed developer/tool credits); headings are localized (D-084), names and titles are not. Required before any build that ships a CC BY asset (first: sfx_stinger_violin_01) → D-084, D-202, D-218
 
 ## 10. UI/UX
 - **D-085** 🟢 Main menu: classic menu screen
@@ -413,3 +415,5 @@
 - A Master volume slider in Sound settings? D-225 assumes five sliders, no Master (D-090)
 - "Lobby muzak" (AudioPlan §1.2): a 5th music state, or the Exploration track in the Lobby? Decide before A2 (D-213, D-214)
 - Ending stingers: a one-shot on the Music bus outside the music state machine? (D-199, D-221)
+- Jump-scare stinger routing: SFX or Music group? Decide in A5 (D-081, D-219)
+- Out-of-game attribution (Steam page / bundled credits file) in addition to D-229?

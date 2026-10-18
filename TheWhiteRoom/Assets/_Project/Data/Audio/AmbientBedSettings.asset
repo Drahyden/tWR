@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 507b7af788e1e1f429e1439938bee75e, type: 3}
+  m_Name: AmbientBedSettings
+  m_EditorClassIdentifier: Assembly-CSharp::TWR.Audio.AmbientBedSettings
+  humVolume: 0.12
+  humFadeOutSeconds: 2
+  intervalSeconds: {x: 14, y: 38}
+  firstDelayScale: 0.5
+  distanceMetres: {x: 15, y: 40}
+  heightMetres: {x: 0.5, y: 2.5}
+  volume: {x: 0.35, y: 0.6}
+  spatialBlend: 0.6
+  minDistance: 5
+  maxDistance: 60
+  poolSize: 3

@@ -20,3 +20,5 @@ MonoBehaviour:
   - preacher
   sceneName: Boss_Discover
   exitCondition: 2
+  enemyCount: 0
+  officeAmbience: 0

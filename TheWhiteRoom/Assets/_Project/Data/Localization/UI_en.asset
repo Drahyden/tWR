@@ -158,6 +158,30 @@ MonoBehaviour:
     m_Localized: Back
     m_Metadata:
       m_Items: []
+  - m_Id: 2114763642503168
+    m_Localized: Sound
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2114763751555072
+    m_Localized: Music
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2114763751555073
+    m_Localized: Ambience
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2114763751555074
+    m_Localized: Sound effects
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2114763751555075
+    m_Localized: Voice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2114763751555076
+    m_Localized: Interface
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

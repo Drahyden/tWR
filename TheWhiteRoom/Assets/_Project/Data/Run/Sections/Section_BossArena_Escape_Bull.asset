@@ -20,3 +20,5 @@ MonoBehaviour:
   - bull
   sceneName: Boss_Escape
   exitCondition: 2
+  enemyCount: 0
+  officeAmbience: 0

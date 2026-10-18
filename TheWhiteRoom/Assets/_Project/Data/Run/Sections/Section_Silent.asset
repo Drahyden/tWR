@@ -19,3 +19,5 @@ MonoBehaviour:
   - silent
   sceneName: Section_Silent
   exitCondition: 0
+  enemyCount: 0
+  officeAmbience: 0

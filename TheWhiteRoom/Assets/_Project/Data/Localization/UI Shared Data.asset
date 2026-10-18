@@ -155,6 +155,30 @@ MonoBehaviour:
     m_Key: menu.back
     m_Metadata:
       m_Items: []
+  - m_Id: 2114763642503168
+    m_Key: settings.sound.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2114763751555072
+    m_Key: settings.sound.music
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2114763751555073
+    m_Key: settings.sound.ambience
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2114763751555074
+    m_Key: settings.sound.sfx
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2114763751555075
+    m_Key: settings.sound.voice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2114763751555076
+    m_Key: settings.sound.ui
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
