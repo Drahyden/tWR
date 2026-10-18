@@ -27,6 +27,7 @@ namespace TWR.EditorTools
     /// Existing EndingData assets keep their edited values; only empty fields are filled.
     /// A1 (D-225): the main menu's Settings screen holds the Sound settings panel (TestSceneBuilder.Audio.cs) and every menu
     /// and end-screen button gets a click sound (UiButtonSound).
+    /// D-229: the main menu also gets a Credits button and panel (TestSceneBuilder.Credits.cs).
     /// </summary>
     public static partial class TestSceneBuilder
     {
@@ -585,6 +586,8 @@ namespace TWR.EditorTools
         static bool BuildMainMenuScene()
         {
             if (!PrepareRunAssets(out RunConfig config)) return false;
+            // D-229: credits regenerated from docs/audio/LICENSES.md (unverified rows are logged; they only block player builds)
+            if (!BuildCreditsData(out CreditsData credits, out _)) return false;
 
             var cameraGO = new GameObject("Menu Camera");
             cameraGO.tag = "MainCamera";
@@ -602,7 +605,8 @@ namespace TWR.EditorTools
             GameObject main = StretchedPanel("Main Panel", c);
             Button newRun = UiButton("New Run Button", main.transform, new Vector2(0f, 40f), new Vector2(420f, 86f), new LocalizedString("UI", "menu.new_run"));
             Button settings = UiButton("Settings Button", main.transform, new Vector2(0f, -70f), new Vector2(420f, 86f), new LocalizedString("UI", "menu.settings"));
-            Button quit = UiButton("Quit Button", main.transform, new Vector2(0f, -180f), new Vector2(420f, 86f), new LocalizedString("UI", "menu.quit"));
+            Button creditsButton = UiButton("Credits Button", main.transform, new Vector2(0f, -180f), new Vector2(420f, 86f), new LocalizedString("UI", "menu.credits"));
+            Button quit = UiButton("Quit Button", main.transform, new Vector2(0f, -290f), new Vector2(420f, 86f), new LocalizedString("UI", "menu.quit"));
 
             // A1 (D-225): the Settings screen now holds the Sound settings panel (five sliders, saved when leaving).
             GameObject settingsPanel = StretchedPanel("Settings Panel (Sound settings, D-090, D-225)", c);
@@ -613,14 +617,19 @@ namespace TWR.EditorTools
                                    new LocalizedString("UI", "menu.back"), AudioIds.UiBack);
             settingsPanel.SetActive(false);
 
+            GameObject creditsPanel = BuildCreditsPanel(c, credits, out Button creditsBack); // D-229
+
             var menu = canvasGO.AddComponent<MainMenuController>();
             Assign(menu, "config", config);
             Assign(menu, "mainPanel", main);
             Assign(menu, "settingsPanel", settingsPanel);
+            Assign(menu, "creditsPanel", creditsPanel);
             Assign(menu, "newRunButton", newRun);
             Assign(menu, "settingsButton", settings);
+            Assign(menu, "creditsButton", creditsButton);
             Assign(menu, "quitButton", quit);
             Assign(menu, "backButton", back);
+            Assign(menu, "creditsBackButton", creditsBack);
             return true;
         }
 

@@ -78,6 +78,12 @@ namespace TWR.EditorTools
             ("settings.sound.sfx", "Sound effects"),
             ("settings.sound.voice", "Voice"),
             ("settings.sound.ui", "Interface"),
+            // Credits (D-229): button and headings only; names and titles in the list are not localized.
+            ("menu.credits", "Credits"),
+            ("credits.title", "Credits"),
+            ("credits.heading.created_by", "Created by"),
+            ("credits.heading.made_with", "Made with"),
+            ("credits.heading.audio", "Sounds"),
         };
 
         const string SubtitlesTable = "Subtitles";

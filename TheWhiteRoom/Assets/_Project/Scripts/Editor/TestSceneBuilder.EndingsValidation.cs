@@ -31,7 +31,7 @@ namespace TWR.EditorTools
     ///   NO Seekers, spawn points, puzzles, switches, bosses, pickups, section exits, portals or Core objects (D-204);
     ///   scripted timelines fit 10-30 s (D-199); Overtime has its button on the Interactable layer (D-196);
     /// - MainMenu is build index 0 and Core index 1 (D-210); the menu scene has its controller, buttons and event system
-    ///   and no Core objects.
+    ///   and no Core objects; it has a wired Credits screen and CreditsData matches docs/audio/LICENSES.md (D-229).
     /// </summary>
     public static partial class TestSceneBuilder
     {
@@ -113,6 +113,7 @@ namespace TWR.EditorTools
                         scenes.Length > 1 ? $"0: {Path.GetFileNameWithoutExtension(scenes[0].path)}, 1: {Path.GetFileNameWithoutExtension(scenes[1].path)}" : "too few scenes");
             if (File.Exists(RunScenePath(MainMenuSceneName))) ok &= WithScene(RunScenePath(MainMenuSceneName), scene => InspectMainMenu(report, scene));
             else ok &= Check(report, "MainMenu scene exists", false, RunScenePath(MainMenuSceneName));
+            ok &= ValidateCredits(report); // D-229
 
             if (ok) Debug.Log(report.ToString());
             else Debug.LogError(report.ToString());
@@ -185,12 +186,18 @@ namespace TWR.EditorTools
             if (menus.Count == 1)
             {
                 var so = new SerializedObject(menus[0]);
-                string[] fields = { "config", "mainPanel", "settingsPanel", "newRunButton", "settingsButton", "quitButton", "backButton" };
+                string[] fields = { "config", "mainPanel", "settingsPanel", "creditsPanel", "newRunButton", "settingsButton",
+                                    "creditsButton", "quitButton", "backButton", "creditsBackButton" };
                 var missing = fields.Where(f => so.FindProperty(f).objectReferenceValue == null).ToList();
-                ok &= Check(report, "  [MainMenu] controller wired (New run, Settings, Quit, Back)", missing.Count == 0,
-                            missing.Count == 0 ? "" : "missing: " + string.Join(", ", missing));
+                ok &= Check(report, "  [MainMenu] controller wired (New run, Settings, Credits, Quit, Back)", missing.Count == 0,
+                            missing.Count == 0 ? "" : "missing: " + string.Join(", ", missing) + " (rebuild: TWR > Run > Build Endings + Main Menu)");
             }
             else ok &= Check(report, "  [MainMenu] one MainMenuController", false, menus.Count.ToString());
+            List<CreditsScreen> credits = InScene<CreditsScreen>(scene);
+            bool creditsWired = credits.Count == 1 && new[] { "data", "headingTemplate", "lineTemplate" }
+                                .All(f => new SerializedObject(credits[0]).FindProperty(f).objectReferenceValue != null);
+            ok &= Check(report, "  [MainMenu] Credits screen with data and templates (D-229)", creditsWired,
+                        credits.Count == 1 ? "" : credits.Count + " CreditsScreen(s)");
             int eventSystems = InScene<EventSystem>(scene).Count;
             ok &= Check(report, "  [MainMenu] event system", eventSystems == 1, eventSystems.ToString());
             int cameras = InScene<Camera>(scene).Count;
