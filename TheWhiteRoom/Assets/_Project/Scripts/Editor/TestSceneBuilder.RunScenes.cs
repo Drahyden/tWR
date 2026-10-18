@@ -48,6 +48,9 @@ namespace TWR.EditorTools
     /// R5 (D-195 to D-212, TestSceneBuilder.Endings.cs): Core also gets the end-of-run screen, the subtitle line and the
     /// EndingSequence; the four ending scenes and the MainMenu scene are built too, and Build Settings become
     /// MainMenu (index 0), Core, content scenes, ending scenes (D-210).
+    /// A1 (D-213 to D-227, TestSceneBuilder.Audio.cs): the audio assets are prepared with the other assets, every AudioSource
+    /// made here is routed to its mixer state group, Core's ambient bed gets the RunAmbienceDriver, each content and ending
+    /// scene gets its reverb zones, and the [TWR] audio validation runs at the end.
     /// </summary>
     public static partial class TestSceneBuilder
     {
@@ -99,6 +102,7 @@ namespace TWR.EditorTools
             public RunConfig config;
             public HealthItemData health;
             public SoundscapeSettings soundscape;
+            public AudioAssets audio;            // A1 (D-219 to D-227)
             public BullData bull;
             public PreacherData preacher;
             public BossSoundSet bullSounds, preacherSounds;
@@ -135,9 +139,10 @@ namespace TWR.EditorTools
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return;
 
-            Debug.Log("[TWR] Building the run scenes (R2 to R5, D-161 to D-212) in " + RunScenesFolder + " ...");
+            Debug.Log("[TWR] Building the run scenes (R2 to R5, D-161 to D-212; audio A1, D-213 to D-227) in " + RunScenesFolder + " ...");
             EnsureFolder(RunScenesFolder);
             seekerPrefabBuiltThisPass = false;
+            reportedAudioProblems.Clear(); // A1: report each missing mixer part once per build
 
             bool built = true;
             built &= BuildRunScene(CoreSceneName, BuildCoreScene, false);
@@ -160,6 +165,7 @@ namespace TWR.EditorTools
             bool valid = ValidateRunSetup();
             valid &= ValidateRunScenes();
             valid &= ValidateEndings();
+            valid &= ValidateAudio(); // A1 (D-227)
 
             if (built && configured && valid)
                 Debug.Log("[TWR] Run scenes built and valid. Press Play in " + RunScenePath(CoreSceneName) + " (open) for a run, or in " +
@@ -172,6 +178,7 @@ namespace TWR.EditorTools
         {
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             bool ok = build();
+            if (ok) AddReverbZones(sceneName); // A1: reverb per section template (D-224); none in Core / MainMenu
             if (ok && bakeNavMesh)
             {
                 // Each section bakes its own NavMesh, saved next to the scene (D-135, D-161).
@@ -207,6 +214,11 @@ namespace TWR.EditorTools
                 h.healAmount = 25f;        // D-171 default
             });
             a.soundscape = LoadOrCreate<SoundscapeSettings>(SoundscapeSettingsPath, null);
+            if (!PrepareAudioAssets(out a.audio)) // A1: placeholders, library, routing, reverb presets (D-219 to D-227)
+            {
+                Debug.LogError("[TWR] Could not create the audio assets (A1).");
+                return false;
+            }
             if (a.health == null || a.soundscape == null || !PrepareBossAssets(ref a)) // R4 BossData (TestSceneBuilder.BossArenas.cs)
             {
                 Debug.LogError("[TWR] Could not create the run assets (health item, soundscape settings, boss data).");
@@ -277,7 +289,7 @@ namespace TWR.EditorTools
             BuildCombatHud(hud, player);
             BuildBossHud(hud);                          // R4: boss HP bar, hidden until a fight starts (D-185)
             BuildPortalRuntime(a.portal, player);      // PortalRenderManager: portals come and go with the sections
-            BuildAmbientBedObject();                    // keeps playing across section loads (D-167)
+            AmbientBed bed = BuildAmbientBed(player.transform, false); // keeps playing across section loads (D-167, D-223)
             ScreenFader fader = BuildScreenFader();
             BuildSubtitleUi();                          // R5: subtitle line, on by default (D-089)
             EndOfRunScreen endScreen = BuildEndOfRunScreen(); // R5: end-of-run screen (D-200)
@@ -288,6 +300,9 @@ namespace TWR.EditorTools
             Assign(loader, "player", player.GetComponent<PlayerController>());
             Assign(loader, "fader", fader);
             manager.gameObject.AddComponent<VoiceEventLogger>();
+            var ambience = bed.gameObject.AddComponent<RunAmbienceDriver>(); // office one-shots per section (D-223)
+            Assign(ambience, "bed", bed);
+            Assign(ambience, "manager", manager);
             var endings = manager.gameObject.AddComponent<EndingSequence>(); // R5: player mode, fade, end screen (D-207)
             Assign(endings, "endScreen", endScreen);
             Assign(endings, "hudCanvas", hud.GetComponent<Canvas>());
@@ -697,8 +712,7 @@ namespace TWR.EditorTools
             root.transform.localPosition = localPosition;
             root.transform.localRotation = localRotation;
             var audio = root.AddComponent<AudioSource>();
-            audio.playOnAwake = false;
-            audio.spatialBlend = 1f;
+            ConfigureSfxSource3D(audio, 1f, MechanismAudioMaxDistance); // mechanisms -> SFXState (D-219)
 
             var panelRoot = new GameObject("Panel");
             panelRoot.transform.SetParent(root.transform, false);
@@ -907,6 +921,7 @@ namespace TWR.EditorTools
                     section.enemyCount = enemies;
                     EditorUtility.SetDirty(section);
                 }
+                EnforceOfficeAmbienceRule(section); // A1: no office one-shots in silent rooms / boss arenas (D-223)
                 Debug.Log($"[TWR] {section.name}: scene '{scene}', exit condition {condition} (D-165), enemy count {enemies} (D-176).", section);
             }
 

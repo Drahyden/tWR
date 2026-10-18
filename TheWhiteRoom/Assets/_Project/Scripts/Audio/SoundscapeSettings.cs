@@ -3,8 +3,8 @@ using UnityEngine;
 namespace TWR.Audio
 {
     /// <summary>
-    /// Tunable fade times for silent rooms (D-168, D-082): how fast the ambient bed / music fade to silence on
-    /// entry and come back after leaving. Create via: Project window > right-click > Create > TWR > Soundscape Settings.
+    /// Tunable fade times for silent rooms (D-168, D-082): how fast the Silent snapshot fades music and the ambient
+    /// bed out on entry, and how fast they come back after leaving (D-220). Create via: Project window > right-click > Create > TWR > Soundscape Settings.
     /// </summary>
     [CreateAssetMenu(fileName = "SoundscapeSettings", menuName = "TWR/Soundscape Settings")]
     public class SoundscapeSettings : ScriptableObject

@@ -227,16 +227,8 @@ namespace TWR.EditorTools
             if (includeAmbientBed) BuildAmbientBedObject();
         }
 
-        static GameObject BuildAmbientBedObject()
-        {
-            var ambientGO = new GameObject("Ambient Bed (2D hum)");
-            var source = ambientGO.AddComponent<AudioSource>();
-            source.playOnAwake = false;
-            source.spatialBlend = 0f;
-            source.loop = true;
-            ambientGO.AddComponent<AmbientBed>();
-            return ambientGO;
-        }
+        /// Sandbox ambient bed: hum + office one-shots from the start, placed around the AudioListener (A1, D-223).
+        static GameObject BuildAmbientBedObject() => BuildAmbientBed(null, true).gameObject;
 
         static void BuildLobbyShell(Transform lobby, Material floorMat, Material glowMat, Material trimMat)
         {
@@ -270,8 +262,7 @@ namespace TWR.EditorTools
             root.transform.SetParent(parent, false);
             root.transform.SetPositionAndRotation(floorPoint, Quaternion.LookRotation(facing));
             var audio = root.AddComponent<AudioSource>();
-            audio.playOnAwake = false;
-            audio.spatialBlend = 1f;
+            ConfigureSfxSource3D(audio, 1f, MechanismAudioMaxDistance); // mechanisms -> SFXState (D-219)
 
             GameObject panel = PuzzlePart("Panel", root.transform, new Vector3(0f, size.y * 0.5f, 0.04f), new Vector3(size.x, size.y, 0.08f), panelMat);
             panel.layer = puzzle.interactableLayer; // F finds it ("Locked"); bullets stop on it like a wall
@@ -351,8 +342,7 @@ namespace TWR.EditorTools
             root.transform.SetParent(parent, false);
             root.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
             var audio = root.AddComponent<AudioSource>();
-            audio.playOnAwake = false;
-            audio.spatialBlend = 1f;
+            ConfigureSfxSource3D(audio, 1f, MechanismAudioMaxDistance); // mechanisms -> SFXState (D-219)
 
             // Short wall: 1 m either side of the opening, 3.6 m tall, 0.2 m thick, centred on the portal plane.
             float side = OpeningWidth * 0.5f + 0.5f;

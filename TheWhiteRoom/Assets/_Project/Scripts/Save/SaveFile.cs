@@ -9,7 +9,10 @@ namespace TWR.Save
     /// Load never throws: a missing, empty or unreadable file counts as "no endings" (curated first run, D-154); an
     /// unreadable file is copied to "*.corrupt" once so it can be looked at. Write goes to a temp file first and then
     /// replaces the real file, so a crash mid-write can't destroy the old save. Only called when an ending is recorded
-    /// or cleared (D-211), never per frame.
+    /// or cleared (D-211) or settings are saved (D-226), never per frame.
+    /// A1 (D-226): format version 2 adds the settings; a version 1 file (or missing values) gets default settings.
+    /// Writers use Update (read-modify-write): read the file fresh, change only their part, write it back, so the found
+    /// endings, unknown ids and the settings never overwrite each other.
     /// </summary>
     public static class SaveFile
     {
@@ -36,6 +39,17 @@ namespace TWR.Save
                 TryKeepCorruptCopy(path);
                 return new SaveData();
             }
+        }
+
+        /// <summary>
+        /// Read-modify-write (D-226): load the file as it is on disk now, let modify change its part, write it back.
+        /// False (and an error log) if writing failed.
+        /// </summary>
+        public static bool Update(string path, Action<SaveData> modify)
+        {
+            SaveData data = Load(path);
+            modify?.Invoke(data);
+            return Write(path, data);
         }
 
         /// <summary>Write via temp file + replace (D-212). False (and an error log) if the disk refused.</summary>
@@ -84,7 +98,14 @@ namespace TWR.Save
             }
             if (data.version > SaveData.CurrentVersion)
                 Debug.LogWarning($"[Save] Save file version {data.version} is newer than this game ({SaveData.CurrentVersion}); reading what we know.");
-            // version < CurrentVersion: nothing to migrate yet (version 1 is the first format).
+
+            // Version 1 -> 2 (D-226): version 1 had no settings, so they start at the defaults.
+            if (data.version < 2 || data.settings == null)
+            {
+                if (data.version < 2) Debug.Log($"[Save] Save file version {data.version} -> {SaveData.CurrentVersion}: settings start at the defaults (D-226).");
+                data.settings = new SettingsData();
+            }
+            data.settings.Sanitize();
             return data;
         }
 

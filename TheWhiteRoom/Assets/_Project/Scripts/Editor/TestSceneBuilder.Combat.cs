@@ -145,6 +145,10 @@ namespace TWR.EditorTools
             var health = GetOrAdd<PlayerHealth>(root);
             var weapons = GetOrAdd<WeaponInventory>(root);
 
+            // A1 (D-219): the player's one AudioSource (footsteps, jump, land and the gun) goes to SFXState. 2D, but it
+            // still picks up the room's reverb zone (D-077, D-224).
+            RouteAudio(root.GetComponent<AudioSource>(), TWR.Audio.AudioBus.SFX);
+
             Transform holder = cam.transform.Find(WeaponHolderName);
             if (holder == null)
             {

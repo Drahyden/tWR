@@ -8,6 +8,7 @@ namespace TWR.Enemies
     /// an idle loop, footsteps spaced by distance walked, and one-shots for alert, attack wind-up, hurt and death.
     /// Seeker footsteps are ONLY audio for the player's ears; they are never NoiseSystem events, so enemies don't
     /// hear each other. Empty slots stay silent, or use generated placeholders if the sound set allows it.
+    /// The source goes to the SFXState mixer group (D-219).
     /// </summary>
     [RequireComponent(typeof(AudioSource))]
     public class SeekerAudio : MonoBehaviour
@@ -23,6 +24,7 @@ namespace TWR.Enemies
         void Awake()
         {
             source = GetComponent<AudioSource>();
+            TWR.Audio.AudioRouting.RouteIfUnassigned(source, TWR.Audio.AudioBus.SFX); // enemies -> SFXState (D-219)
             if (agent == null) agent = GetComponent<NavMeshAgent>();
 
             bool hasSet = sounds != null;

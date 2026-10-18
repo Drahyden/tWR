@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using TWR.Audio;
 using TWR.Core;
 using TWR.Run;
 
@@ -9,8 +10,9 @@ namespace TWR.UI
     /// <summary>
     /// The minimal classic main menu (D-085, D-202) in its own scene, build index 0, loaded alone without Core (D-210).
     /// New run loads the Core scene (single), whose RunManager then loads the hub lobby additively and starts a run
-    /// (curated first run while no endings are saved, D-154). Settings opens a placeholder panel with Back until the
-    /// real settings menu exists (D-090). Quit exits the application (D-211; in the editor it stops Play mode).
+    /// (curated first run while no endings are saved, D-154). Settings opens the settings panel with Back; for now it holds
+    /// the Sound settings (AudioSettingsPanel, D-225), which save when the panel is left. Quit exits the application
+    /// (D-211; in the editor it stops Play mode). A1 (D-220): the menu resets the mixer to the Default snapshot.
     /// Mouse-driven with a free, visible cursor (D-209); the cursor re-locks when the player's input turns on in the run.
     /// Labels are localized through LocalizedWorldText on each TMP label (D-084).
     /// </summary>
@@ -41,6 +43,7 @@ namespace TWR.UI
         {
             Time.timeScale = 1f;
             PauseLock.SetBlocked(false);
+            AudioState.ResetToDefault(); // D-220: coming back from an ending (Ending snapshot) -> Default
             Cursor.lockState = CursorLockMode.None; // mouse-driven menu (D-209)
             Cursor.visible = true;
             ShowMain();

@@ -23,6 +23,10 @@ namespace TWR.Run
         [Tooltip("The persistent scene with the player, HUD, RunManager, ambient bed and lighting (D-161). Never counted by RunStats.")]
         public string coreSceneName = "Core";
 
+        [Header("Audio - D-223")]
+        [Tooltip("The hub lobby plays the ambient bed's distant office one-shots (sections use their SectionData flag).")]
+        public bool lobbyOfficeAmbience = true;
+
         [Header("Section transition - D-167")]
         [Tooltip("Fade to white before the old section unloads (seconds).")]
         [Min(0f)] public float fadeOutSeconds = 0.4f;

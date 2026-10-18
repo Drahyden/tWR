@@ -3,7 +3,7 @@
 > Source of truth for every chat in the "tWR Game Development" project.
 > Each definition gets an ID (D-###). Links between definitions use `→ D-###`.
 > Status: 🟢 locked · 🟡 tentative · ⚪ open
-> Interview complete (Q1–116). New decisions continue from D-213.
+> Interview complete (Q1–116). New decisions continue from D-228.
 
 ## 0. Index of sections
 1. Core identity · 2. Story & world · 3. Player & controls · 4. Combat · 5. Puzzles · 6. Enemies & AI · 7. Level design · 8. Art direction · 9. Audio · 10. UI/UX · 11. Progression & systems · 12. Technical (Unity) · 13. Production & pipeline · 14. Open questions
@@ -193,8 +193,23 @@
 - **D-080** 🟢 Inner-voice triggers: start/end of rooms, specific object interactions, start/end of puzzles → D-024, D-056; tech: event-driven dialogue triggers
 - **D-081** 🟢 Jump scares use sharp audio stingers → D-013
 - **D-082** 🟢 Some rooms are completely silent → D-013, D-075
-- **D-083** 🟡 SFX sources: Sonniss GDC bundles, Kenney CC0, Freesound (CC0 filter) + paid-tier AI SFX for creature sounds + own recordings; keep a license log → D-078
+- **D-083** 🟢 SFX sources: Sonniss GDC bundles, Kenney CC0, Freesound (CC0 filter) + paid-tier AI SFX for creature sounds + own recordings; keep a license log (settled by D-218) → D-078, D-218
 - **D-084** 🟢 Localization: VO in English first; Spanish VO in a later sprint. Build localization-ready from day one → D-031, D-089
+- **D-213** 🟢 Boss music state: a 4th adaptive music state, Boss, with one track per boss (Bull, Preacher); BossPhaseChanged (phase 2) adds the top stem layer. Extends D-075's three states; resolves the D-193 "until a boss state is decided" clause → D-075, D-076, D-185, D-193, D-214
+- **D-214** 🟢 Music structure: one looping instrumental track per state; FADR stems (drums / bass / other) play as vertical layers that fade in and out within a state; states crossfade in ≈ 2 s, with no beat-matching between states → D-006, D-075, D-213
+- **D-215** 🟢 Inner-voice tone mapping (resolves D-030's exact mapping): three tones — Neutral before the fork (and default), Resolute after the fork at HP ≥ 50%, Erratic after the fork at HP < 35%; between 35% and 49% the previous tone is kept (hysteresis). The path changes the content (words), HP changes the tone; Erratic also drives the D-071 effect → D-024, D-030, D-034, D-060, D-071
+- **D-216** 🟢 Voice delivery rules: global cooldown of ≈ 8 s between lines, priority lines (fork, boss, ending) exempt; music and ambience duck by ≈ 6 dB while a line plays; lines suppressed in silent rooms (D-168); subtitles shown when enabled (D-089); repeat-run lines (endings saved, D-201) play at most once per run → D-024, D-080, D-089, D-168, D-201
+- **D-217** 🟢 The Overtime ending (D-196) has no inner-voice line on purpose; the silence and the button are the ending → D-196, D-199
+- **D-218** 🟢 License log: `docs/audio/LICENSES.md`, one row per audio file (file name · source · URL/pack · license · attribution needed y/n); settles D-083 with the source list in docs/audio/AudioPlan.md §2 → D-006, D-083
+- **D-219** 🟡 Audio mixer layout: TWR_Mixer (developer-made, Update Mode = Unscaled Time) with five user groups Music, Ambience, SFX, Voice, UI, each holding one exposed volume (MusicVol, AmbienceVol, SFXVol, VoiceVol, UIVol) set only by settings; each user group has one child state group (MusicState, AmbienceState, SFXState, VoiceState, UIState) that snapshots control. Every AudioSource routes to a state group (player/gun/enemy/boss/mechanism → SFX, menus → UI, ambient bed → Ambience, music → Music, voice → Voice) → D-077, D-090, D-099, D-168
+- **D-220** 🟡 Snapshots: Default, Silent, Ending, Paused (no Combat-duck; combat intensity is D-214 layering). Snapshots change only state groups, never exposed params. One AudioState controller chooses by priority Paused > Ending > Silent > Default; SoundscapeState's ref-counted silence requests stay the single authority and drive Silent (implements D-168's snapshot). MainMenu and New run reset to Default. Paused is authored but has no caller until the pause menu (D-087) exists → D-087, D-168, D-202, D-207, D-210, D-214
+- **D-221** 🟡 Ending audio: scripted endings (D-199) switch to Ending on scene start (Music full for the ending stinger, Ambience ≈ −10 dB, SFX slightly lower, Voice unchanged); Overtime (D-196) stays on Default (hum + footsteps, no music, no voice per D-217) until the button, then Ending with Ambience off; the end-of-run screen stays on Ending → D-196, D-199, D-200, D-217
+- **D-222** 🟡 Voice ducking (implements D-216's ≈ 6 dB): VoiceState sends to a Duck Volume on the MusicState and AmbienceState groups; built in A1, tuned with real lines in A4 → D-216, D-219
+- **D-223** 🟡 Ambient bed (Core, D-161): 2D fluorescent hum loop (reverbZoneMix 0) + sparse randomized distant office one-shots (phone, printer, keyboard) attached to the player, spawned 15–40 m away in a random direction, spatialBlend ≈ 0.6, maxDistance ≤ 60 m, so portal crossings don't pop (D-141) and stay under D-144. A per-section-template flag enables them; off in silent rooms, boss arenas and ending scenes → D-077, D-141, D-144, D-161, D-168
+- **D-224** 🟡 Reverb: AudioReverbZones live in content scenes per section template (bigger in halls and boss arenas, smaller in small rooms; high overall per D-077). Both sides of a portal pair use the same preset so crossing doesn't jump → D-077, D-141, D-155, D-164
+- **D-225** 🟡 Sound settings (part of D-090): five sliders 0–100 (stored 0–1, dB = 20·log10(max(v, 0.0001)), 0 = −80 dB), default 100; applied live, saved when leaving the screen; reachable from the main menu Settings (D-202) for now, built as a panel the future pause menu reuses. A startup bootstrap outside Core applies the saved volumes (after Awake) so they work from MainMenu and when Core is played directly → D-090, D-099, D-202, D-210
+- **D-226** 🟡 Settings in the save file (amends D-211, extends D-212): settings are stored in the D-212 file, format version 2 (v1 or missing values = defaults); the file is also written when settings are saved, read-modify-write so found endings and unknown ids are kept; the F1 clear (D-201) clears endings only → D-099, D-201, D-211, D-212
+- **D-227** 🟡 Audio data and checks: an AudioLibrary SO maps sound IDs → clips for global/UI/mechanism/ambience/player sounds (enemy and boss sets stay in their per-type SOs, D-138); a [TWR] validation scans scenes and prefabs for AudioSources with no mixer group or 3D maxDistance ≥ 100 m; AudioSource.PlayClipAtPoint is not used; every clip, placeholders included, gets a LICENSES.md row (D-218) → D-138, D-144, D-218, D-219
 
 ## 10. UI/UX
 - **D-085** 🟢 Main menu: classic menu screen
@@ -384,17 +399,17 @@
 | 116 | Ending extensibility | EndingData ScriptableObjects selected by rules; a secret 5th ending needs no code; F1 triggers each ending | D-203 |
 
 ## 14. Open questions
-- Exact HP/path → inner-voice mapping (D-030)
 - Per-variant hint lines beyond generic family hints (D-178).
 - Interaction animations with no visible hands (D-070)
 - FOV / head bob / motion blur toggles; damage direction indicator (D-090, D-091)
-- Final SFX source selection (D-083)
 - Can enemies follow, see or hear through portals / location-changing doors, and can later enemy types open doors? (D-053b, D-097, D-135, D-144)
 - Does the "is observed" check (D-045, D-053a) count observation through a portal view? (D-139)
 - Portal recursion (portal-in-portal) and sound through portals after the slice (D-140, D-144)
 - Health pickup amount and frequency — tune after playtesting R2 (D-171)
 - Boss display names: boss.bull.name / boss.preacher.name are placeholders ("The Bull", "The Preacher") (D-185, D-193)
-- A dedicated boss music state (D-075); the bosses use the combat state for now (D-193)
 - Does "no fall damage" stay global for the whole game? D-191 assumes yes
 - Subtitles default ON until the Settings toggle (D-089, D-090) exists? R5 assumes ON
 - Final ending scenes, art, VO and what the White Room actually is (D-195–D-199 are placeholders)
+- A Master volume slider in Sound settings? D-225 assumes five sliders, no Master (D-090)
+- "Lobby muzak" (AudioPlan §1.2): a 5th music state, or the Exploration track in the Lobby? Decide before A2 (D-213, D-214)
+- Ending stingers: a one-shot on the Music bus outside the music state machine? (D-199, D-221)

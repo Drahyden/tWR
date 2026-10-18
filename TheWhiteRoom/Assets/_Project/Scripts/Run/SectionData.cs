@@ -9,6 +9,7 @@ namespace TWR.Run
     /// R2 (D-161, D-165): sceneName is the content scene loaded additively next to the Core scene, and
     /// exitCondition says what unlocks the section's exit door. "TWR/Run/Build Run Scenes" fills both.
     /// R3 (D-176): enemyCount = how many Seekers a seeded run spawns here (seed 0 uses the authored spawn points).
+    /// A1 (D-223): officeAmbience = the ambient bed's distant office one-shots play here (never in silent rooms / boss arenas).
     /// Create via: Project window > right-click > Create > TWR > Run > Section Data.
     /// </summary>
     [CreateAssetMenu(fileName = "Section_", menuName = "TWR/Run/Section Data")]
@@ -33,6 +34,14 @@ namespace TWR.Run
         [Tooltip("How many Seekers a seeded run spawns here (fixed per template, D-176): combat 3, stealth 2, puzzle 1, " +
                  "others 0. Bosses are not counted. The scene needs at least enemyCount + 1 rollable spawn points.")]
         [Min(0)] public int enemyCount;
+
+        [Header("Audio - D-223")]
+        [Tooltip("Distant office one-shots (phone, printer, keyboard) of the ambient bed play in this section. " +
+                 "Must be off for silent rooms and boss arenas (the run-scene builder enforces it).")]
+        public bool officeAmbience = true;
+
+        /// <summary>D-223: office one-shots are never allowed in these templates.</summary>
+        public static bool OfficeAmbienceAllowed(SectionType type) => type != SectionType.Silent && type != SectionType.BossArena;
 
         /// <summary>The R3 default enemy count per template (D-176); "TWR/Run/Build Run Scenes" writes it.</summary>
         public static int DefaultEnemyCount(SectionType type)
@@ -76,6 +85,8 @@ namespace TWR.Run
                 Debug.LogWarning($"[TWR] Section '{name}' is a boss arena without a path. Set Path to Escape or Discover (D-148, D-156).", this);
             if (type == SectionType.Fork && path != RunPath.None)
                 Debug.LogWarning($"[TWR] Section '{name}' is the fork room but has path {path}. The fork room belongs to no path; set Path to None.", this);
+            if (officeAmbience && !OfficeAmbienceAllowed(type))
+                Debug.LogWarning($"[TWR] Section '{name}' ({type}) has office ambience on; D-223 wants it off in silent rooms and boss arenas.", this);
             if (exitCondition == SectionExitCondition.BossDefeated && type != SectionType.BossArena)
                 Debug.LogWarning($"[TWR] Section '{name}' waits for a boss but is not a boss arena: its exit would never open.", this);
         }

@@ -6,6 +6,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Localization;
 using UnityEngine.UI;
+using TWR.Audio;
 using TWR.Endings;
 using TWR.Run;
 using TWR.UI;
@@ -24,6 +25,8 @@ namespace TWR.EditorTools
     /// - Build Settings: MainMenu first (index 0), then Core, the content scenes and the ending scenes (D-210).
     /// Validation lives in TestSceneBuilder.EndingsValidation.cs. Assets are created AFTER NewScene, like every builder.
     /// Existing EndingData assets keep their edited values; only empty fields are filled.
+    /// A1 (D-225): the main menu's Settings screen holds the Sound settings panel (TestSceneBuilder.Audio.cs) and every menu
+    /// and end-screen button gets a click sound (UiButtonSound).
     /// </summary>
     public static partial class TestSceneBuilder
     {
@@ -107,6 +110,7 @@ namespace TWR.EditorTools
 
             Debug.Log("[TWR] Building R5 (D-195 to D-212): Core (end screen, subtitles, ending sequence), 4 ending scenes, MainMenu ...");
             EnsureFolder(RunScenesFolder);
+            reportedAudioProblems.Clear(); // A1: report each missing mixer part once per build
             bool built = BuildRunScene(CoreSceneName, BuildCoreScene, false);
             built &= BuildEndingScenesAndMenu();
             bool configured = ConfigureEndingAssets();
@@ -116,6 +120,7 @@ namespace TWR.EditorTools
             bool valid = ValidateRunSetup();
             valid &= ValidateRunScenes();
             valid &= ValidateEndings();
+            valid &= ValidateAudio(); // A1 (D-227)
 
             if (built && configured && valid)
                 Debug.Log("[TWR] Endings + main menu built and valid. Open " + RunScenePath(MainMenuSceneName) + " and press Play (or Play in Core for a run).");
@@ -599,12 +604,13 @@ namespace TWR.EditorTools
             Button settings = UiButton("Settings Button", main.transform, new Vector2(0f, -70f), new Vector2(420f, 86f), new LocalizedString("UI", "menu.settings"));
             Button quit = UiButton("Quit Button", main.transform, new Vector2(0f, -180f), new Vector2(420f, 86f), new LocalizedString("UI", "menu.quit"));
 
-            GameObject settingsPanel = StretchedPanel("Settings Panel (placeholder until D-090)", c);
-            UiText("Settings Title", settingsPanel.transform, new Vector2(0f, 120f), new Vector2(1000f, 80f), 56f,
+            // A1 (D-225): the Settings screen now holds the Sound settings panel (five sliders, saved when leaving).
+            GameObject settingsPanel = StretchedPanel("Settings Panel (Sound settings, D-090, D-225)", c);
+            UiText("Settings Title", settingsPanel.transform, new Vector2(0f, 200f), new Vector2(1000f, 80f), 56f,
                    new LocalizedString("UI", "menu.settings.title"), new Color(0.1f, 0.1f, 0.1f), TextAlignmentOptions.Center);
-            UiText("Settings Placeholder", settingsPanel.transform, new Vector2(0f, 30f), new Vector2(1000f, 60f), 34f,
-                   new LocalizedString("UI", "menu.settings.placeholder"), new Color(0.35f, 0.35f, 0.35f), TextAlignmentOptions.Center);
-            Button back = UiButton("Back Button", settingsPanel.transform, new Vector2(0f, -100f), new Vector2(420f, 86f), new LocalizedString("UI", "menu.back"));
+            BuildAudioSettingsPanel(settingsPanel, 120f);
+            Button back = UiButton("Back Button", settingsPanel.transform, new Vector2(0f, -370f), new Vector2(420f, 86f),
+                                   new LocalizedString("UI", "menu.back"), AudioIds.UiBack);
             settingsPanel.SetActive(false);
 
             var menu = canvasGO.AddComponent<MainMenuController>();
@@ -787,7 +793,9 @@ namespace TWR.EditorTools
             return label;
         }
 
-        static Button UiButton(string name, Transform parent, Vector2 position, Vector2 size, LocalizedString text)
+        /// Menu / end-screen button with a localized label and a click sound (UIState, A1 D-219; soundId from AudioIds).
+        static Button UiButton(string name, Transform parent, Vector2 position, Vector2 size, LocalizedString text,
+                               string soundId = AudioIds.UiClick)
         {
             RectTransform rect = UiRect(name, parent, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), position, size);
             var image = rect.gameObject.AddComponent<Image>();
@@ -800,6 +808,7 @@ namespace TWR.EditorTools
             labelRect.anchorMax = Vector2.one;
             labelRect.offsetMin = Vector2.zero;
             labelRect.offsetMax = Vector2.zero;
+            AddButtonSound(button, soundId);
             return button;
         }
     }

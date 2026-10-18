@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.Localization;
+using TWR.Audio;
 using TWR.Core;
 using TWR.Interaction;
 
@@ -14,6 +15,8 @@ namespace TWR.Puzzles
     /// It only opens: where the door leads (D-053b, D-058) is a separate component (e.g. a Portal, D-147).
     /// A door whose DoorLock is "permanently locked" never opens but still shows "Locked" (D-145).
     /// The panel's collider sits on the Interactable layer and also stops bullets like a wall.
+    /// A1 (D-219, D-227): its AudioSource goes to SFXState; empty DoorData clips fall back to the AudioLibrary IDs
+    /// mechanism.door.open / mechanism.door.locked.
     /// </summary>
     public class Door : MonoBehaviour, IInteractable
     {
@@ -55,6 +58,7 @@ namespace TWR.Puzzles
                 closedRotation = panel.localRotation;
             }
             audioSource = GetComponent<AudioSource>();
+            AudioRouting.RouteIfUnassigned(audioSource, AudioBus.SFX); // mechanisms -> SFXState (D-219)
         }
 
         public void Interact(GameObject interactor)
@@ -62,7 +66,7 @@ namespace TWR.Puzzles
             if (!CanInteract) return;
             if (IsLocked)
             {
-                PlayClip(data.lockedClip); // "rattle"; the prompt already says Locked
+                PlayClip(data.lockedClip, AudioIds.DoorLocked); // "rattle"; the prompt already says Locked
                 return;
             }
             Open(interactor);
@@ -75,7 +79,7 @@ namespace TWR.Puzzles
             opening = true;
             openTimer = 0f;
             NoiseSystem.Emit(transform.position, data.openNoiseRadius, NoiseType.Mechanism, opener);
-            PlayClip(data.openClip);
+            PlayClip(data.openClip, AudioIds.DoorOpen);
             OpenStarted?.Invoke(this, opener);
         }
 
@@ -113,9 +117,12 @@ namespace TWR.Puzzles
                 panel.localRotation = closedRotation * Quaternion.Euler(0f, data.swingAngle * amount, 0f);
         }
 
-        void PlayClip(AudioClip clip)
+        /// The DoorData clip first; if that slot is empty, the AudioLibrary entry with this ID (D-227).
+        void PlayClip(AudioClip clip, string libraryId)
         {
-            if (clip != null && audioSource != null) audioSource.PlayOneShot(clip);
+            if (audioSource == null) return;
+            if (clip != null) audioSource.PlayOneShot(clip);
+            else AudioLibrary.PlayOneShot(audioSource, libraryId, 1f, true);
         }
     }
 }

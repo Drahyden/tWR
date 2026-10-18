@@ -1,4 +1,5 @@
 using UnityEngine;
+using TWR.Audio;
 using TWR.Core;
 
 namespace TWR.Player
@@ -7,7 +8,9 @@ namespace TWR.Player
     /// Player footstep, jump and landing sounds + matching noise events (D-079, D-043, D-052).
     /// A footstep fires every "stride" metres walked (works like a timer that speeds up when you run);
     /// the audio hook and the noise always fire at the same moment. Crouch is quiet, sprint is loud.
-    /// Clip arrays may be empty for now: noises still fire, you just hear nothing.
+    /// Clip arrays may be empty for now: then the AudioLibrary IDs player.footstep / jump / land are used (D-227); if those
+    /// are empty too, noises still fire and you just hear nothing. The player's AudioSource (shared with the gun) goes to
+    /// the SFXState mixer group (D-219).
     /// </summary>
     [RequireComponent(typeof(AudioSource))]
     public class PlayerMovementSounds : MonoBehaviour
@@ -28,6 +31,7 @@ namespace TWR.Player
         void Awake()
         {
             audioSource = GetComponent<AudioSource>();
+            AudioRouting.RouteIfUnassigned(audioSource, AudioBus.SFX); // D-219 (the builder normally did it already)
             if (locomotion == null) locomotion = GetComponent<PlayerLocomotion>();
         }
 
@@ -72,7 +76,7 @@ namespace TWR.Player
             else if (locomotion.IsSprinting) { radius = tuning.sprintStepNoise;  volume = tuning.sprintStepVolume; }
             else                        { radius = tuning.walkStepNoise;    volume = tuning.walkStepVolume; }
 
-            PlayRandom(footstepClips, volume);
+            PlayRandom(footstepClips, AudioIds.PlayerFootstep, volume);
             NoiseSystem.Emit(transform.position, radius, NoiseType.Footstep, gameObject);
             FootstepTaken?.Invoke(radius);
         }
@@ -80,7 +84,7 @@ namespace TWR.Player
         void HandleJumped()
         {
             if (tuning == null) return;
-            PlayRandom(jumpClips, 1f);
+            PlayRandom(jumpClips, AudioIds.PlayerJump, 1f);
             NoiseSystem.Emit(transform.position, tuning.jumpNoise, NoiseType.Jump, gameObject);
         }
 
@@ -90,14 +94,21 @@ namespace TWR.Player
 
             float radius = Mathf.Min(tuning.landNoiseBase + fallSpeed * tuning.landNoisePerSpeed, tuning.landNoiseMax);
             if (locomotion.IsCrouching) radius *= 0.5f; // landing crouched is softer
-            PlayRandom(landClips, Mathf.Clamp01(fallSpeed / 15f + 0.3f));
+            PlayRandom(landClips, AudioIds.PlayerLand, Mathf.Clamp01(fallSpeed / 15f + 0.3f));
             NoiseSystem.Emit(transform.position, radius, NoiseType.Land, gameObject);
             strideProgress = 0f;
         }
 
-        void PlayRandom(AudioClip[] clips, float volume)
+        /// Own clip list first; if it is empty, the AudioLibrary entry with this ID (D-227). Never changes the pitch:
+        /// the gun plays on the same source.
+        void PlayRandom(AudioClip[] clips, string libraryId, float volume)
         {
-            if (clips == null || clips.Length == 0 || audioSource == null) return;
+            if (audioSource == null) return;
+            if (clips == null || clips.Length == 0)
+            {
+                AudioLibrary.PlayOneShot(audioSource, libraryId, volume);
+                return;
+            }
             AudioClip clip = clips[Random.Range(0, clips.Length)];
             if (clip != null) audioSource.PlayOneShot(clip, volume);
         }

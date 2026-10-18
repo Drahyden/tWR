@@ -4,11 +4,11 @@ using UnityEngine;
 namespace TWR.Audio
 {
     /// <summary>
-    /// Shared "is the world silent right now?" switch (D-168, D-082). A silent room requests silence while it is
-    /// loaded; the ambient bed (D-077 fluorescent hum) and, later, the adaptive music (D-075) listen and fade out.
-    /// Player, gun and enemy sounds are NOT affected (D-168), and gameplay noise events never are.
-    /// The project has no AudioMixer yet, so this replaces the planned mixer snapshot: when a mixer exists, its
-    /// listener can switch a snapshot here instead. Requests are counted so two sources can't cancel each other.
+    /// Shared "is the world silent right now?" switch (D-168, D-082), and still the single authority for silence:
+    /// a silent room requests silence while it is loaded. Requests are counted so two sources can't cancel each other.
+    /// A1 (D-220): when the state flips it tells AudioState, which switches the mixer to the Silent snapshot (music and
+    /// ambience state groups fade to silence, hum included). Player, gun and enemy sounds are NOT affected (D-168), and
+    /// gameplay noise events never are. The Changed event stays for other listeners (e.g. the future music system).
     /// </summary>
     public static class SoundscapeState
     {
@@ -22,14 +22,18 @@ namespace TWR.Audio
         public static void RequestSilence(float fadeSeconds)
         {
             requests++;
-            if (requests == 1) Changed?.Invoke(true, fadeSeconds);
+            if (requests != 1) return;
+            AudioState.HandleSilenceChanged(fadeSeconds);
+            Changed?.Invoke(true, fadeSeconds);
         }
 
         public static void ReleaseSilence(float fadeSeconds)
         {
             if (requests == 0) return;
             requests--;
-            if (requests == 0) Changed?.Invoke(false, fadeSeconds);
+            if (requests != 0) return;
+            AudioState.HandleSilenceChanged(fadeSeconds);
+            Changed?.Invoke(false, fadeSeconds);
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

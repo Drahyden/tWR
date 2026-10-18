@@ -233,8 +233,7 @@ namespace TWR.EditorTools
             doorGO.transform.SetParent(group, false);
             doorGO.transform.SetPositionAndRotation(new Vector3(22.3f, 0f, -2.5f), Quaternion.LookRotation(Vector3.left));
             var audio = doorGO.AddComponent<AudioSource>();
-            audio.playOnAwake = false;
-            audio.spatialBlend = 1f;
+            ConfigureSfxSource3D(audio, 1f, MechanismAudioMaxDistance); // mechanisms -> SFXState (D-219)
 
             GameObject panel = PuzzlePart("Panel", doorGO.transform, new Vector3(0f, 1.3f, 0f), new Vector3(1.6f, 2.6f, 0.12f), doorMat);
             panel.layer = assets.interactableLayer; // F finds it; bullets also stop on it like a wall (D-118)

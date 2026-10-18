@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using TWR.Audio;
 using TWR.Combat;
 using TWR.Core;
 using TWR.Player;
@@ -16,6 +17,9 @@ namespace TWR.Endings
     /// the crosshair and the interaction prompt.
     /// Finish: freeze the player, fade to the ending's colour (white, or black for Overtime), then show the end-of-run
     /// screen with a free, visible cursor (D-209). Leave: undo all of it (New run / Main menu / another debug ending).
+    /// A1 audio (D-221): scripted endings switch the mixer to the Ending snapshot when their scene is ready; Overtime stays
+    /// on Default until the button, then Ending with the ambient bed off; the end screen stays on Ending; Leave resets
+    /// to Default (D-220).
     /// </summary>
     [DisallowMultipleComponent]
     public class EndingSequence : MonoBehaviour
@@ -93,7 +97,9 @@ namespace TWR.Endings
         /// <summary>The ending scene is in and the player stands at its entry (screen still white).</summary>
         public void HandleSceneReady()
         {
-            if (IsScripted) HideCursor(); // the frozen input reader freed it; a cutscene shows no cursor
+            if (!IsScripted) return; // Overtime stays on Default (hum + footsteps) until the button (D-221)
+            HideCursor(); // the frozen input reader freed it; a cutscene shows no cursor
+            AudioState.EnterEnding(false); // D-221: scripted endings switch to Ending on scene start
         }
 
         /// <summary>Fade out and show the end-of-run screen (D-199, D-200). False if already finishing / shown.</summary>
@@ -108,6 +114,9 @@ namespace TWR.Endings
         {
             finishing = true;
             PauseLock.SetBlocked(true);
+            // D-221: Overtime's button -> Ending with the ambience off; scripted endings are already on Ending.
+            // The end-of-run screen then stays on Ending.
+            AudioState.EnterEnding(!IsScripted);
             if (loader != null) loader.Freeze();
             HideCursor();
 
@@ -150,6 +159,7 @@ namespace TWR.Endings
             PauseLock.SetBlocked(false);
             IsActive = false;
             IsScripted = false;
+            AudioState.ResetToDefault(); // D-220: New run / Main menu / another ending start from Default
         }
 
         void StopFinishing()

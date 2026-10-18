@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using TWR.Audio;
 using TWR.Core;
 
 namespace TWR.Puzzles
@@ -46,6 +47,7 @@ namespace TWR.Puzzles
         {
             locked = startsLocked || permanentlyLocked;
             audioSource = GetComponent<AudioSource>();
+            AudioRouting.RouteIfUnassigned(audioSource, AudioBus.SFX); // mechanisms -> SFXState (D-219)
             ApplyVisual();
         }
 
@@ -60,7 +62,11 @@ namespace TWR.Puzzles
             if (data != null)
             {
                 NoiseSystem.Emit(transform.position, data.unlockNoiseRadius, NoiseType.Mechanism, source);
-                if (data.unlockClip != null && audioSource != null) audioSource.PlayOneShot(data.unlockClip);
+                if (audioSource != null)
+                {
+                    if (data.unlockClip != null) audioSource.PlayOneShot(data.unlockClip);
+                    else AudioLibrary.PlayOneShot(audioSource, AudioIds.DoorUnlock, 1f, true); // D-227 fallback
+                }
             }
             Unlocked?.Invoke(this);
         }

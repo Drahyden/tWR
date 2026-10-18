@@ -11,7 +11,8 @@ namespace TWR.Save
     /// random seeds afterwards. RecordFound writes the file at once (D-205: quitting during the ending still counts);
     /// ClearAll is the F1 debug "clear saved endings". Inner-voice hook (D-039, D-201): SeenEndingCount, HasFound(id)
     /// and the Changed event. Meta only, no gameplay effect (D-039). One shared instance, loaded from disk on first use
-    /// in each Play session.
+    /// in each Play session. A1 (D-226): it writes with read-modify-write (SaveFile.Update), so the settings in the same
+    /// file are never overwritten, and ClearAll clears the endings only.
     /// </summary>
     public sealed class EndingsSave : IEndingsRecord
     {
@@ -47,17 +48,22 @@ namespace TWR.Save
         {
             if (string.IsNullOrEmpty(endingId) || !found.Add(endingId)) return false;
             data.foundEndings.Add(endingId);
-            SaveFile.Write(path, data);
+            // Read-modify-write (D-226): the settings and any unknown ids in the file are kept.
+            SaveFile.Update(path, file =>
+            {
+                if (!file.foundEndings.Contains(endingId)) file.foundEndings.Add(endingId);
+            });
             Changed?.Invoke();
             return true;
         }
 
+        /// <summary>F1 debug "clear saved endings" (D-201): clears the endings ONLY; the settings stay (D-226).</summary>
         public void ClearAll()
         {
             found.Clear();
             data.foundEndings.Clear();
-            SaveFile.Write(path, data); // keeps the file (later it also holds settings, D-212)
-            Debug.Log("[Save] Saved endings cleared (F1 debug, D-201). The next run is the curated first run (D-154).");
+            SaveFile.Update(path, file => file.foundEndings.Clear());
+            Debug.Log("[Save] Saved endings cleared (F1 debug, D-201); settings kept (D-226). The next run is the curated first run (D-154).");
             Changed?.Invoke();
         }
 

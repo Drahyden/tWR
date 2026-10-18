@@ -15,6 +15,7 @@ namespace TWR.EditorTools
     /// Imports TMP Essentials, creates/activates Localization Settings, the English locale (project locale
     /// + Specific Locale Selector), and the "UI" string table with its starter entries (D-084).
     /// R5 (D-199 to D-202): ending titles, end-of-run screen patterns, main menu labels (UI) and the ending lines (Subtitles).
+    /// A1 (D-225): the Sound settings title and slider labels (UI).
     /// Through TestSceneBuilder.PrepareSharedAssets it also creates the layers and sets up the
     /// draw-the-gun-on-top renderer features (WeaponRenderSetup, D-123).
     /// Safe to run any time: it only creates or fixes what is missing. "TWR/Build Test Scene" runs it first.
@@ -70,6 +71,13 @@ namespace TWR.EditorTools
             ("menu.settings.title", "Settings"),
             ("menu.settings.placeholder", "Nothing to set yet."),
             ("menu.back", "Back"),
+            // Audio A1: Sound settings panel (D-225). Values are plain numbers 0-100, not localized.
+            ("settings.sound.title", "Sound"),
+            ("settings.sound.music", "Music"),
+            ("settings.sound.ambience", "Ambience"),
+            ("settings.sound.sfx", "Sound effects"),
+            ("settings.sound.voice", "Voice"),
+            ("settings.sound.ui", "Interface"),
         };
 
         const string SubtitlesTable = "Subtitles";

@@ -7,7 +7,7 @@ namespace TWR.Enemies
     /// one-shots (telegraphs, charge, impact, stomp, hurt, death, teleport, volley). PlayAt plays on ANOTHER source, e.g.
     /// the Preacher's destination telegraph (D-184: the sound comes from where it will appear). Empty slots use the
     /// generated placeholders if the set allows it. Boss sounds are audio only, never NoiseSystem events (D-138).
-    /// Clips are looked up once in Awake; playing a sound allocates nothing (D-100).
+    /// Clips are looked up once in Awake; playing a sound allocates nothing (D-100). Its sources go to SFXState (D-219).
     /// </summary>
     [RequireComponent(typeof(AudioSource))]
     public class BossAudio : MonoBehaviour
@@ -23,6 +23,7 @@ namespace TWR.Enemies
         void Awake()
         {
             source = GetComponent<AudioSource>();
+            TWR.Audio.AudioRouting.RouteIfUnassigned(source, TWR.Audio.AudioBus.SFX); // enemies -> SFXState (D-219)
             bool placeholders = sounds == null || sounds.usePlaceholdersWhenEmpty;
             clips = new AudioClip[SoundCount];
             for (int i = 0; i < SoundCount; i++)
@@ -58,6 +59,7 @@ namespace TWR.Enemies
         {
             AudioClip clip = clips != null ? clips[(int)sound] : null;
             if (clip == null || other == null) return;
+            TWR.Audio.AudioRouting.RouteIfUnassigned(other, TWR.Audio.AudioBus.SFX); // D-219
             other.pitch = pitch;
             other.PlayOneShot(clip, EffectsVolume);
         }

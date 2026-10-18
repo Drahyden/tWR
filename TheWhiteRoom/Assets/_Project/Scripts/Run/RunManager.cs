@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using TWR.Audio;
 using TWR.Combat;
 using TWR.Core;
 using TWR.Endings;
@@ -40,6 +41,7 @@ namespace TWR.Run
     /// Main menu loads the MainMenu scene alone, which unloads Core (D-210). The run clock runs from the lobby run door
     /// to the boss exit in scaled game time, so a future pause (Time.timeScale = 0) is excluded (D-206).
     /// The endings record is the real save file (TWR.Save.EndingsSave, D-201, D-212).
+    /// A1 (D-220): StartNewRun resets the mixer to the Default snapshot (AudioState.ResetToDefault).
     /// </summary>
     [DefaultExecutionOrder(-200)]
     [DisallowMultipleComponent]
@@ -268,6 +270,7 @@ namespace TWR.Run
         /// </summary>
         public void StartNewRun()
         {
+            AudioState.ResetToDefault(); // D-220: every new run starts on the Default snapshot
             completing = false;
             clockStarted = false;
             clockStopped = false;

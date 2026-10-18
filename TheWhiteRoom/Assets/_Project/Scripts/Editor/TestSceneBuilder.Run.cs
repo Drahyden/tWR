@@ -81,6 +81,7 @@ namespace TWR.EditorTools
                 ok &= ValidateEndings(); // R5 (D-195 to D-212)
             }
             else Debug.LogWarning("[TWR] The run scenes are not built yet. Run TWR > Run > Build Run Scenes (R2).");
+            ok &= ValidateAudio(); // A1: mixer structure, routing, max distance, reverb, license log (D-219 to D-227)
 
             if (ok)
                 Debug.Log("[TWR] Run setup is valid.");

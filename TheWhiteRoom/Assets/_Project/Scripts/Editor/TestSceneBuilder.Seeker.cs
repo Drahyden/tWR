@@ -171,6 +171,7 @@ namespace TWR.EditorTools
                 audio.minDistance = 1f;
                 audio.maxDistance = 25f;
                 audio.dopplerLevel = 0f;
+                RouteAudio(audio, TWR.Audio.AudioBus.SFX); // enemies -> SFXState (D-219)
 
                 // Visual body, pivot at the feet so it can lean (telegraph) and tip over (death).
                 Transform visual = new GameObject("Body").transform;

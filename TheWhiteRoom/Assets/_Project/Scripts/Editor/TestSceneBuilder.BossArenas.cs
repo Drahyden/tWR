@@ -657,7 +657,9 @@ namespace TWR.EditorTools
             source.spatialBlend = 1f;
             source.rolloffMode = AudioRolloffMode.Linear;
             source.minDistance = 4f;
-            source.maxDistance = 90f;
+            source.maxDistance = 90f; // < 100 m (D-227)
+            source.dopplerLevel = 0f;
+            RouteAudio(source, TWR.Audio.AudioBus.SFX); // bosses -> SFXState (D-219)
         }
 
         static void SetBossLayer(GameObject go)

@@ -144,10 +144,10 @@ Every key above gets an entry in the localization string table (English now, Spa
 
 ---
 
-## 4. Decisions to approve (become D-213+)
-1. 4th music state **Boss** with one track per boss; phase 2 adds the top layer (resolves the §14 boss-music question).
-2. Music structure: one track per state, FADR stems as vertical layers, ~2 s crossfades between states.
-3. D-030 tone mapping: Neutral before fork; after fork Resolute at HP ≥ 50%, Erratic at HP < 35%, hysteresis between; path changes content, HP changes tone.
-4. Voice delivery: ~8 s global cooldown (priority lines exempt), −6 dB ducking, suppressed in silent rooms, repeat-run lines once per run.
-5. Overtime ending has no voice line.
-6. License log at `docs/audio/LICENSES.md` (settles D-083 together with the source list above).
+## 4. Decisions (approved — recorded in docs/GDD.md)
+1. 🟢 **D-213** 4th music state **Boss** with one track per boss; phase 2 adds the top layer (resolves the §14 boss-music question).
+2. 🟢 **D-214** Music structure: one track per state, FADR stems as vertical layers, ~2 s crossfades between states.
+3. 🟢 **D-215** D-030 tone mapping: Neutral before fork; after fork Resolute at HP ≥ 50%, Erratic at HP < 35%, hysteresis between; path changes content, HP changes tone.
+4. 🟢 **D-216** Voice delivery: ~8 s global cooldown (priority lines exempt), −6 dB ducking, suppressed in silent rooms, repeat-run lines once per run.
+5. 🟢 **D-217** Overtime ending has no voice line.
+6. 🟢 **D-218** License log at `docs/audio/LICENSES.md` (settles D-083 together with the source list above).
