@@ -30,6 +30,8 @@ namespace TWR.EditorTools
     /// - each run content / ending scene has reverb zones, and portal scenes use one preset on both sides (D-224).
     /// - office one-shots are off in silent rooms and boss arenas (D-223); no runtime script uses the static
     ///   play-at-point helper of AudioSource; every audio file has a row in docs/audio/LICENSES.md (D-218).
+    /// - A2 (D-230 to D-235): no scene/prefab AudioSource holds a music clip (only the MusicDirector plays music), music IDs
+    ///   are a fourth AudioIds class (Music), and the whole music validation (TestSceneBuilder.MusicValidation.cs).
     /// Opens scenes additively and closes them again.
     /// </summary>
     public static partial class TestSceneBuilder
@@ -65,6 +67,7 @@ namespace TWR.EditorTools
             ok &= ValidateAudioInPrefabs(report);
             ok &= ValidateNoPlayAtPoint(report);
             ok &= ValidateLicenseLog(report);
+            ok &= ValidateMusic(report); // A2 (D-230 to D-235): TestSceneBuilder.MusicValidation.cs
 
             if (ok) Debug.Log(report.ToString());
             else Debug.LogError(report.ToString());
@@ -299,23 +302,26 @@ namespace TWR.EditorTools
             var unclassified = new List<string>();
             foreach (string id in constants)
             {
-                int groups = (AudioIds.Required.Contains(id) ? 1 : 0) + (AudioIds.Fallback.Contains(id) ? 1 : 0) + (AudioIds.Reserved.Contains(id) ? 1 : 0);
+                int groups = (AudioIds.Required.Contains(id) ? 1 : 0) + (AudioIds.Fallback.Contains(id) ? 1 : 0) +
+                             (AudioIds.Reserved.Contains(id) ? 1 : 0) + (AudioIds.Music.Contains(id) ? 1 : 0);
                 if (groups != 1) unclassified.Add(id);
             }
             bool ok = Check(report, "  every AudioIds constant is listed in AudioIds.All", notInAll.Count == 0,
                             notInAll.Count == 0 ? "" : string.Join(", ", notInAll) + " (add them to AudioIds.All)");
-            ok &= Check(report, "  every AudioIds constant is in exactly one of Required / Fallback / Reserved", unclassified.Count == 0,
+            ok &= Check(report, "  every AudioIds constant is in exactly one of Required / Fallback / Reserved / Music", unclassified.Count == 0,
                         unclassified.Count == 0 ? "" : string.Join(", ", unclassified));
 
             var missingIds = new List<string>();
             var requiredEmpty = new List<string>();
             var fallbackEmpty = new List<string>();
             var reservedEmpty = new List<string>();
+            var musicEmpty = new List<string>();
             foreach (string id in constants)
             {
                 if (!library.TryGet(id, out AudioLibrary.Entry entry)) { missingIds.Add(id); continue; }
                 if (entry.HasClips) continue;
-                if (AudioIds.Reserved.Contains(id)) reservedEmpty.Add(id);
+                if (AudioIds.Music.Contains(id)) musicEmpty.Add(id);
+                else if (AudioIds.Reserved.Contains(id)) reservedEmpty.Add(id);
                 else if (AudioIds.Fallback.Contains(id)) fallbackEmpty.Add(id);
                 else requiredEmpty.Add(id); // Required, or unclassified: treat as used by code
             }
@@ -339,7 +345,8 @@ namespace TWR.EditorTools
             if (reservedFilled.Count > 0)
                 report.AppendLine("    note: registered for later, nothing plays it yet (fine): " + string.Join(", ", reservedFilled) + " (A5, D-081, D-228)");
 
-            // Loops are flagged (the loop check uses the flag) and no music is in the library yet (A2).
+            // Loops are flagged (the loop check uses the flag). Music entries (A2) are not flagged: the stems are long, so the
+            // loop check stays on the hum; music clips must sit under music IDs only.
             var loopNotFlagged = AudioIds.Loops.Where(id => library.TryGet(id, out AudioLibrary.Entry e) && !e.loop).ToList();
             if (loopNotFlagged.Count > 0)
             {
@@ -347,17 +354,25 @@ namespace TWR.EditorTools
                 report.AppendLine("    warning: " + text);
                 Debug.LogWarning("[TWR] AudioLibrary: " + text + " (D-228).", library);
             }
-            var musicClips = new List<string>();
+            if (musicEmpty.Count > 0)
+            {
+                string text = "no clip for music ID(s) " + string.Join(", ", musicEmpty) + " (run TWR > Audio > Build Music (A2))";
+                report.AppendLine("    warning: " + text);
+                Debug.LogWarning("[TWR] AudioLibrary: " + text + " (D-235).", library);
+            }
+            // A2: music clips belong only under music IDs (they are loaded with the library from Resources, so they must be
+            // Streaming; the music validation checks that), never under a sound ID that code plays as a one-shot.
+            var misplacedMusic = new List<string>();
             if (library.entries != null)
                 foreach (AudioLibrary.Entry entry in library.entries)
-                    if (entry?.clips != null)
+                    if (entry?.clips != null && !AudioIds.Music.Contains(entry.id))
                         foreach (AudioClip clip in entry.clips)
-                            if (clip != null && AssetDatabase.GetAssetPath(clip).StartsWith(AudioFolder + "/Music/")) musicClips.Add($"{entry.id}: {clip.name}");
-            if (musicClips.Count > 0)
+                            if (clip != null && AssetDatabase.GetAssetPath(clip).StartsWith(AudioFolder + "/Music/")) misplacedMusic.Add($"{entry.id}: {clip.name}");
+            if (misplacedMusic.Count > 0)
             {
-                string text = "music clips are in the library before A2 (they'd be loaded with it from Resources): " + string.Join(", ", musicClips);
+                string text = "music clips under non-music IDs (music is played by the MusicDirector only): " + string.Join(", ", misplacedMusic);
                 report.AppendLine("    warning: " + text);
-                Debug.LogWarning("[TWR] AudioLibrary: " + text + " (D-228).", library);
+                Debug.LogWarning("[TWR] AudioLibrary: " + text + " (D-233, D-235).", library);
             }
             var unknown = library.entries == null ? new List<string>() :
                 library.entries.Where(e => e != null && !string.IsNullOrEmpty(e.id) && !constants.Contains(e.id)).Select(e => e.id).ToList();
@@ -443,6 +458,8 @@ namespace TWR.EditorTools
                 onFallback = missingStateGroups.Contains(group.name + "State");
                 if (!onFallback) problems.Add($"{where}: routed to '{group.name}', must be a state group (e.g. SFXState, D-219)");
             }
+            if (source.clip != null && AssetDatabase.GetAssetPath(source.clip).StartsWith(AudioImportRules.MusicFolder + "/"))
+                problems.Add($"{where}: plays the music clip '{source.clip.name}' itself; music comes only from the MusicDirector (D-233)");
             if (source.spatialBlend > 0f && source.maxDistance >= MaxAudioDistance)
                 problems.Add($"{where}: 3D max distance {source.maxDistance:0} m (must be < {MaxAudioDistance:0} m, D-144, D-227)");
             return onFallback;

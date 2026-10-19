@@ -78,6 +78,26 @@ namespace TWR.EditorTools
                 Debug.LogWarning($"[TWR] License log: {warnings} warning(s) for {files.Count} audio files (see above).");
         }
 
+        /// <summary>
+        /// For other checks (the A2 music validation, D-235): one problem text per file name that has no row, or whose
+        /// row is still TO VERIFY / UNKNOWN. logFound = false if LICENSES.md doesn't exist (then nothing is reported).
+        /// </summary>
+        public static List<string> ProblemsFor(IEnumerable<string> fileNames, out bool logFound)
+        {
+            var problems = new List<string>();
+            logFound = File.Exists(LogPath);
+            if (!logFound) return problems;
+            List<string> rows = ReadTableRows(File.ReadAllLines(LogPath));
+            foreach (string name in fileNames)
+            {
+                string row = rows.FirstOrDefault(r => r.Contains(name));
+                if (row == null) problems.Add($"{name}: no row");
+                else if (row.Contains("UNKNOWN")) problems.Add($"{name}: row is UNKNOWN");
+                else if (row.Contains("TO VERIFY")) problems.Add($"{name}: row is TO VERIFY");
+            }
+            return problems;
+        }
+
         /// <summary>Table rows of the log, without the header and separator lines.</summary>
         static List<string> ReadTableRows(string[] lines)
         {

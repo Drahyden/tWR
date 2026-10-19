@@ -74,7 +74,8 @@ namespace TWR.Endings
     /// <summary>
     /// One ending as data (D-203): a stable id (saved, D-212), a localized title (D-084), the inner-voice line's subtitle
     /// key (D-199), a replaceable placeholder graphic for the end screen (D-092, D-200), its own content scene (D-199,
-    /// D-210), how it is presented and how it fades out, and its selection rule + priority (D-204). isSecret hides it on
+    /// D-210), how it is presented and how it fades out, its music stinger (D-234, scripted endings only), and its
+    /// selection rule + priority (D-204). isSecret hides it on
     /// the end screen until found (D-208). A secret 5th ending = a new asset with a higher priority added to the
     /// EndingCatalog; no code change. Create via: Create > TWR > Endings > Ending Data.
     /// </summary>
@@ -99,6 +100,12 @@ namespace TWR.Endings
         public Color finishFadeColour = Color.white;
         [Tooltip("Length of that fade, seconds.")]
         [Min(0f)] public float finishFadeSeconds = 1.5f;
+
+        [Header("Music - D-234")]
+        [Tooltip("Ending stinger (mus_end_<id>_a), played ONCE when the ending scene starts, under the Ending snapshot. " +
+                 "Only scripted endings play it: Overtime stays without music (D-221), so leave it empty there. " +
+                 "Filled by TWR > Audio > Build Music (A2).")]
+        public AudioClip music;
 
         [Header("Selection - D-028, D-204, D-208")]
         [Tooltip("Secret endings get no silhouette on the end screen until found and don't count in 'X / 4' (D-208).")]

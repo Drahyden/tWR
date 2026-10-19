@@ -179,6 +179,26 @@ MonoBehaviour:
     m_Key: settings.sound.ui
     m_Metadata:
       m_Items: []
+  - m_Id: 2143019129241600
+    m_Key: menu.credits
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2143019204739072
+    m_Key: credits.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2143019204739073
+    m_Key: credits.heading.created_by
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2143019204739074
+    m_Key: credits.heading.made_with
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2143019204739075
+    m_Key: credits.heading.audio
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

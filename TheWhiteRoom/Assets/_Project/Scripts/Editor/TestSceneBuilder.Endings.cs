@@ -122,6 +122,7 @@ namespace TWR.EditorTools
             valid &= ValidateRunScenes();
             valid &= ValidateEndings();
             valid &= ValidateAudio(); // A1 (D-227)
+            valid &= ValidateLocalization(); // every localized text has a key with English (D-084)
 
             if (built && configured && valid)
                 Debug.Log("[TWR] Endings + main menu built and valid. Open " + RunScenePath(MainMenuSceneName) + " and press Play (or Play in Core for a run).");
@@ -792,7 +793,7 @@ namespace TWR.EditorTools
             label.alignment = alignment;
             label.color = colour;
             label.raycastTarget = false;
-            label.text = text != null ? "[" + text.TableEntryReference.Key + "]" : string.Empty; // editor preview only
+            label.text = ProjectSetup.PreviewText(text); // editor preview (English from the table); LocalizedWorldText sets it at runtime
             if (text != null)
             {
                 var localized = rect.gameObject.AddComponent<LocalizedWorldText>();

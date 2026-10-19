@@ -111,3 +111,101 @@ MonoBehaviour:
     pitchMin: 1
     pitchMax: 1
     loop: 0
+  - id: music.lobby
+    clips:
+    - {fileID: 8300000, guid: d9b9ccd9a5e7d614b9c3152dcf6d42ce, type: 3}
+    - {fileID: 8300000, guid: 3ae2791284c193b46ba8610a565d6e9f, type: 3}
+    - {fileID: 8300000, guid: cfc13d849fc906047b34e2b72eb1adeb, type: 3}
+    - {fileID: 8300000, guid: 4409578f47add4448b91eb69cd9211fc, type: 3}
+    - {fileID: 8300000, guid: f77cd6a8608845042810e339d094f7bd, type: 3}
+    volumeMin: 1
+    volumeMax: 1
+    pitchMin: 1
+    pitchMax: 1
+    loop: 0
+  - id: music.explore
+    clips:
+    - {fileID: 8300000, guid: e327c828512d6d040b8082f12f23204c, type: 3}
+    - {fileID: 8300000, guid: a9c77b2c896dd1d40940cbfdb6745ad4, type: 3}
+    - {fileID: 8300000, guid: 095a52df9e063864e906e9de5d456131, type: 3}
+    - {fileID: 8300000, guid: 2bd9854c0a4eb5249b862468066aa39a, type: 3}
+    volumeMin: 1
+    volumeMax: 1
+    pitchMin: 1
+    pitchMax: 1
+    loop: 0
+  - id: music.puzzle
+    clips:
+    - {fileID: 8300000, guid: 31f3844ecf789a9419eeef7ba38cd445, type: 3}
+    - {fileID: 8300000, guid: 95e416eb16b67214aa5281e27595cd0f, type: 3}
+    - {fileID: 8300000, guid: b7ea2b0041be1ef449c956c448623d52, type: 3}
+    volumeMin: 1
+    volumeMax: 1
+    pitchMin: 1
+    pitchMax: 1
+    loop: 0
+  - id: music.combat
+    clips:
+    - {fileID: 8300000, guid: d58afeadaaf3ecd408e191220cfa4ddb, type: 3}
+    - {fileID: 8300000, guid: 890bc88a61e75ed4e95cc8e5ceefbee1, type: 3}
+    - {fileID: 8300000, guid: 7a2e84d725a8eb54c8c8bff300d015ed, type: 3}
+    - {fileID: 8300000, guid: d60bb41155073854dbfd6ba8e6f2ca1a, type: 3}
+    volumeMin: 1
+    volumeMax: 1
+    pitchMin: 1
+    pitchMax: 1
+    loop: 0
+  - id: music.boss.bull
+    clips:
+    - {fileID: 8300000, guid: 9450b4a95f509e948851a87b1105917a, type: 3}
+    - {fileID: 8300000, guid: 1d1c4c495b59105449a08be30761c15b, type: 3}
+    - {fileID: 8300000, guid: 21a6758ec7c1d8d418585700fafc915b, type: 3}
+    - {fileID: 8300000, guid: 49642d97a192b624796e3df257b756e9, type: 3}
+    volumeMin: 1
+    volumeMax: 1
+    pitchMin: 1
+    pitchMax: 1
+    loop: 0
+  - id: music.boss.preacher
+    clips:
+    - {fileID: 8300000, guid: 85a83df1a1412704d8a913c1547ed330, type: 3}
+    - {fileID: 8300000, guid: 8cf021f0c138a09489ce72fa1602a143, type: 3}
+    - {fileID: 8300000, guid: 5394fd31f8a051b4f86bc164b74fca75, type: 3}
+    - {fileID: 8300000, guid: 6d1129f32dcdb4d48a069935e8963dd7, type: 3}
+    volumeMin: 1
+    volumeMax: 1
+    pitchMin: 1
+    pitchMax: 1
+    loop: 0
+  - id: music.end.clockout
+    clips:
+    - {fileID: 8300000, guid: 0505c6adf85a7124d90c81f758051ec2, type: 3}
+    volumeMin: 1
+    volumeMax: 1
+    pitchMin: 1
+    pitchMax: 1
+    loop: 0
+  - id: music.end.overtime
+    clips:
+    - {fileID: 8300000, guid: 0edda63b61a7e52448137a47d0eabab8, type: 3}
+    volumeMin: 1
+    volumeMax: 1
+    pitchMin: 1
+    pitchMax: 1
+    loop: 0
+  - id: music.end.floorplan
+    clips:
+    - {fileID: 8300000, guid: 7d344381322686b4db2b6c0c34329bab, type: 3}
+    volumeMin: 1
+    volumeMax: 1
+    pitchMin: 1
+    pitchMax: 1
+    loop: 0
+  - id: music.end.absorbed
+    clips:
+    - {fileID: 8300000, guid: 027cbe6fe33580c4d852c1853c131e1b, type: 3}
+    volumeMin: 1
+    volumeMax: 1
+    pitchMin: 1
+    pitchMax: 1
+    loop: 0

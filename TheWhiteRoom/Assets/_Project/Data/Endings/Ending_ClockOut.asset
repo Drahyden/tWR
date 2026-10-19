@@ -36,6 +36,7 @@ MonoBehaviour:
   graphic: {fileID: 21300000, guid: 7aa91a4930ebd3c4782f27489c2416c7, type: 3}
   finishFadeColour: {r: 1, g: 1, b: 1, a: 1}
   finishFadeSeconds: 1.5
+  music: {fileID: 8300000, guid: 0505c6adf85a7124d90c81f758051ec2, type: 3}
   isSecret: 0
   priority: 10
   rule:

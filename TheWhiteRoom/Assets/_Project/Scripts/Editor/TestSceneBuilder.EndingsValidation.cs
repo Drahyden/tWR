@@ -101,9 +101,9 @@ namespace TWR.EditorTools
                 if (exists) ok &= ValidateEndingScene(report, ending);
             }
 
-            var missingKeys = R5UiKeys.Where(k => !ProjectSetup.TableHasKey("UI", k)).ToList();
+            var missingKeys = R5UiKeys.Where(k => !ProjectSetup.TableHasEnglish("UI", k)).ToList();
             ok &= Check(report, $"{R5UiKeys.Length} end-screen / menu keys in table 'UI' (D-084)", missingKeys.Count == 0,
-                        missingKeys.Count == 0 ? "" : "missing: " + string.Join(", ", missingKeys) + " (run TWR > Setup Project)");
+                        missingKeys.Count == 0 ? "" : "missing: " + string.Join(", ", missingKeys) + " (run TWR > Setup Project; also missing if the English text is empty)");
 
             // Main menu (D-202, D-210).
             EditorBuildSettingsScene[] scenes = EditorBuildSettings.scenes;
@@ -228,7 +228,7 @@ namespace TWR.EditorTools
         }
 
         static bool KeyExists(LocalizedString text) =>
-            text != null && !text.IsEmpty && ProjectSetup.TableHasKey(text.TableReference.TableCollectionName, text.TableEntryReference.Key);
+            text != null && !text.IsEmpty && ProjectSetup.TableHasEnglish(text.TableReference.TableCollectionName, text.TableEntryReference.Key);
 
         static string KeyName(LocalizedString text) =>
             text == null || text.IsEmpty ? "(empty)" : $"{text.TableReference.TableCollectionName}/{text.TableEntryReference.Key}";

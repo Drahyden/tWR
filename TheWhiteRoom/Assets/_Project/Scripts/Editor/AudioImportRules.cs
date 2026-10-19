@@ -12,7 +12,10 @@ namespace TWR.EditorTools
     ///   loop out of memory; looping itself is set on the AudioSource.
     /// - Audio/SFX (short one-shots, e.g. the violin stinger): Decompress On Load (Compressed In Memory also accepted),
     ///   Preserve sample rate, Preload Audio Data on, Load In Background off, so a jump scare plays the same frame it fires.
-    /// - Audio/Music is NOT touched (A2), nor Audio/Placeholder (the builder sets those when it writes them).
+    /// - Audio/Music (A2, D-235): the same loop rule as Ambience for every file, stems AND the ending stingers (they are
+    ///   20-40 s full mixes, so Streaming keeps them out of memory too; they start on a white screen, where the stream
+    ///   start-up is never heard). Looping is set by the MusicDirector on its sources, never in the importer.
+    /// - Audio/Placeholder is NOT touched (the builder sets those when it writes them).
     /// Brand-new files get the settings in OnPreprocessAudio (no extra import). EnsureProjectAudio (run by
     /// TWR > Audio > Build Audio (A1)) fixes existing files, but only values outside the accepted range and only then
     /// reimports, so running it again changes nothing. It also gives the loop check's temporary copy PCM + Decompress On
@@ -22,6 +25,7 @@ namespace TWR.EditorTools
     {
         public const string AmbienceFolder = "Assets/_Project/Audio/Ambience";
         public const string SfxFolder = "Assets/_Project/Audio/SFX";
+        public const string MusicFolder = "Assets/_Project/Audio/Music";
         /// Temporary copies made by the loop check (outside _Project, deleted right after).
         public const string LoopCheckTempFolder = "Assets/_TWR_LoopCheckTemp";
 
@@ -36,7 +40,7 @@ namespace TWR.EditorTools
             if (string.IsNullOrEmpty(assetPath)) return Rule.None;
             string path = assetPath.Replace('\\', '/');
             if (path.StartsWith(LoopCheckTempFolder + "/")) return Rule.LoopCheckTemp;
-            if (path.StartsWith(AmbienceFolder + "/")) return Rule.Loop;
+            if (path.StartsWith(AmbienceFolder + "/") || path.StartsWith(MusicFolder + "/")) return Rule.Loop;
             if (path.StartsWith(SfxFolder + "/")) return Rule.OneShot;
             return Rule.None;
         }
@@ -87,12 +91,12 @@ namespace TWR.EditorTools
 
         // ---------- existing files (builder step) ----------
 
-        /// Checks every clip in Audio/Ambience and Audio/SFX and fixes only what breaks the rule (D-228). Imports files
+        /// Checks every clip in Audio/Ambience, Audio/SFX and Audio/Music and fixes only what breaks the rule (D-228). Imports files
         /// Unity hasn't seen yet. Logs one [TWR] line per changed file. Returns the number of changed files.
         public static int EnsureProjectAudio()
         {
             int changed = 0;
-            foreach (string folder in new[] { AmbienceFolder, SfxFolder })
+            foreach (string folder in new[] { AmbienceFolder, SfxFolder, MusicFolder })
             {
                 if (!Directory.Exists(folder)) continue;
                 foreach (string file in Directory.GetFiles(folder))
@@ -106,6 +110,36 @@ namespace TWR.EditorTools
                 }
             }
             return changed;
+        }
+
+        /// Read only: what breaks this file's folder rule (empty list = fine). Used by the [TWR] music validation (D-235).
+        public static List<string> RuleProblems(string path)
+        {
+            var problems = new List<string>();
+            Rule rule = RuleFor(path);
+            if (rule != Rule.Loop && rule != Rule.OneShot) return problems;
+            if (!(AssetImporter.GetAtPath(path) is AudioImporter importer))
+            {
+                problems.Add("not imported");
+                return problems;
+            }
+            AudioImporterSampleSettings sample = importer.defaultSampleSettings;
+            if (importer.forceToMono) problems.Add("Force To Mono is on");
+            if (sample.sampleRateSetting != AudioSampleRateSetting.PreserveSampleRate) problems.Add("Sample Rate is not Preserve");
+            if (rule == Rule.Loop)
+            {
+                if (sample.loadType == AudioClipLoadType.DecompressOnLoad) problems.Add("Load Type is Decompress On Load (Streaming wanted)");
+                if (sample.compressionFormat != AudioCompressionFormat.Vorbis) problems.Add($"Compression is {sample.compressionFormat} (Vorbis wanted)");
+                else if (Mathf.Abs(sample.quality - LoopQuality) > QualityTolerance) problems.Add($"Quality {Mathf.RoundToInt(sample.quality * 100f)} (70 wanted)");
+                if (!importer.loadInBackground) problems.Add("Load In Background is off");
+            }
+            else
+            {
+                if (sample.loadType == AudioClipLoadType.Streaming) problems.Add("Load Type is Streaming (Decompress On Load wanted)");
+                if (!sample.preloadAudioData) problems.Add("Preload Audio Data is off");
+            }
+            if (importer.ContainsSampleSettingsOverride(StandalonePlatform)) problems.Add("has a Windows (Standalone) override");
+            return problems;
         }
 
         /// Fix this file's settings if they break its folder's rule. True if it was changed (and reimported).

@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26044987c14709343b0ab763737a3a27, type: 3}
+  m_Name: MusicData_Puzzle
+  m_EditorClassIdentifier: Assembly-CSharp::TWR.Audio.MusicData
+  state: 4
+  trackName: mus_puzzle_a
+  bossId: 
+  stems:
+  - name: bass
+    clip: {fileID: 8300000, guid: 31f3844ecf789a9419eeef7ba38cd445, type: 3}
+    onAtEntry: 1
+  - name: drums
+    clip: {fileID: 8300000, guid: 95e416eb16b67214aa5281e27595cd0f, type: 3}
+    onAtEntry: 0
+  - name: other
+    clip: {fileID: 8300000, guid: b7ea2b0041be1ef449c956c448623d52, type: 3}
+    onAtEntry: 1
+  drumsStem: drums
+  menuStem: other
+  baseVolume: 0.8
+  layerFadeSeconds: 1.5
+  crossfadeSeconds: 2
+  drumsDelaySeconds: 30
+  drumsOutDelaySeconds: 2.5

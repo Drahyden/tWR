@@ -8,7 +8,7 @@ namespace TWR.Audio
     /// a silent room requests silence while it is loaded. Requests are counted so two sources can't cancel each other.
     /// A1 (D-220): when the state flips it tells AudioState, which switches the mixer to the Silent snapshot (music and
     /// ambience state groups fade to silence, hum included). Player, gun and enemy sounds are NOT affected (D-168), and
-    /// gameplay noise events never are. The Changed event stays for other listeners (e.g. the future music system).
+    /// gameplay noise events never are. A2: the MusicDirector reads IsSilenced and takes the fade time from Changed (D-233).
     /// </summary>
     public static class SoundscapeState
     {

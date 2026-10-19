@@ -3,7 +3,7 @@
 > Source of truth for every chat in the "tWR Game Development" project.
 > Each definition gets an ID (D-###). Links between definitions use `→ D-###`.
 > Status: 🟢 locked · 🟡 tentative · ⚪ open
-> Interview complete (Q1–116). New decisions continue from D-230.
+> Interview complete (Q1–116). New decisions continue from D-236.
 
 ## 0. Index of sections
 1. Core identity · 2. Story & world · 3. Player & controls · 4. Combat · 5. Puzzles · 6. Enemies & AI · 7. Level design · 8. Art direction · 9. Audio · 10. UI/UX · 11. Progression & systems · 12. Technical (Unity) · 13. Production & pipeline · 14. Open questions
@@ -212,6 +212,12 @@
 - **D-227** 🟢 Audio data and checks: an AudioLibrary SO maps sound IDs → clips for global/UI/mechanism/ambience/player sounds (enemy and boss sets stay in their per-type SOs, D-138); a [TWR] validation scans scenes and prefabs for AudioSources with no mixer group or 3D maxDistance ≥ 100 m; AudioSource.PlayClipAtPoint is not used; every clip, placeholders included, gets a LICENSES.md row (D-218) → D-138, D-144, D-218, D-219
 - **D-228** 🟢 Audio library checks (extends D-227): the [TWR] validation also reports AudioLibrary IDs with no clip; a [TWR] loop check measures leading/trailing silence and the sample jump at the seam of loop clips (starting with amb_fluorescent_hum_01). Loop clips import as Streaming (or Compressed In Memory), Vorbis ≈ 70, Preserve sample rate; looping is set on the AudioSource. The library may hold clips that nothing plays yet (the jump-scare stinger is registered now, played from A5, D-081); music IDs are added in A2 → D-081, D-213, D-218, D-223, D-227
 - **D-229** 🟢 Credits (amends 🟢 D-202; approved by the developer, not built yet): a Credits entry in the main menu opens a scrolling list generated from docs/audio/LICENSES.md rows with attribution = y (plus fixed developer/tool credits); headings are localized (D-084), names and titles are not. Required before any build that ships a CC BY asset (first: sfx_stinger_violin_01) → D-084, D-202, D-218
+- **D-230** 🟡 Lobby music state (resolves the §14 "Lobby muzak" question): a 5th music state, Lobby, plays in the hub lobby with all its stems; the main menu plays the same track with one named stem only (set in MusicData, default "other"), thinner and lonelier → D-075, D-202, D-214
+- **D-231** 🟡 Music stems (clarifies 🟢 D-214; approved by the developer): a state uses every FADR stem file present (mus_<state>_a_<stem>), with no fixed set (bass, drums, guitar, piano, other, vocals). "Instrumental" means no words: wordless choir stems are allowed (Preacher); a stem with words is not used. Stems of a state start together by scheduled playback and stay in sync; layers fade ≈ 1.5 s; a stem-length mismatch logs a [TWR] warning → D-006, D-214, D-222
+- **D-232** 🟡 Music layer rules (clarifies 🟢 D-213; approved by the developer): Exploration (SectionStarted, no threat) = all but drums; Puzzle (PuzzleEvents.Started → Solved, or SectionEnded) = all but drums, drums fade in after 30 s unsolved (the timer counts only while Puzzle is the playing state); Combat (any Seeker in Chase/Attack via EnemyEvents.AwarenessChanged) = all; when no Seeker is chasing any more the drums fade out first, then the state returns to Exploration; Boss = all but drums at BossEvents.Started (track picked per boss), drums on the first hit on the boss, BossPhaseChanged brings in all layers. Overrides SUNO_Prompts' "bass on first hit" for the Preacher → D-126, D-133, D-167, D-193, D-213, D-214
+- **D-233** 🟡 Music priority and silence: Ending > Boss > Combat > Puzzle > Exploration > Lobby; one music director (created at startup like D-225's audio bootstrap, survives scene loads) reads SoundscapeState and idles in silent rooms (it never requests snapshots, D-220); all music routes to MusicState (D-219) → D-168, D-219, D-220, D-225
+- **D-234** 🟡 Ending stingers (resolves the §14 ending-stinger question): each scripted ending (D-199) plays its end_<id> track once on scene start under the Ending snapshot, outside the looping-state rules of D-214. Overtime keeps 🟢 D-221 (no music); mus_end_overtime_a is registered but not played for now → D-199, D-203, D-217, D-221
+- **D-235** 🟡 Music data and tools: one MusicData SO per state (stems, fade times, layer rules, menu stem); music clip IDs are also registered in the AudioLibrary (D-228); TWR → Audio → Build Music (A2) creates/updates the data and validates naming, import settings (D-228), stem lengths and LICENSES.md rows (D-227); a Music section in the existing F1 debug menu shows the state and active layers and can force each state → D-185, D-201, D-227, D-228
 
 ## 10. UI/UX
 - **D-085** 🟢 Main menu: classic menu screen
@@ -413,7 +419,5 @@
 - Subtitles default ON until the Settings toggle (D-089, D-090) exists? R5 assumes ON
 - Final ending scenes, art, VO and what the White Room actually is (D-195–D-199 are placeholders)
 - A Master volume slider in Sound settings? D-225 assumes five sliders, no Master (D-090)
-- "Lobby muzak" (AudioPlan §1.2): a 5th music state, or the Exploration track in the Lobby? Decide before A2 (D-213, D-214)
-- Ending stingers: a one-shot on the Music bus outside the music state machine? (D-199, D-221)
 - Jump-scare stinger routing: SFX or Music group? Decide in A5 (D-081, D-219)
 - Out-of-game attribution (Steam page / bundled credits file) in addition to D-229?

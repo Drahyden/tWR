@@ -166,6 +166,7 @@ namespace TWR.EditorTools
             valid &= ValidateRunScenes();
             valid &= ValidateEndings();
             valid &= ValidateAudio(); // A1 (D-227)
+            valid &= ValidateLocalization(); // every localized text has a key with English (D-084)
 
             if (built && configured && valid)
                 Debug.Log("[TWR] Run scenes built and valid. Press Play in " + RunScenePath(CoreSceneName) + " (open) for a run, or in " +
@@ -843,7 +844,7 @@ namespace TWR.EditorTools
             tmp.fontSizeMax = 12f;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.color = colour;
-            tmp.text = "[" + text.TableEntryReference.Key + "]"; // editor preview only; replaced by the localized text at runtime
+            tmp.text = ProjectSetup.PreviewText(text); // editor preview (English from the table); replaced by the localized text at runtime
             var localized = go.AddComponent<LocalizedWorldText>();
             localized.Text = text;
             EditorUtility.SetDirty(localized);

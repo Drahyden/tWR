@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26044987c14709343b0ab763737a3a27, type: 3}
+  m_Name: MusicData_Lobby
+  m_EditorClassIdentifier: Assembly-CSharp::TWR.Audio.MusicData
+  state: 2
+  trackName: mus_lobby_a
+  bossId: 
+  stems:
+  - name: bass
+    clip: {fileID: 8300000, guid: d9b9ccd9a5e7d614b9c3152dcf6d42ce, type: 3}
+    onAtEntry: 1
+  - name: drums
+    clip: {fileID: 8300000, guid: 3ae2791284c193b46ba8610a565d6e9f, type: 3}
+    onAtEntry: 1
+  - name: guitar
+    clip: {fileID: 8300000, guid: cfc13d849fc906047b34e2b72eb1adeb, type: 3}
+    onAtEntry: 1
+  - name: other
+    clip: {fileID: 8300000, guid: 4409578f47add4448b91eb69cd9211fc, type: 3}
+    onAtEntry: 1
+  - name: piano
+    clip: {fileID: 8300000, guid: f77cd6a8608845042810e339d094f7bd, type: 3}
+    onAtEntry: 1
+  drumsStem: drums
+  menuStem: other
+  baseVolume: 0.8
+  layerFadeSeconds: 1.5
+  crossfadeSeconds: 2
+  drumsDelaySeconds: 30
+  drumsOutDelaySeconds: 2.5

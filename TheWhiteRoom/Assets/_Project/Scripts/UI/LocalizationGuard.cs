@@ -69,7 +69,9 @@ namespace TWR.UI
         {
             Current = ready ? State.Ready : State.Unavailable;
             if (!ready)
-                Debug.LogWarning($"[TWR] Localization not set up ({reason}); prompts will show their keys. Run TWR > Setup Project.");
+                Debug.LogWarning($"[TWR] Localization not set up ({reason}); texts will show their [keys]. Run TWR > Setup Project, then " +
+                                 "TWR > Validate Localization. If it still fails: Window > Asset Management > Addressables > Groups > " +
+                                 "Play Mode Script > Use Asset Database (fastest).");
             var callbacks = Resolved;
             Resolved = null;
             callbacks?.Invoke(ready);

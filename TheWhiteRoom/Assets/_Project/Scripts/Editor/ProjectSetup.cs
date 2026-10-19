@@ -19,6 +19,10 @@ namespace TWR.EditorTools
     /// Through TestSceneBuilder.PrepareSharedAssets it also creates the layers and sets up the
     /// draw-the-gun-on-top renderer features (WeaponRenderSetup, D-123).
     /// Safe to run any time: it only creates or fixes what is missing. "TWR/Build Test Scene" runs it first.
+    /// Localization (D-084): it works on the existing (also hand-made) UI / Subtitles tables, adds every missing starter key
+    /// with its English text, fills empty English texts (never overwrites typed ones) and logs what it added; afterwards
+    /// TestSceneBuilder.ValidateLocalizationTables reports keys without English text. Builders use PreviewText so labels
+    /// show the English text in edit mode instead of "[key]".
     /// </summary>
     public static class ProjectSetup
     {
@@ -110,6 +114,7 @@ namespace TWR.EditorTools
             // Also the Interactable layer, PlayerTuning asset and input-asset check used by the scene builder.
             if (TestSceneBuilder.PrepareSharedAssets(out _, out _, out _))
                 Debug.Log("[TWR] Project setup complete.");
+            TestSceneBuilder.ValidateLocalizationTables(); // keys without English text, Addressables play mode (D-084)
         });
 
         /// Runs setup, then calls onComplete. If TMP Essentials must be imported first, onComplete runs
@@ -243,7 +248,9 @@ namespace TWR.EditorTools
             EditorUtility.SetDirty(settings);
         }
 
-        /// Creates the string table collection if missing and adds the English entries that are missing or empty.
+        /// Creates the string table collection if missing (an existing, hand-made one is used as it is) and adds every
+        /// starter key that is missing, with its English text; a key that exists with an EMPTY English text gets it too.
+        /// English the developer typed by hand is never overwritten. Logs each key it added or filled (D-084).
         static void SetupStringTable(Locale english, string tableName, (string key, string english)[] entries)
         {
             StringTableCollection collection = LocalizationEditorSettings.GetStringTableCollection(tableName);
@@ -255,23 +262,39 @@ namespace TWR.EditorTools
 
             var table = collection.GetTable(english.Identifier) as StringTable;
             if (table == null)
+            {
                 table = collection.AddNewTable(english.Identifier) as StringTable;
+                if (table != null) Debug.Log($"[TWR] Added an English table to string table '{tableName}'.");
+            }
             if (table == null)
             {
                 Debug.LogError("[TWR] Could not create the English '" + tableName + "' table.");
                 return;
             }
 
+            var added = new System.Collections.Generic.List<string>();
+            var filled = new System.Collections.Generic.List<string>();
             foreach (var (key, englishText) in entries)
             {
+                // GetEntry finds the key through the shared data, so a key that exists without an English entry is reused.
                 StringTableEntry entry = table.GetEntry(key);
                 if (entry == null)
+                {
                     table.AddEntry(key, englishText);
+                    added.Add(key);
+                }
                 else if (string.IsNullOrEmpty(entry.Value))
+                {
                     entry.Value = englishText;
+                    filled.Add(key);
+                }
             }
+            if (added.Count == 0 && filled.Count == 0) return;
+
             EditorUtility.SetDirty(table);
             EditorUtility.SetDirty(collection.SharedData);
+            if (added.Count > 0) Debug.Log($"[TWR] String table '{tableName}': added {added.Count} key(s) with English text: {string.Join(", ", added)}");
+            if (filled.Count > 0) Debug.Log($"[TWR] String table '{tableName}': filled the empty English text of {filled.Count} key(s): {string.Join(", ", filled)}");
         }
 
         /// <summary>True if the string table collection has this key (used by the [TWR] validation, D-084).</summary>
@@ -280,6 +303,44 @@ namespace TWR.EditorTools
             if (string.IsNullOrEmpty(tableName) || string.IsNullOrEmpty(key)) return false;
             StringTableCollection collection = LocalizationEditorSettings.GetStringTableCollection(tableName);
             return collection != null && collection.SharedData != null && collection.SharedData.GetEntry(key) != null;
+        }
+
+        /// <summary>True if the key exists AND has a non-empty English text (the [TWR] validation, D-084).</summary>
+        internal static bool TableHasEnglish(string tableName, string key) => TryGetEnglish(tableName, key, out _);
+
+        /// <summary>The English text of a table key; false if the table, the key or the English text is missing.</summary>
+        internal static bool TryGetEnglish(string tableName, string key, out string text)
+        {
+            text = null;
+            if (string.IsNullOrEmpty(tableName) || string.IsNullOrEmpty(key)) return false;
+            StringTableCollection collection = LocalizationEditorSettings.GetStringTableCollection(tableName);
+            if (collection == null) return false;
+            var table = collection.GetTable(new LocaleIdentifier(LocaleCode)) as StringTable;
+            StringTableEntry entry = table != null ? table.GetEntry(key) : null;
+            if (entry == null || string.IsNullOrEmpty(entry.Value)) return false;
+            text = entry.Value;
+            return true;
+        }
+
+        /// <summary>The English locale code used for every check (D-084: English first).</summary>
+        internal static string EnglishCode => LocaleCode;
+
+        /// <summary>The starter keys the builders put into each table (the [TWR] validation checks they all have English).</summary>
+        internal static System.Collections.Generic.IEnumerable<(string table, string key)> StarterKeys()
+        {
+            foreach (var (key, _) in UiEntries) yield return (UiTable, key);
+            foreach (var (key, _) in SubtitleEntries) yield return (SubtitlesTable, key);
+        }
+
+        /// <summary>
+        /// Text a builder writes into a label as the edit-mode preview: the English text from the table, so the scene view
+        /// shows real words. "[key]" only if the key has no English yet. LocalizedWorldText replaces it at runtime.
+        /// </summary>
+        internal static string PreviewText(LocalizedString text)
+        {
+            if (text == null || text.IsEmpty) return string.Empty;
+            string key = text.TableEntryReference.Key;
+            return TryGetEnglish(text.TableReference.TableCollectionName, key, out string english) ? english : "[" + key + "]";
         }
 
         static void EnsureFolder(string path)

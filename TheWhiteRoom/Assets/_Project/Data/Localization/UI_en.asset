@@ -182,6 +182,26 @@ MonoBehaviour:
     m_Localized: Interface
     m_Metadata:
       m_Items: []
+  - m_Id: 2143019129241600
+    m_Localized: Credits
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2143019204739072
+    m_Localized: Credits
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2143019204739073
+    m_Localized: Created by
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2143019204739074
+    m_Localized: Made with
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2143019204739075
+    m_Localized: Sounds
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

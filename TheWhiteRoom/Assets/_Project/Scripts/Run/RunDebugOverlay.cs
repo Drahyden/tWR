@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using TWR.Audio;
 using TWR.Player;
 using TWR.Enemies;
 using TWR.Endings;
@@ -29,6 +30,9 @@ namespace TWR.Run
     /// RunResult and records it as found (like a real run end), "Finish ending now", the saved endings and "Clear saved
     /// endings" (next run is the curated first run again). Closing the overlay never gives input back during a scripted
     /// ending or on the end screen (D-207).
+    /// A2 (D-235): a Music section (TWR.Audio.MusicDebugPanel): state, track, layers with on/off + volume, puzzle timer,
+    /// chaser count, force buttons. While this overlay exists it is the F1 owner; the director's music-only overlay
+    /// (MainMenu) stays passive.
     /// </summary>
     [DisallowMultipleComponent]
     public class RunDebugOverlay : MonoBehaviour
@@ -65,12 +69,14 @@ namespace TWR.Run
 
         void OnEnable()
         {
+            MusicDebugPanel.RegisterHost(); // A2: this overlay owns F1 and draws the Music section (D-235)
             SceneManager.sceneLoaded += HandleSceneLoaded;
             if (loader != null) loader.TransitionFinished += HandleTransitionFinished;
         }
 
         void OnDisable()
         {
+            MusicDebugPanel.UnregisterHost();
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             if (loader != null) loader.TransitionFinished -= HandleTransitionFinished;
             if (open) SetOpen(false);
@@ -193,6 +199,8 @@ namespace TWR.Run
                 GUILayout.Space(6f);
                 DrawEndings();
             }
+            GUILayout.Space(6f);
+            MusicDebugPanel.Draw(rich); // A2 (D-235): state, layers, timers, force buttons
             GUILayout.Space(6f);
             DrawSeedEntry();
 

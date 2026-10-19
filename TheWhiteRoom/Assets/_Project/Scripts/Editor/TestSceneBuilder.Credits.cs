@@ -243,12 +243,12 @@ namespace TWR.EditorTools
                 var sections = (data.fixedSections ?? new CreditsData.Section[0]).Concat(data.generatedSections ?? new CreditsData.Section[0]);
                 var badHeadings = sections.Where(s => s != null && !KeyExists(s.heading)).Select(s => KeyName(s?.heading)).ToList();
                 ok &= Check(report, "credits headings localized (table 'UI', D-084)", badHeadings.Count == 0,
-                            badHeadings.Count == 0 ? "" : "missing: " + string.Join(", ", badHeadings) + " (run TWR > Setup Project)");
+                            badHeadings.Count == 0 ? "" : "missing: " + string.Join(", ", badHeadings) + " (run TWR > Setup Project; also missing if the English text is empty)");
             }
 
-            var missingKeys = CreditsUiKeys.Where(k => !ProjectSetup.TableHasKey("UI", k)).ToList();
+            var missingKeys = CreditsUiKeys.Where(k => !ProjectSetup.TableHasEnglish("UI", k)).ToList();
             ok &= Check(report, $"{CreditsUiKeys.Length} credits keys in table 'UI' (D-084)", missingKeys.Count == 0,
-                        missingKeys.Count == 0 ? "" : "missing: " + string.Join(", ", missingKeys) + " (run TWR > Setup Project)");
+                        missingKeys.Count == 0 ? "" : "missing: " + string.Join(", ", missingKeys) + " (run TWR > Setup Project; also missing if the English text is empty)");
             return ok;
         }
 

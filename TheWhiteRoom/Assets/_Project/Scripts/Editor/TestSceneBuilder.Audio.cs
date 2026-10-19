@@ -17,7 +17,8 @@ namespace TWR.EditorTools
     /// - Placeholder WAVs in Audio/Placeholder (hum loop, phone, printer, keyboard, UI click; AudioPlaceholderWav), each
     ///   listed in docs/audio/LICENSES.md (D-218). The hum placeholder is still written (it is the fallback and has a row).
     /// - Import settings of Audio/Ambience and Audio/SFX checked and fixed only where they break the rule
-    ///   (AudioImportRules, D-228). Audio/Music is not touched and no music is loaded (A2).
+    ///   (AudioImportRules, D-228); since A2 Audio/Music follows the loop rule too. The music data itself is built by
+    ///   TWR > Audio > Build Music (A2) (TestSceneBuilder.Music.cs).
     /// - Data/Resources/AudioRoutingSettings: TWR_Mixer, its five STATE groups and four snapshots, found BY NAME (the
     ///   developer-made .mixer file is never edited). Missing parts give ONE [TWR] warning per build; the validation
     ///   report lists the steps. Until a state group exists, sources go to its parent group (D-219, D-220).
@@ -92,7 +93,7 @@ namespace TWR.EditorTools
             EnsureFolder(ResourcesDataFolder);
 
             Dictionary<string, AudioClip> placeholders = EnsurePlaceholderClips();
-            AudioImportRules.EnsureProjectAudio(); // Ambience = Streaming loops, SFX = one-shots; Music untouched (D-228)
+            AudioImportRules.EnsureProjectAudio(); // Ambience + Music = Streaming loops, SFX = one-shots (D-228, D-235)
             audio.routing = EnsureAudioRouting();
             audio.library = EnsureAudioLibrary(placeholders);
             audio.ambient = LoadOrCreate<AmbientBedSettings>(AmbientBedSettingsPath, null);
