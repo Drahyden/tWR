@@ -60,6 +60,9 @@ namespace TWR.Scares
         [Header("Trigger - D-236")]
         [Tooltip("Relief: player within this distance of the exit door. Behind you: the spot is seen within this distance.")]
         [Min(0.5f)] public float triggerDistance = 5f;
+        [Tooltip("Relief: the player's feet must also be within this height of the door sill (D-245: the raised exit, so it " +
+                 "never fires from the floor below the ledge).")]
+        [Min(0.1f)] public float triggerHeightTolerance = 0.5f;
         [Tooltip("Relief: full angle of the view cone for 'facing the door' (shared ViewCone, D-132). 'Seen' for Behind you " +
                  "means on screen with a clear line of sight.")]
         [Range(10f, 120f)] public float viewConeDegrees = 60f;

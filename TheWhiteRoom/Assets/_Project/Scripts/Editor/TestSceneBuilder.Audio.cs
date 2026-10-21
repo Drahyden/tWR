@@ -427,17 +427,20 @@ namespace TWR.EditorTools
                              new Vector3(LobbyMaxX - LobbyMinX, LobbyHeight, LobbyMaxZ - LobbyMinZ), ReverbSpace.LargeHall),
                         Room("Impossible Hall (portal pair: same preset)", hallCentre, hallSize, ReverbSpace.LargeHall),
                     };
-                case "Section_Puzzle":
-                    return new[] { Room("Puzzle Room", new Vector3(16.2f, PuzzleRoomHeight * 0.5f, 0f), new Vector3(12f, PuzzleRoomHeight, 12f), ReverbSpace.MediumRoom) };
+                case "Section_Puzzle": // D-240: large rooms get the large-hall reverb (D-224)
+                    return new[] { Room("Puzzle Room (large)", new Vector3((LpMinX + LpMaxX) * 0.5f, LpHeight * 0.5f, 0f),
+                                        new Vector3(LpMaxX - LpMinX, LpHeight, LpMaxZ - LpMinZ), ReverbSpace.LargeHall) };
                 case "Section_Combat":
-                    return new[] { ShellRoom("Combat Room", 20f, 16f, 4.5f, ReverbSpace.MediumRoom) };
+                    return new[] { ShellRoom("Combat Room (large)", LcWidth, LcLength, LcHeight, ReverbSpace.LargeHall) };
                 case "Section_Stealth":
                     return new[] { ShellRoom("Stealth Room", 24f, 18f, 4f, ReverbSpace.MediumRoom) };
                 case "Section_ImpossibleGeometry":
                     return new[]
                     {
                         ShellRoom("Portal Room (portal pair: same preset)", 12f, 14f, 5f, ReverbSpace.LargeHall),
-                        Room("Impossible Hall (portal pair: same preset)", hallCentre, hallSize, ReverbSpace.LargeHall),
+                        Room("Impossible Hall, large (portal pair: same preset, D-240)",
+                             new Vector3((IgHallMinX + IgHallMaxX) * 0.5f, IgHallHeight * 0.5f, (IgHallMinZ + IgHallMaxZ) * 0.5f),
+                             new Vector3(IgHallMaxX - IgHallMinX, IgHallHeight, IgHallMaxZ - IgHallMinZ), ReverbSpace.LargeHall),
                     };
                 case "Section_Silent":
                     return new[] { ShellRoom("Silent Room", 12f, 12f, 6f, ReverbSpace.MediumRoom) };

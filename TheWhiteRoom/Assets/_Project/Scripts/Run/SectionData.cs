@@ -48,7 +48,7 @@ namespace TWR.Run
         {
             switch (type)
             {
-                case SectionType.Combat: return 3;
+                case SectionType.Combat: return 4;   // D-243: the 64 x 40 m room (was 3)
                 case SectionType.Stealth: return 2;  // D-169: at least 2 patrols
                 case SectionType.Puzzle: return 1;
                 default: return 0;

@@ -19,4 +19,5 @@ MonoBehaviour:
   - combat
   sceneName: Section_Combat
   exitCondition: 0
-  enemyCount: 3
+  enemyCount: 4
+  officeAmbience: 1

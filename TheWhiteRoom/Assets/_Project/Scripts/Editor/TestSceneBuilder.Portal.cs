@@ -532,21 +532,7 @@ namespace TWR.EditorTools
             Block("Wall W (north)", new Vector3(HallMinX - 0.1f, h * 0.5f, HallMaxZ - northLength * 0.5f), new Vector3(0.2f, h + 0.2f, northLength), wallMat, shell);
             Block("Wall W (above portal)", new Vector3(HallMinX - 0.1f, (OpeningHeight + h + 0.2f) * 0.5f, zPortal), new Vector3(0.2f, h + 0.2f - OpeningHeight, OpeningWidth), wallMat, shell);
 
-            // Alcove behind the return portal (1.2 m deep, exactly as wide as the opening): room to step through.
-            Transform alcove = new GameObject("Return Portal Alcove").transform;
-            alcove.SetParent(hall, false);
-            Block("Alcove Floor", new Vector3(HallMinX - 0.7f, -0.1f, zPortal), new Vector3(1.4f, 0.2f, OpeningWidth + 0.4f), floorMat, alcove);
-            Block("Alcove Ceiling", new Vector3(HallMinX - 0.7f, OpeningHeight + 0.1f, zPortal), new Vector3(1.4f, 0.2f, OpeningWidth + 0.4f), trimMat, alcove);
-            Block("Alcove Side S", new Vector3(HallMinX - 0.7f, OpeningHeight * 0.5f, zPortal - half - 0.1f), new Vector3(1.4f, OpeningHeight, 0.2f), trimMat, alcove);
-            Block("Alcove Side N", new Vector3(HallMinX - 0.7f, OpeningHeight * 0.5f, zPortal + half + 0.1f), new Vector3(1.4f, OpeningHeight, 0.2f), trimMat, alcove);
-            Block("Alcove Back", new Vector3(HallMinX - 1.3f, OpeningHeight * 0.5f, zPortal), new Vector3(0.2f, OpeningHeight, OpeningWidth + 0.4f), trimMat, alcove);
-
-            // Return portal: no panel, always open (D-146).
-            var anchor = new GameObject("Return Portal (hall side)");
-            anchor.transform.SetParent(hall, false);
-            anchor.transform.SetPositionAndRotation(HallPortalPosition, Quaternion.Euler(0f, HallPortalYaw, 0f));
-            BuildFrameTrim(anchor.transform, trimMat, 0.16f);
-            Portal hallPortal = BuildPortal("Portal (hall side)", returnPortalId, anchor.transform, null, assets);
+            Portal hallPortal = BuildReturnPortal(assets, hall, floorMat, trimMat, returnPortalId, out Transform anchorT);
 
             // Props (D-062), all well clear of the 1 m vestibule in front of the portal.
             Transform props = new GameObject("Hall Props (office/home motifs)").transform;
@@ -567,6 +553,38 @@ namespace TWR.EditorTools
             Block("Lone Door Frame Post R", new Vector3(525.2f, 1.2f, -8.6f), new Vector3(0.12f, 2.4f, 0.12f), trimMat, props);
             Block("Lone Door Frame Head", new Vector3(524.6f, 2.46f, -8.6f), new Vector3(1.32f, 0.12f, 0.12f), trimMat, props);
 
+            BuildHallTestPieces(props, anchorT, trimMat, targetMat);
+            return hallPortal;
+        }
+
+        /// Alcove behind the return portal (1.2 m deep, exactly as wide as the opening) + the always-open return portal
+        /// in the hall's west wall at HallPortalPosition (D-146). Shared by the 30 x 20 m hall and the large IG hall (D-240).
+        static Portal BuildReturnPortal(PortalAssets assets, Transform hall, Material floorMat, Material trimMat, string returnPortalId,
+                                        out Transform anchorT)
+        {
+            float zPortal = HallPortalPosition.z;
+            float half = OpeningWidth * 0.5f;
+            Transform alcove = new GameObject("Return Portal Alcove").transform;
+            alcove.SetParent(hall, false);
+            Block("Alcove Floor", new Vector3(HallMinX - 0.7f, -0.1f, zPortal), new Vector3(1.4f, 0.2f, OpeningWidth + 0.4f), floorMat, alcove);
+            Block("Alcove Ceiling", new Vector3(HallMinX - 0.7f, OpeningHeight + 0.1f, zPortal), new Vector3(1.4f, 0.2f, OpeningWidth + 0.4f), trimMat, alcove);
+            Block("Alcove Side S", new Vector3(HallMinX - 0.7f, OpeningHeight * 0.5f, zPortal - half - 0.1f), new Vector3(1.4f, OpeningHeight, 0.2f), trimMat, alcove);
+            Block("Alcove Side N", new Vector3(HallMinX - 0.7f, OpeningHeight * 0.5f, zPortal + half + 0.1f), new Vector3(1.4f, OpeningHeight, 0.2f), trimMat, alcove);
+            Block("Alcove Back", new Vector3(HallMinX - 1.3f, OpeningHeight * 0.5f, zPortal), new Vector3(0.2f, OpeningHeight, OpeningWidth + 0.4f), trimMat, alcove);
+
+            // Return portal: no panel, always open (D-146).
+            var anchor = new GameObject("Return Portal (hall side)");
+            anchor.transform.SetParent(hall, false);
+            anchor.transform.SetPositionAndRotation(HallPortalPosition, Quaternion.Euler(0f, HallPortalYaw, 0f));
+            BuildFrameTrim(anchor.transform, trimMat, 0.16f);
+            anchorT = anchor.transform;
+            return BuildPortal("Portal (hall side)", returnPortalId, anchor.transform, null, assets);
+        }
+
+        /// The shoot-through target straight ahead of the portal and the F-through-the-portal button beside it (D-143).
+        static void BuildHallTestPieces(Transform props, Transform anchorT, Material trimMat, Material targetMat)
+        {
+            float zPortal = HallPortalPosition.z;
             // One shootable test target, straight ahead when you look through the lobby portal (shoot-through test).
             Block("Target Pillar", new Vector3(515f, 1.5f, zPortal), new Vector3(0.6f, 3f, 0.6f), trimMat, props);
             GameObject target = Block("Shootable Target (through the portal)", new Vector3(514.65f, 1.6f, zPortal), new Vector3(0.1f, 0.7f, 0.7f), targetMat, props);
@@ -576,7 +594,6 @@ namespace TWR.EditorTools
             // F-through-the-portal test (D-143): a button just past the vestibule, beside the line of entry,
             // close enough to reach with the 2.5 m interaction ray from right in front of the lobby portal.
             Material buttonMat = GetOrCreateMaterial("M_TestButton", new Color(1f, 0.2f, 0.2f), new Color(0.5f, 0.1f, 0.1f));
-            Transform anchorT = anchor.transform;
             Vector3 pedestalFloor = anchorT.TransformPoint(new Vector3(0.95f, 0f, 1.3f));
             Block("Button Pedestal (hall)", pedestalFloor + Vector3.up * 0.5f, new Vector3(0.5f, 1f, 0.5f), trimMat, props);
             GameObject button = Block("Test Button (F through the portal)", pedestalFloor + Vector3.up * 1.15f, new Vector3(0.3f, 0.3f, 0.3f), buttonMat, props);
@@ -586,8 +603,6 @@ namespace TWR.EditorTools
             var buttonSo = new SerializedObject(buttonInteractable);
             buttonSo.FindProperty("interactionId").stringValue = "hall.test_button";
             buttonSo.ApplyModifiedPropertiesWithoutUndo();
-
-            return hallPortal;
         }
 
         static void Desk(string name, Vector3 floorCentre, Transform parent, Material legMat, Material topMat)

@@ -8,7 +8,7 @@ namespace TWR.Scares
     /// Puts one jump scare (ScareData) into a section scene (D-236, D-239) and watches for its trigger; the ScareDirector in
     /// Core decides whether it may fire (D-238) and plays it.
     /// - "Relief" (FacingExitAfterSolve): armed by PuzzleEvents.Solved of a main (not optional) puzzle; fires when the player
-    ///   is within triggerDistance of Target (the exit door) and facing it.
+    ///   is within triggerDistance of Target (the exit door), at its height (triggerHeightTolerance, D-245) and facing it.
     /// - "Behind you" (SeenAfterUnobserved): armed when the player crosses the portal armOnPortalId. This object's position is
     ///   the spot. Once the spot has been off screen for unobservedSeconds and the player is within triggerDistance, the
     ///   figure is put there unseen (D-053a); the moment it is on screen with a clear line of sight, the scare fires.
@@ -77,7 +77,9 @@ namespace TWR.Scares
         void TickRelief(ScareDirector director)
         {
             if (target == null || director.IsPlaying) return;
-            if (ScareDirector.FlatDistance(director.PlayerFeet, target.position) > data.triggerDistance) return;
+            Vector3 feet = director.PlayerFeet;
+            if (ScareDirector.FlatDistance(feet, target.position) > data.triggerDistance) return;
+            if (Mathf.Abs(feet.y - target.position.y) > data.triggerHeightTolerance) return; // on the exit ledge (D-245)
             Vector3 doorCentre = target.position + Vector3.up * 1.3f;
             if (!director.PlayerFaces(doorCentre, data.viewConeDegrees, data.triggerDistance + 2f)) return;
             director.TryFire(this);

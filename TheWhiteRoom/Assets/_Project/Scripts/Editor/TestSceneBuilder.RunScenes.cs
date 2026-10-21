@@ -32,9 +32,10 @@ namespace TWR.EditorTools
     /// - Core (D-161): player, HUD, RunManager + SectionLoader + RunConfig, ambient bed, light + global Bloom volume,
     ///   white fade overlay (D-167), event system. No geometry. Stays loaded and active for the whole game.
     /// - Lobby (D-163): the slice lobby without the white room; the old doorway is now the unlocked run door.
-    /// - Section_Puzzle (existing puzzle room + Seeker, exit gated by MainPuzzlesSolved), Section_Combat (3 Seekers,
-    ///   cover, health), Section_Stealth (D-169: 2 patrols, crouch/cover route, health), Section_ImpossibleGeometry
-    ///   (D-164: own portal pair, exit inside the hall), Section_Silent (D-168), Fork (D-150, D-166: EXIT door +
+    /// - Section_Puzzle (large puzzle room with platforms + Seeker, exit gated by MainPuzzlesSolved), Section_Combat
+    ///   (large room with galleries and movers, 4 Seekers, cover, health), Section_Stealth (D-169: 2 patrols, crouch/cover
+    ///   route, health), Section_ImpossibleGeometry (D-164: own portal pair, exit inside the large hall), the three large
+    ///   rooms built in TestSceneBuilder.LargeSections.cs (D-240 to D-247), Section_Silent (D-168), Fork (D-150, D-166: EXIT door +
     ///   black BASEMENT door, health), Boss_Escape / Boss_Discover (R4: the Bull and Preacher arenas, built in
     ///   TestSceneBuilder.BossArenas.cs, D-180 to D-194).
     /// Every content scene: entry vestibule with a one-way locked door behind the SectionEntry, an exit door with a
@@ -394,54 +395,61 @@ namespace TWR.EditorTools
 
         static bool BuildPuzzleSectionScene()
         {
-            if (!PrepareRunSceneAssets(out RunSceneAssets a, true)) return false;
+            if (!PrepareRunSceneAssets(out RunSceneAssets a, true) || !PrepareLevelAssets(out LevelAssets lv)) return false;
 
-            // The slice puzzle room (x 10.2..22.2): 3 pistol switches, ammo, locked exit door + corridor (D-124 to D-130).
-            DoorLock exitLock = BuildPuzzleTest(a.combat, a.puzzle, a.white, a.whiteEmissive, a.offWhite);
-
-            Transform root = new GameObject("Section: Puzzle (D-155, D-165)").transform;
-            // R3: the R2 Seeker (same spawn + patrol, curated only) plus two hidden roll spots; the 4th switch slot,
-            // tally dots, variant pool, puzzle area and the rolled ammo spots (D-172 to D-177).
+            // D-240 / D-244: the large puzzle room (x 10.2..58.2, z -12..12, 12 m) with platforms, a mover and a lift,
+            // 4 pistol switch slots, ammo, and the exit door raised to 6 m (locked until solved, gate MainPuzzlesSolved).
+            Transform root = new GameObject("Section: Puzzle (D-155, D-165, D-240)").transform;
+            BuildLargePuzzleRoom(root, a, lv);
+            // R3: the curated Seeker plus two hidden roll spots; slot setup, tally dots, variant pool, puzzle area and the
+            // rolled ammo spots (D-172 to D-177).
             if (!AuthorPuzzleSectionRolls(root, a)) return false;
-            // West wall of the puzzle room with the 2.4 x 3 m doorway (was the white room's east wall).
-            BuildEastWallWithDoorway(a.whiteEmissive, root);
             // Entry vestibule west of the doorway; the one-way door faces east into it.
             BuildEntryVestibule(root, a, new Vector3(5.9f, 0f, 0f), Vector3.right);
-
-            // The exit opens when every main puzzle is solved (D-165). The PuzzleController also unlocks it as before.
-            AddExitGate(exitLock, SectionExitCondition.MainPuzzlesSolved);
-            GameObject trigger = TriggerVolume("Section Exit (puzzle.exit)", new Vector3(24.2f, 0f, -2.5f), new Vector3(2f, 3f, 3.6f), a.combat, root);
-            ConfigureExit(trigger.AddComponent<SectionExit>(), RunPath.None, "puzzle.exit");
-            return AddReliefScare(root); // A5: Scare 1 "Relief" at the exit door (D-236)
+            AddSeekerLinks(root, a.tuning); // D-243
+            return AddReliefScare(root); // A5: Scare 1 "Relief" at the raised exit door (D-236, D-245)
         }
 
         // ---------- Section: combat (D-155, D-165 None, D-170 fixed spawns, D-171 health) ----------
 
         static bool BuildCombatSectionScene()
         {
-            if (!PrepareRunSceneAssets(out RunSceneAssets a, true)) return false;
-            Transform root = new GameObject("Section: Combat (D-155)").transform;
+            if (!PrepareRunSceneAssets(out RunSceneAssets a, true) || !PrepareLevelAssets(out LevelAssets lv)) return false;
+            Transform root = new GameObject("Section: Combat (D-155, D-240)").transform;
 
-            // Room x -10..10, z 4..20, 4.5 m high; exit north at x = 0, never locked (D-165).
-            BuildSectionShell(root, a, 20f, 16f, 4.5f, a.whiteEmissive, new[] { 0f }, true, SectionExitCondition.None);
+            // D-240: room x -20..20, z 4..68, 10 m high; exit north at x = 0 on the 4.5 m ledge, never locked (D-165).
+            BuildSectionShell(root, a, LcWidth, LcLength, LcHeight, a.whiteEmissive, new[] { 0f }, true, SectionExitCondition.None, LcExitSill);
+            MarkShellFloor(root, "combat.floor");
+            BuildCombatPlatforms(root, a, lv); // galleries, ramps, islands, pillar, 2 movers, exit ledge (D-240 to D-242)
 
+            // Floor cover (greybox), kept out of the ramps and from under the movers' path (z 48..51, D-241).
             Transform cover = new GameObject("Cover (greybox)").transform;
             cover.SetParent(root, false);
-            Block("Low Cover A", new Vector3(-4f, 0.7f, 8f), new Vector3(1.2f, 1.4f, 1.2f), a.offWhite, cover);
-            Block("Low Cover B", new Vector3(4f, 0.7f, 8f), new Vector3(1.2f, 1.4f, 1.2f), a.offWhite, cover);
-            Block("Low Wall (centre)", new Vector3(0f, 0.6f, 12f), new Vector3(3f, 1.2f, 0.6f), a.offWhite, cover);
-            Block("Tall Cover W", new Vector3(-9f, 1.1f, 13f), new Vector3(1f, 2.2f, 2f), a.offWhite, cover);
-            Block("Tall Cover E", new Vector3(9f, 1.1f, 13f), new Vector3(1f, 2.2f, 2f), a.offWhite, cover);
+            Block("Low Cover A", new Vector3(-6f, 0.7f, 12f), new Vector3(1.2f, 1.4f, 1.2f), a.offWhite, cover);
+            Block("Low Cover B", new Vector3(6f, 0.7f, 12f), new Vector3(1.2f, 1.4f, 1.2f), a.offWhite, cover);
+            Block("Low Wall (south)", new Vector3(0f, 0.6f, 18f), new Vector3(3f, 1.2f, 0.6f), a.offWhite, cover);
+            Block("Tall Cover W", new Vector3(-11f, 1.1f, 20f), new Vector3(1f, 2.2f, 2f), a.offWhite, cover);
+            Block("Tall Cover E", new Vector3(11f, 1.1f, 20f), new Vector3(1f, 2.2f, 2f), a.offWhite, cover);
+            Block("Low Cover C", new Vector3(-3f, 0.7f, 33f), new Vector3(1.2f, 1.4f, 1.2f), a.offWhite, cover);
+            Block("Low Cover D", new Vector3(3f, 0.7f, 33f), new Vector3(1.2f, 1.4f, 1.2f), a.offWhite, cover);
+            Block("Tall Cover NW", new Vector3(-10f, 1.1f, 44f), new Vector3(1f, 2.2f, 2f), a.offWhite, cover);
+            Block("Tall Cover NE", new Vector3(10f, 1.1f, 44f), new Vector3(1f, 2.2f, 2f), a.offWhite, cover);
+            Block("Low Wall (north)", new Vector3(0f, 0.6f, 56f), new Vector3(4f, 1.2f, 0.6f), a.offWhite, cover);
+            Block("Low Cover E", new Vector3(-7f, 0.7f, 58f), new Vector3(1.2f, 1.4f, 1.2f), a.offWhite, cover);
+            Block("Low Cover F", new Vector3(7f, 0.7f, 58f), new Vector3(1.2f, 1.4f, 1.2f), a.offWhite, cover);
 
-            // The three R2 Seekers (D-170) stay as the curated layout (seed 0); seeded runs pick 3 of 4 hidden spots (D-176).
-            Transform enemies = new GameObject("Enemies (R2 curated + R3 roll spots, D-170, D-176)").transform;
+            // D-243: 4 curated Seekers (seed 0: two floor loops, the exit-ledge guard, a gallery patrol); seeded runs pick
+            // 4 of 6 hidden spots (D-176).
+            Transform enemies = new GameObject("Enemies (curated + R3 roll spots, D-170, D-176, D-243)").transform;
             enemies.SetParent(root, false);
-            BuildSeekerSpawn(enemies, a, "Seeker A (west loop)", "combat.enemy.r2_west", true, false, new Vector3(-5f, 0f, 17f), Vector3.back,
-                new[] { new Vector3(-7f, 0f, 10f), new Vector3(-7f, 0f, 17f), new Vector3(-3f, 0f, 17f), new Vector3(-3f, 0f, 10f) });
-            BuildSeekerSpawn(enemies, a, "Seeker B (east loop)", "combat.enemy.r2_east", true, false, new Vector3(5f, 0f, 17f), Vector3.back,
-                new[] { new Vector3(7f, 0f, 10f), new Vector3(7f, 0f, 17f), new Vector3(3f, 0f, 17f), new Vector3(3f, 0f, 10f) });
-            BuildSeekerSpawn(enemies, a, "Seeker C (exit guard)", "combat.enemy.r2_exit", true, false, new Vector3(0f, 0f, 18.5f), Vector3.back,
-                new[] { new Vector3(-2f, 0f, 18.5f), new Vector3(2f, 0f, 18.5f) });
+            BuildSeekerSpawn(enemies, a, "Seeker A (west loop)", "combat.enemy.r2_west", true, false, new Vector3(-8f, 0f, 50f), Vector3.back,
+                new[] { new Vector3(-12f, 0f, 46f), new Vector3(-12f, 0f, 56f), new Vector3(-4f, 0f, 56f), new Vector3(-4f, 0f, 46f) });
+            BuildSeekerSpawn(enemies, a, "Seeker B (east loop)", "combat.enemy.r2_east", true, false, new Vector3(8f, 0f, 50f), Vector3.back,
+                new[] { new Vector3(12f, 0f, 46f), new Vector3(12f, 0f, 56f), new Vector3(4f, 0f, 56f), new Vector3(4f, 0f, 46f) });
+            BuildSeekerSpawn(enemies, a, "Seeker C (exit ledge guard)", "combat.enemy.r2_exit", true, false, new Vector3(0f, LcExitSill, 64.5f), Vector3.back,
+                new[] { new Vector3(-3f, LcExitSill, 64.5f), new Vector3(3f, LcExitSill, 64.5f) });
+            BuildSeekerSpawn(enemies, a, "Seeker D (west gallery patrol)", "combat.enemy.r2_gallery", true, false, new Vector3(-18f, 3f, 30f), Vector3.forward,
+                new[] { new Vector3(-18f, 3f, 20f), new Vector3(-18f, 3f, 56f) });
             AuthorCombatRollSpots(root, enemies, a);
 
             ItemPickup health = HealthPickup("Health Pickup (combat, D-171)", new Vector3(-8.5f, 0f, 6f), a, root);
@@ -450,16 +458,17 @@ namespace TWR.EditorTools
             {
                 ("combat.health.sw", new Vector3(-8.5f, 0f, 6f), true),
                 ("combat.health.se", new Vector3(8.5f, 0f, 10f), false),
-                ("combat.health.n", new Vector3(-1.5f, 0f, 16f), false),
-                ("combat.health.ne", new Vector3(6.5f, 0f, 15f), false),
+                ("combat.health.n", new Vector3(-3f, LcExitSill, 65.5f), false),   // on the exit ledge
+                ("combat.health.ne", new Vector3(18f, 3f, 40f), false),            // east gallery
             });
             BuildPickupGroup(root, "combat.ammo", new[] { ammo }, "", new[]
             {
                 ("combat.ammo.se", new Vector3(8.5f, 0f, 6f), true),
-                ("combat.ammo.w", new Vector3(-6f, 0f, 12.5f), false),
-                ("combat.ammo.mid", new Vector3(2.5f, 0f, 10f), false),
-                ("combat.ammo.nw", new Vector3(-3f, 0f, 18.8f), false),
+                ("combat.ammo.w", new Vector3(-18f, 3f, 26f), false),              // west gallery
+                ("combat.ammo.mid", new Vector3(2.5f, 0f, 24f), false),
+                ("combat.ammo.nw", new Vector3(-10f, 0f, 52f), false),
             });
+            AddSeekerLinks(root, a.tuning); // D-243, after everything that could block a link end
             return true;
         }
 
@@ -520,24 +529,25 @@ namespace TWR.EditorTools
 
         static bool BuildImpossibleSectionScene()
         {
-            if (!PrepareRunSceneAssets(out RunSceneAssets a, false)) return false;
-            Transform root = new GameObject("Section: Impossible Geometry (D-164)").transform;
+            if (!PrepareRunSceneAssets(out RunSceneAssets a, false) || !PrepareLevelAssets(out LevelAssets lv)) return false;
+            Transform root = new GameObject("Section: Impossible Geometry (D-164, D-240)").transform;
 
             // Room x -6..6, z 4..18, 5 m high, no exit of its own: the exit is in the hall behind the portal.
             BuildSectionShell(root, a, 12f, 14f, 5f, a.whiteEmissive, new float[0], false, SectionExitCondition.None);
 
-            // Its own portal pair (same parts as D-146): a freestanding portal door facing the entry, and the 30 x 20 m
-            // hall 500 m east (>= 200 m apart, separate NavMesh, D-144) with the always-open return portal.
+            // Its own portal pair (same parts as D-146): a freestanding portal door facing the entry, and the 120 x 40 x 14 m
+            // hall 500 m east (>= 200 m apart, separate NavMesh, D-144, D-240) with the always-open return portal.
             Portal roomPortal = BuildPortalDoor(a.portal, a.offWhite, a.glow, root, "Portal Door (freestanding, D-164)",
                                                 new Vector3(0f, 0f, 12f), 180f, "ig.portal", "door.ig_portal");
-            Transform hall = new GameObject("Impossible Hall (+500 m X, D-054, D-164)").transform;
+            Transform hall = new GameObject("Impossible Hall (+500 m X, 120 x 40 x 14 m, D-054, D-164, D-240)").transform;
             hall.SetParent(root, false);
-            Portal hallPortal = BuildHall(a.portal, hall, a.white, a.offWhite, a.wood, a.plant, a.target, "ig.hall.return", HallPortalPosition.z);
+            Portal hallPortal = BuildLargeHall(hall, a, lv);
             Assign(roomPortal, "destination", hallPortal);
             Assign(hallPortal, "destination", roomPortal);
 
-            // The section exit is inside the hall (east wall), so crossing the portal is required (D-164).
-            BuildExitPassage(root, a, "Exit (in the hall, D-164)", "door.exit", new Vector3(HallMaxX + 0.1f, 0f, HallPortalPosition.z),
+            // The section exit is inside the hall (east wall, 7.5 m up), so crossing the portal is required (D-164, D-240).
+            BuildExitPassage(root, a, "Exit (in the hall, raised 7.5 m, D-164, D-240)", "door.exit",
+                             new Vector3(IgHallMaxX + 0.1f, IgHallExitSill, IgHallExitZ),
                              Vector3.right, RunPath.None, "impossible.exit", true, true, SectionExitCondition.None, a.door);
             return AddBehindYouScare(root); // A5: Scare 2 "Behind you" by the return portal (D-236)
         }
@@ -623,9 +633,10 @@ namespace TWR.EditorTools
 
         /// Standard layout (world = local, the entry door at the origin): entry vestibule z 0..4 (x -2..2), main room
         /// x -width/2..width/2, z 4..4+depth, openings in the north wall at northDoorXs. withStandardExit = an exit door
-        /// at northDoorXs[0] with its gate (fallback condition) and the SectionExit corridor behind it.
+        /// at northDoorXs[0] with its gate (fallback condition) and the SectionExit corridor behind it. exitSill > 0 = that
+        /// one north door is raised to this height (D-240; the caller builds a way up to it).
         static void BuildSectionShell(Transform root, RunSceneAssets a, float width, float depth, float height, Material wallMat,
-                                      float[] northDoorXs, bool withStandardExit, SectionExitCondition fallback)
+                                      float[] northDoorXs, bool withStandardExit, SectionExitCondition fallback, float exitSill = 0f)
         {
             BuildEntryVestibule(root, a, Vector3.zero, Vector3.forward);
 
@@ -639,10 +650,13 @@ namespace TWR.EditorTools
             WallAlongZ(shell, "Wall E", maxX + 0.1f, minZ - 0.1f, maxZ + 0.2f, height, wallMat, 0f, 0f);
             // South wall: open over the vestibule's full width and height.
             WallAlongX(shell, "Wall S", minZ, minX - 0.2f, maxX + 0.2f, height, wallMat, VestibuleWidth, VestibuleHeight, 0f);
-            WallAlongX(shell, "Wall N", maxZ + 0.1f, minX - 0.2f, maxX + 0.2f, height, wallMat, RunDoorWidth, RunDoorHeight, northDoorXs);
+            if (exitSill > 0f && northDoorXs.Length == 1)
+                RaisedOpeningWall(shell, "Wall N", true, maxZ + 0.1f, minX - 0.2f, maxX + 0.2f, height, northDoorXs[0], exitSill, wallMat);
+            else
+                WallAlongX(shell, "Wall N", maxZ + 0.1f, minX - 0.2f, maxX + 0.2f, height, wallMat, RunDoorWidth, RunDoorHeight, northDoorXs);
 
             if (withStandardExit && northDoorXs.Length > 0)
-                BuildExitPassage(root, a, "Exit", "door.exit", new Vector3(northDoorXs[0], 0f, maxZ + 0.1f), Vector3.forward,
+                BuildExitPassage(root, a, "Exit", "door.exit", new Vector3(northDoorXs[0], exitSill, maxZ + 0.1f), Vector3.forward,
                                  RunPath.None, "exit", true, true, fallback, a.door);
         }
 

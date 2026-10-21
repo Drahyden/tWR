@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using TWR.Core;
+using TWR.Level;
 
 namespace TWR.Player
 {
@@ -13,6 +14,9 @@ namespace TWR.Player
     /// R4 (D-182, D-191): ApplyKnockback = a planar push (Bull fast charge) moved ONLY through IPlayerMotor.Move, never a
     /// teleport: its distance is first shortened by a capsule cast to the first wall/obstacle, and it stops at once if the
     /// motor reports it is blocked. Falling is capped at PlayerTuning.maxFallSpeed (about 40 m/s); there is no fall damage.
+    /// D-241: standing on a MovingPlatform, the player is first moved by the platform's own step this frame (through
+    /// IPlayerMotor.Move, the platform already moved earlier in the frame), then by their own movement, so riding is
+    /// exact. After jumping or walking off, the platform's sideways speed is kept until the next landing.
     /// </summary>
     public class PlayerLocomotion : MonoBehaviour, IRunResettable
     {
@@ -33,6 +37,9 @@ namespace TWR.Player
         bool wasGrounded;
         float currentHeight;
         float currentEyeHeight;
+        MovingPlatform groundPlatform; // D-241: the platform under the feet after the last move (null = none)
+        Collider groundCollider;       // what the ground probe hit last, so the platform lookup runs only on change
+        Vector3 carriedVelocity;       // the platform's sideways speed, kept while airborne after leaving it
 
         /// <summary>Fired when a jump starts (jump sound + noise, D-079).</summary>
         public event Action Jumped;
@@ -77,13 +84,18 @@ namespace TWR.Player
             UpdatePlanar(dt, up);
             UpdateVertical(dt);
 
+            // D-241: ride first (the platform moved earlier this frame), so our own move below stays relative to it.
+            if (IsGrounded && groundPlatform != null && groundPlatform.FrameDelta.sqrMagnitude > 0f)
+                motor.Move(groundPlatform.FrameDelta);
+
             float upSpeedBeforeMove = upSpeed;
             Vector3 knockStep = KnockbackStep(dt);
-            motor.Move((planarVelocity + impulseVelocity + up * upSpeed) * dt + knockStep);
+            motor.Move((planarVelocity + impulseVelocity + carriedVelocity + up * upSpeed) * dt + knockStep);
 
             if (motor.HitCeiling && upSpeed > 0f) upSpeed = 0f; // bonk: stop rising
 
             UpdateGrounded(upSpeedBeforeMove);
+            UpdateGroundPlatform(up);
             HorizontalSpeed = Vector3.ProjectOnPlane(motor.Velocity, up).magnitude;
             impulseVelocity = Vector3.MoveTowards(impulseVelocity, Vector3.zero, tuning.impulseDrag * dt);
             UpdateKnockback(dt, knockStep);
@@ -237,6 +249,7 @@ namespace TWR.Player
                 return false;
 
             upSpeed = Mathf.Sqrt(2f * tuning.jumpHeight * -tuning.gravity);
+            if (groundPlatform != null) carriedVelocity = Vector3.ProjectOnPlane(groundPlatform.Velocity, motor.Up); // D-241
             IsGrounded = false;
             lastGroundedTime = -10f; // no coyote double-dip
             Jumped?.Invoke();
@@ -254,6 +267,35 @@ namespace TWR.Player
                     Landed?.Invoke(Mathf.Max(0f, -upSpeedBeforeMove));
             }
             wasGrounded = IsGrounded;
+        }
+
+        // ---------- moving platforms (D-241) ----------
+
+        /// After the move: on the ground, find the MovingPlatform under the feet (one short sphere cast; the component
+        /// lookup only when the collider changes). In the air, keep the last platform's sideways speed until landing.
+        void UpdateGroundPlatform(Vector3 up)
+        {
+            if (!IsGrounded)
+            {
+                if (groundPlatform != null) carriedVelocity = Vector3.ProjectOnPlane(groundPlatform.Velocity, up);
+                groundPlatform = null;
+                groundCollider = null;
+                return;
+            }
+            carriedVelocity = Vector3.zero;
+
+            float radius = Mathf.Max(0.05f, tuning.controllerRadius * 0.9f);
+            Vector3 origin = transform.position + up * (radius + 0.05f);
+            int mask = GameLayers.WithoutActors(tuning.obstacleMask);
+            if (!Physics.SphereCast(origin, radius, -up, out RaycastHit hit, 0.3f, mask, QueryTriggerInteraction.Ignore))
+            {
+                groundPlatform = null;
+                groundCollider = null;
+                return;
+            }
+            if (hit.collider == groundCollider) return;
+            groundCollider = hit.collider;
+            groundPlatform = hit.collider.GetComponentInParent<MovingPlatform>();
         }
 
         /// <summary>
@@ -278,6 +320,9 @@ namespace TWR.Player
             impulseVelocity = Vector3.zero;
             knockbackVelocity = Vector3.zero;
             knockbackRemaining = 0f;
+            carriedVelocity = Vector3.zero;
+            groundPlatform = null;
+            groundCollider = null;
             upSpeed = 0f;
             jumpsUsed = 0;
             HorizontalSpeed = 0f;

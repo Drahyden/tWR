@@ -9,6 +9,7 @@ using UnityEngine.SceneManagement;
 using TWR.Combat;
 using TWR.Enemies;
 using TWR.Items;
+using TWR.Level;
 using TWR.Player;
 using TWR.Run;
 
@@ -55,9 +56,19 @@ namespace TWR.EditorTools
             public float Slope;
             public bool Reachable;   // from the floor
             public bool ReachesFloor;
+            public MovingPlatform Mover;  // D-242: null = static
+            public Vector3[] Offsets = { Vector3.zero }; // movers: sampled positions along the path (from point A)
             public readonly List<int> Out = new List<int>();
             public readonly List<int> In = new List<int>();
+            public bool Moving => Mover != null;
             public Vector3 Centre => new Vector3((MinX + MaxX) * 0.5f, ExitTop, (MinZ + MaxZ) * 0.5f);
+
+            /// This node moved by offset (a mover at one sample of its path).
+            public PlatformNode At(Vector3 o) => o == Vector3.zero ? this : new PlatformNode
+            {
+                Source = Source, Id = Id, Kind = Kind, MinX = MinX + o.x, MaxX = MaxX + o.x, MinZ = MinZ + o.z, MaxZ = MaxZ + o.z,
+                EntryTop = EntryTop + o.y, ExitTop = ExitTop + o.y, Bottom = Bottom + o.y, Slope = Slope,
+            };
         }
 
         /// The D-186 graph of one arena scene. Built from ArenaPlatform markers (no physics needed, works in edit mode).
@@ -71,6 +82,7 @@ namespace TWR.EditorTools
             {
                 foreach (PlatformNode n in Nodes)
                 {
+                    if (n.Moving) continue; // nothing stands on a mover for good (pickups, spawns, cavities)
                     if (feet.x < n.MinX - 0.3f || feet.x > n.MaxX + 0.3f || feet.z < n.MinZ - 0.3f || feet.z > n.MaxZ + 0.3f) continue;
                     if (Mathf.Abs(feet.y - n.ExitTop) > 0.4f) continue;
                     onWhat = n.Id;
@@ -81,13 +93,16 @@ namespace TWR.EditorTools
             }
         }
 
-        static PlatformGraph BuildPlatformGraph(Scene scene, PlayerTuning tuning)
+        /// includeMovers = false: static platforms only (D-242: the combat exit must not need a mover).
+        static PlatformGraph BuildPlatformGraph(Scene scene, PlayerTuning tuning, bool includeMovers = true)
         {
             var graph = new PlatformGraph();
             foreach (ArenaPlatform p in InScene<ArenaPlatform>(scene))
             {
                 var box = p.GetComponent<BoxCollider>();
                 if (box == null) continue;
+                var mover = p.GetComponent<MovingPlatform>();
+                if (mover != null && !includeMovers) continue;
                 Transform t = p.transform;
                 Vector3 half = box.size * 0.5f;
                 float minX = float.MaxValue, maxX = float.MinValue, minZ = float.MaxValue, maxZ = float.MinValue;
@@ -111,13 +126,14 @@ namespace TWR.EditorTools
                 {
                     Source = p, Id = p.PlatformId, Kind = p.Kind, MinX = minX, MaxX = maxX, MinZ = minZ, MaxZ = maxZ,
                     EntryTop = tilted ? topLow : topHigh, ExitTop = topHigh, Bottom = bottom, Slope = slope,
+                    Mover = mover, Offsets = mover != null ? MoverSamples(mover.Travel) : new[] { Vector3.zero },
                 });
             }
 
             List<PlatformNode> n = graph.Nodes;
             for (int a = 0; a < n.Count; a++)
                 for (int b = 0; b < n.Count; b++)
-                    if (a != b && CanMove(n[a], n[b], tuning))
+                    if (a != b && CanMoveAnySample(n[a], n[b], tuning))
                     {
                         n[a].Out.Add(b);
                         n[b].In.Add(a);
@@ -163,6 +179,25 @@ namespace TWR.EditorTools
             if (rise > JumpStepUp) return false;
             float maxGap = MaxJumpGap(rise, tuning);
             return maxGap >= 0f && gap <= maxGap;
+        }
+
+        /// D-242: a mover connects if the move works at ANY of its samples (it cycles forever and waits at both ends).
+        static bool CanMoveAnySample(PlatformNode a, PlatformNode b, PlayerTuning tuning)
+        {
+            foreach (Vector3 oa in a.Offsets)
+                foreach (Vector3 ob in b.Offsets)
+                    if (CanMove(a.At(oa), b.At(ob), tuning)) return true;
+            return false;
+        }
+
+        /// Point A, every 1 m of travel, and point B.
+        static Vector3[] MoverSamples(Vector3 travel)
+        {
+            float length = travel.magnitude;
+            int steps = Mathf.Max(1, Mathf.CeilToInt(length));
+            var samples = new Vector3[steps + 1];
+            for (int i = 0; i <= steps; i++) samples[i] = travel * (i / (float)steps);
+            return samples;
         }
 
         static bool Covers(PlatformNode outer, PlatformNode inner) =>
@@ -350,15 +385,20 @@ namespace TWR.EditorTools
             return ok;
         }
 
-        static bool CheckPreacherArena(StringBuilder report, Scene scene, PlayerTuning tuning)
+        /// <summary>
+        /// The D-186 platform rules on one graph (Preacher arena, and the large sections per D-242): every platform
+        /// reachable from the floor and with a way back down, headroom >= 2 m between overlapping static platforms, ramps
+        /// <= 40 degrees. Each problem platform also gets its own [TWR] warning (label = where, decisions = the IDs to cite).
+        /// </summary>
+        static bool CheckPlatformGraph(StringBuilder report, PlatformGraph graph, PlayerTuning tuning, string label, string decisions)
         {
             bool ok = true;
-            PlatformGraph graph = BuildPlatformGraph(scene, tuning);
             report.AppendLine($"  reachability (D-186): sprint {tuning.sprintSpeed} m/s, jump {tuning.jumpHeight} m, gravity {tuning.gravity}: " +
                               $"max gap flat {MaxJumpGap(0f, tuning):0.00} m, +0.9 m {MaxJumpGap(JumpStepUp, tuning):0.00} m");
             ok &= Check(report, "floor marked as the start of the reachability graph", graph.FloorCount >= 1, graph.FloorCount.ToString());
 
             int platforms = 0, unreachable = 0, stuck = 0, headroom = 0, steep = 0, tiny = 0;
+            var tinyNames = new List<string>();
             foreach (PlatformNode n in graph.Nodes)
             {
                 if (n.Kind == ArenaPlatformKind.Floor) continue;
@@ -366,40 +406,52 @@ namespace TWR.EditorTools
                 if (!n.Reachable)
                 {
                     unreachable++;
-                    Debug.LogWarning($"[TWR] Preacher arena: platform '{n.Id}' (top {n.ExitTop:0.0} m) can't be reached from the floor with " +
-                                     "walk / sprint / one jump (D-183, D-186).", n.Source);
+                    Debug.LogWarning($"[TWR] {label}: platform '{n.Id}' (top {n.ExitTop:0.0} m) can't be reached from the floor with " +
+                                     $"walk / sprint / one jump ({decisions}).", n.Source);
                 }
                 if (!n.ReachesFloor)
                 {
                     stuck++;
-                    Debug.LogWarning($"[TWR] Preacher arena: from platform '{n.Id}' there is no way back down to the floor (D-186).", n.Source);
+                    Debug.LogWarning($"[TWR] {label}: from platform '{n.Id}' there is no way back down to the floor (D-186).", n.Source);
                 }
                 if (n.Kind == ArenaPlatformKind.Ramp && n.Slope > MaxRampDegrees)
                 {
                     steep++;
-                    Debug.LogWarning($"[TWR] Preacher arena: ramp '{n.Id}' is {n.Slope:0} degrees (max {MaxRampDegrees}, D-186).", n.Source);
+                    Debug.LogWarning($"[TWR] {label}: ramp '{n.Id}' is {n.Slope:0} degrees (max {MaxRampDegrees}, D-186).", n.Source);
                 }
-                if (n.MaxX - n.MinX < 0.8f || n.MaxZ - n.MinZ < 0.8f) tiny++;
+                if (n.MaxX - n.MinX < 0.8f || n.MaxZ - n.MinZ < 0.8f)
+                {
+                    tiny++;
+                    tinyNames.Add($"{n.Id} ({n.MaxX - n.MinX:0.0} x {n.MaxZ - n.MinZ:0.0} m, {n.Kind})");
+                }
+                if (n.Moving) continue; // mover headroom is checked along its whole path (D-242)
                 foreach (PlatformNode above in graph.Nodes)
                 {
-                    if (above == n || above.Kind == ArenaPlatformKind.Floor) continue;
+                    if (above == n || above.Kind == ArenaPlatformKind.Floor || above.Moving) continue;
                     float ox = Mathf.Min(n.MaxX, above.MaxX) - Mathf.Max(n.MinX, above.MinX);
                     float oz = Mathf.Min(n.MaxZ, above.MaxZ) - Mathf.Max(n.MinZ, above.MinZ);
                     float clearance = above.Bottom - n.ExitTop;
                     if (ox > 0.05f && oz > 0.05f && clearance > 0.01f && clearance < MinHeadroom)
                     {
                         headroom++;
-                        Debug.LogWarning($"[TWR] Preacher arena: only {clearance:0.00} m headroom above '{n.Id}' (under '{above.Id}', D-186 wants {MinHeadroom} m).", n.Source);
+                        Debug.LogWarning($"[TWR] {label}: only {clearance:0.00} m headroom above '{n.Id}' (under '{above.Id}', D-186 wants {MinHeadroom} m).", n.Source);
                         break;
                     }
                 }
             }
-            ok &= Check(report, $"every platform reachable from the floor with base movement (D-183, D-186)", unreachable == 0, $"{platforms} platforms, {unreachable} unreachable");
+            ok &= Check(report, $"every platform reachable from the floor with base movement ({decisions})", unreachable == 0, $"{platforms} platforms, {unreachable} unreachable");
             ok &= Check(report, "every platform has a way back down (drops allowed, D-186)", stuck == 0, stuck + " stuck");
             ok &= Check(report, $"headroom >= {MinHeadroom} m, ramps <= {MaxRampDegrees} deg (D-186)", headroom == 0 && steep == 0, $"{headroom} low ceilings, {steep} steep ramps");
-            if (tiny > 0) report.AppendLine($"  WARNING: {tiny} platform(s) narrower than 0.8 m.");
+            if (tiny > 0) report.AppendLine($"  WARNING: {tiny} platform(s) narrower than 0.8 m: {string.Join(", ", tinyNames)}");
             float highest = graph.Nodes.Where(n => n.Kind != ArenaPlatformKind.Floor).Select(n => n.ExitTop).DefaultIfEmpty(0f).Max();
             report.AppendLine($"  highest platform top: {highest:0.0} m");
+            return ok;
+        }
+
+        static bool CheckPreacherArena(StringBuilder report, Scene scene, PlayerTuning tuning)
+        {
+            PlatformGraph graph = BuildPlatformGraph(scene, tuning);
+            bool ok = CheckPlatformGraph(report, graph, tuning, "Preacher arena", "D-183, D-186");
 
             // Cavities (D-187).
             List<PreacherCavity> cavities = InScene<PreacherCavity>(scene);

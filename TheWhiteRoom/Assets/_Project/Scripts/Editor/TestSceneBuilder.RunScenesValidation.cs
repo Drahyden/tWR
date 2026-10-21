@@ -32,6 +32,7 @@ namespace TWR.EditorTools
     /// 200 m apart (D-144), and a baked NavMesh wherever Seekers
     /// spawn (stealth: at least 2 patrols, D-169). Opens each scene additively and closes it again. Logs with [TWR].
     /// R3 (D-172 to D-177): the seeded-roll checks live in TestSceneBuilder.RunRollsValidation.cs.
+    /// D-240 to D-247: the large-room checks (puzzle, combat, IG hall) live in TestSceneBuilder.LargeSectionsValidation.cs.
     /// R5 (D-200, D-207, D-210): MainMenu is build index 0 and Core index 1; Core has the end-of-run screen, subtitles and the
     /// EndingSequence. Ending scenes + main menu are checked in TestSceneBuilder.EndingsValidation.cs.
     /// </summary>
@@ -311,6 +312,10 @@ namespace TWR.EditorTools
 
             // R4 boss arenas (D-180 to D-194): boss, size, exit, pickups, columns / reachability + cavities.
             if (section != null && section.type == SectionType.BossArena) ok &= ValidateBossArena(report, scene, section);
+
+            // Large rooms with platforms (D-240 to D-247): size, raised exit, reachability with movers, switches, movers,
+            // Seeker links, budget, scare placement. Only the puzzle, combat and IG scenes.
+            if (!isLobby) ok &= ValidateLargeSection(report, scene);
 
             if (ok) Debug.Log(report.ToString());
             else Debug.LogError(report.ToString());

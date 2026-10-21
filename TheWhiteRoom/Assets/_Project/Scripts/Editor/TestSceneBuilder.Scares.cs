@@ -37,8 +37,9 @@ namespace TWR.EditorTools
         const string ScareBlackoutProfilePath = ScareDataFolder + "/ScareBlackoutProfile.asset";
         const string ScareFigurePrefabPath = Root + "/Prefabs/ScareFigure.prefab";
 
-        // Puzzle room exit door, floor centre of the opening (BuildExitDoor in TestSceneBuilder.Puzzle.cs).
-        static readonly Vector3 PuzzleExitDoorPoint = new Vector3(22.3f, 0f, -2.5f);
+        // Puzzle room exit door, floor centre of the raised opening on the exit ledge (D-240, D-245; consts from
+        // TestSceneBuilder.LargeSections.cs, so no cross-file static order problem).
+        static readonly Vector3 PuzzleExitDoorPoint = new Vector3(LpMaxX + 0.1f, LpExitSill, LpExitZ);
         // "Behind you" spot: in the hall, 1.5 m in from the return portal wall and 3.5 m south of the portal (clear of its
         // 1 m vestibule, D-142). The player arrives facing east, so the spot is behind them.
         static readonly Vector3 BehindYouSpot = new Vector3(HallPortalPosition.x + 1.5f, 0f, HallPortalPosition.z - 3.5f);

@@ -80,6 +80,14 @@ namespace TWR.Enemies
         public void PlayAlert() => Play(alertClip, EffectsVolume);
         public void PlayWindUp() => Play(windUpClip, EffectsVolume);
         public void PlayHurt() => Play(hurtClip, EffectsVolume);
+        /// <summary>D-243: take-off and landing of a leap between platforms (a heavier footstep). Audio only, no noise event.</summary>
+        public void PlayLeap()
+        {
+            AudioClip clip = placeholderStep;
+            if (sounds != null && sounds.footsteps != null && sounds.footsteps.Length > 0)
+                clip = sounds.footsteps[Random.Range(0, sounds.footsteps.Length)];
+            Play(clip, EffectsVolume);
+        }
 
         /// <summary>Stops the idle loop and plays the death sound. Footsteps stop because the agent is off.</summary>
         public void PlayDeath()

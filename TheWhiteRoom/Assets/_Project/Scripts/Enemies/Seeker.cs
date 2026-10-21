@@ -15,6 +15,8 @@ namespace TWR.Enemies
     /// It moves with a NavMeshAgent (D-135; can't open doors), re-paths 4-5 times a second while chasing,
     /// and raises EnemyEvents.AwarenessChanged for music/voice. Senses, melee, health, visuals and audio are
     /// separate components; this one only decides. No allocations per frame (D-100).
+    /// D-243: NavMeshLinks between platforms are crossed with a short scripted leap (an arc, footstep thud on take-off
+    /// and landing) instead of the agent's straight slide; the state machine waits while it is in the air.
     /// </summary>
     [RequireComponent(typeof(NavMeshAgent), typeof(SeekerSenses), typeof(SeekerHealth))]
     public class Seeker : MonoBehaviour
@@ -60,6 +62,10 @@ namespace TWR.Enemies
 
         SeekerSenses.NoiseHeardHandler onNoise;
 
+        bool leaping;               // D-243: crossing a NavMeshLink
+        Vector3 leapStart, leapEnd;
+        float leapTime, leapDuration, leapArc;
+
         public SeekerState State => state;
         public SeekerData Data => data;
         public Vector3 LastKnownPosition => lastKnownPosition;
@@ -96,6 +102,7 @@ namespace TWR.Enemies
             agent.angularSpeed = data.angularSpeed;
             agent.acceleration = data.acceleration;
             agent.autoBraking = true;
+            agent.autoTraverseOffMeshLink = false; // links are leaped by hand (D-243)
         }
 
         void OnEnable()
@@ -144,6 +151,11 @@ namespace TWR.Enemies
         {
             if (!agent.isOnNavMesh) return;
             stateTime += Time.deltaTime;
+            if (leaping || agent.isOnOffMeshLink)
+            {
+                UpdateLeap();
+                return; // decisions wait until it lands
+            }
 
             switch (state)
             {
@@ -357,6 +369,11 @@ namespace TWR.Enemies
 
         void HandleDeath(DamageInfo killingBlow)
         {
+            if (leaping)
+            {
+                transform.position = leapEnd; // don't die in mid-air over a gap
+                leaping = false;
+            }
             EnterState(SeekerState.Dead);
             enabled = false; // SeekerDeath turns off the agent and colliders
         }
@@ -519,6 +536,44 @@ namespace TWR.Enemies
         }
 
         float FlatDistance(Vector3 point) => Vector3.ProjectOnPlane(point - transform.position, Vector3.up).magnitude;
+
+        // ---------- NavMeshLink leaps (D-243) ----------
+
+        /// Up to 0.9 m up or 3.5 m down over a gap of up to 2 m: an arc from where it stands to the link's far end,
+        /// 0.45-0.9 s depending on size, then the agent takes over again on the far platform.
+        void UpdateLeap()
+        {
+            if (!leaping)
+            {
+                OffMeshLinkData link = agent.currentOffMeshLinkData;
+                leapStart = transform.position;
+                leapEnd = link.endPos + Vector3.up * agent.baseOffset;
+                float rise = leapEnd.y - leapStart.y;
+                float flat = Vector3.ProjectOnPlane(leapEnd - leapStart, Vector3.up).magnitude;
+                leapDuration = Mathf.Clamp(0.45f + 0.05f * flat + 0.08f * Mathf.Abs(rise), 0.45f, 0.9f);
+                leapArc = rise > 0f ? rise * 0.5f + 0.5f : 0.35f;
+                leapTime = 0f;
+                leaping = true;
+                agent.updateRotation = false;
+                if (sounds != null) sounds.PlayLeap();
+            }
+
+            leapTime += Time.deltaTime;
+            float t = Mathf.Clamp01(leapTime / leapDuration);
+            Vector3 p = Vector3.Lerp(leapStart, leapEnd, t);
+            p.y += leapArc * 4f * t * (1f - t);
+            transform.position = p;
+            Vector3 flatDir = Vector3.ProjectOnPlane(leapEnd - leapStart, Vector3.up);
+            if (flatDir.sqrMagnitude > 0.0001f)
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(flatDir), data.turnSpeed * Time.deltaTime);
+            if (t < 1f) return;
+
+            transform.position = leapEnd;
+            leaping = false;
+            agent.CompleteOffMeshLink();
+            agent.updateRotation = true;
+            if (sounds != null) sounds.PlayLeap();
+        }
 
         void BeginSearchPause()
         {
