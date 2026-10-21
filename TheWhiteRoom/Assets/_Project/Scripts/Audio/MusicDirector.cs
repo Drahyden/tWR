@@ -27,6 +27,7 @@ namespace TWR.Audio
     ///   ONCE when its scene is ready (AudioState.IsEnding, the Ending snapshot). Overtime has no music (D-221, D-234).
     /// - Silent rooms (SoundscapeState.IsSilenced): the music fades to nothing and stops (D-168, D-233). It never asks
     ///   for a snapshot itself: AudioState stays the only snapshot controller (D-220).
+    /// - Jump scares (A5, D-237): every music source is multiplied by ScareDip.MusicGain (a short code-side dip).
     /// Playback: two MusicBanks (crossfade between states, D-214); stems start together via PlayScheduled and switch by
     /// volume (D-231). Event handlers only set flags; Update evaluates them, no per-frame allocations (D-100).
     /// The F1 debug menu shows all of this and can force each state (D-235, MusicDebugPanel).
@@ -287,8 +288,9 @@ namespace TWR.Audio
 
             if (playing == MusicStateKind.Puzzle) puzzleSeconds += gameDelta; // D-232: only while Puzzle plays
             ApplyLayerRules();
-            bankA.Tick(audioDelta);
-            bankB.Tick(audioDelta);
+            float dip = ScareDip.MusicGain; // jump-scare dip (D-237); 1 when no scare is happening
+            bankA.Tick(audioDelta, dip);
+            bankB.Tick(audioDelta, dip);
         }
 
         /// Endings and sandbox mode come from the RunManager (a static property read, no search).

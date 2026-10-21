@@ -12,7 +12,7 @@ namespace TWR.Audio
     /// dictionary built on first use, so playing a sound allocates nothing (D-100).
     /// Filled by TWR > Audio > Build Audio (A1): real files where they exist (fluorescent hum, violin stinger), else the
     /// generated placeholders; clips you assign by hand are never replaced (D-228). It may hold clips nothing plays yet
-    /// (the stinger, A5). Every clip needs a LICENSES.md row (D-218).
+    /// (AudioIds.Reserved). The jump-scare stinger is played by the ScareDirector (A5, D-239). Every clip needs a LICENSES.md row (D-218).
     /// </summary>
     [CreateAssetMenu(fileName = "AudioLibrary", menuName = "TWR/Audio/Audio Library")]
     public class AudioLibrary : ScriptableObject

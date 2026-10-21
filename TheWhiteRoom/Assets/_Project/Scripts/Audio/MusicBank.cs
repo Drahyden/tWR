@@ -116,8 +116,9 @@ namespace TWR.Audio
             if (index >= 0 && index < Count) layerTarget[index] = on ? 1f : 0f;
         }
 
-        /// <summary>Move the fades on (call once per frame with unscaled delta time).</summary>
-        public void Tick(float deltaTime)
+        /// <summary>Move the fades on (call once per frame with unscaled delta time). gain = an extra multiplier on every
+        /// source (the jump-scare dip, ScareDip.MusicGain, D-237).</summary>
+        public void Tick(float deltaTime, float gain = 1f)
         {
             if (Count == 0) return;
             if (snapLayers)
@@ -130,7 +131,7 @@ namespace TWR.Audio
             for (int i = 0; i < Count; i++)
             {
                 layerVolume[i] = Mathf.MoveTowards(layerVolume[i], layerTarget[i], layerRate * deltaTime);
-                sources[i].volume = baseVolume * Volume * layerVolume[i];
+                sources[i].volume = baseVolume * Volume * layerVolume[i] * gain;
             }
 
             if (TargetVolume <= 0f && Volume <= 0f) StopNow();

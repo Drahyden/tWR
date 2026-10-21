@@ -7,6 +7,7 @@ using TWR.Player;
 using TWR.Enemies;
 using TWR.Endings;
 using TWR.Save;
+using TWR.Scares;
 using TWR.Stats;
 
 namespace TWR.Run
@@ -33,6 +34,7 @@ namespace TWR.Run
     /// A2 (D-235): a Music section (TWR.Audio.MusicDebugPanel): state, track, layers with on/off + volume, puzzle timer,
     /// chaser count, force buttons. While this overlay exists it is the F1 owner; the director's music-only overlay
     /// (MainMenu) stays passive.
+    /// A5 (D-239): a Scares section (TWR.Scares.ScareDebugPanel): each scare's state, Fire buttons, reset for this run.
     /// </summary>
     [DisallowMultipleComponent]
     public class RunDebugOverlay : MonoBehaviour
@@ -201,6 +203,8 @@ namespace TWR.Run
             }
             GUILayout.Space(6f);
             MusicDebugPanel.Draw(rich); // A2 (D-235): state, layers, timers, force buttons
+            GUILayout.Space(6f);
+            ScareDebugPanel.Draw(rich); // A5 (D-239): scare states, Fire buttons, reset
             GUILayout.Space(6f);
             DrawSeedEntry();
 

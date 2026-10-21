@@ -12,7 +12,8 @@ namespace TWR.Audio
     ///    turns them on per section template (SectionData flag) and in the lobby; off in silent rooms, boss arenas and
     ///    ending scenes.
     /// Silent rooms are handled by the mixer's Silent snapshot (D-168, D-220), not here. Only the Overtime ending's
-    /// "ambience off" (D-221) fades the hum out locally. Clips come from the AudioLibrary (D-227); if it has no hum, a
+    /// "ambience off" (D-221) fades the hum out locally. A jump scare dips the hum through ScareDip (D-237) and pauses the
+    /// office one-shots while it lasts. Clips come from the AudioLibrary (D-227); if it has no hum, a
     /// generated placeholder hum is used. All sources go to the AmbienceState group (D-219). No per-frame allocations.
     /// </summary>
     [RequireComponent(typeof(AudioSource))]
@@ -96,10 +97,14 @@ namespace TWR.Audio
             {
                 float speed = settings != null && settings.humFadeOutSeconds > 0f ? 1f / settings.humFadeOutSeconds : 1f;
                 humMultiplier = Mathf.MoveTowards(humMultiplier, humTarget, speed * Time.unscaledDeltaTime);
-                hum.volume = HumVolume * humMultiplier;
             }
+            // Jump-scare dip (D-237): "Relief" cuts the hum with the lights, then it comes back.
+            float scareGain = ScareDip.AmbienceGain;
+            float volume = HumVolume * humMultiplier * scareGain;
+            if (hum.volume != volume) hum.volume = volume;
+            if (scareGain < 0.01f) StopOfficeSounds(); // full cut: nothing keeps ringing in the dark
 
-            if (!officeOn || pool == null || SoundscapeState.IsSilenced || AudioState.AmbienceOff) return;
+            if (!officeOn || pool == null || SoundscapeState.IsSilenced || AudioState.AmbienceOff || scareGain < 0.99f) return;
             timer -= Time.deltaTime; // scaled: a paused game (timeScale 0) starts no new one-shots
             if (timer > 0f) return;
             PlayOfficeSound();
@@ -115,6 +120,12 @@ namespace TWR.Audio
         void OnDestroy()
         {
             if (anchor != null) Destroy(anchor.gameObject);
+        }
+
+        void StopOfficeSounds()
+        {
+            if (pool == null) return;
+            for (int i = 0; i < pool.Length; i++) if (pool[i] != null && pool[i].isPlaying) pool[i].Stop();
         }
 
         void HandleAudioStateChanged()

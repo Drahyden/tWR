@@ -32,6 +32,8 @@ namespace TWR.EditorTools
     ///   play-at-point helper of AudioSource; every audio file has a row in docs/audio/LICENSES.md (D-218).
     /// - A2 (D-230 to D-235): no scene/prefab AudioSource holds a music clip (only the MusicDirector plays music), music IDs
     ///   are a fourth AudioIds class (Music), and the whole music validation (TestSceneBuilder.MusicValidation.cs).
+    /// - A5 (D-236 to D-239): the jump scares (TestSceneBuilder.Scares.cs): stinger IDs have a clip and a LICENSES.md row,
+    ///   flicker safety, one ScareDirector in Core routed to SFXState, anchors only in their own section template.
     /// Opens scenes additively and closes them again.
     /// </summary>
     public static partial class TestSceneBuilder
@@ -68,6 +70,7 @@ namespace TWR.EditorTools
             ok &= ValidateNoPlayAtPoint(report);
             ok &= ValidateLicenseLog(report);
             ok &= ValidateMusic(report); // A2 (D-230 to D-235): TestSceneBuilder.MusicValidation.cs
+            ok &= ValidateScares(report); // A5 (D-236 to D-239): TestSceneBuilder.Scares.cs
 
             if (ok) Debug.Log(report.ToString());
             else Debug.LogError(report.ToString());

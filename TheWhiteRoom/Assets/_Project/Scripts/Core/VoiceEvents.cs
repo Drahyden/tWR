@@ -32,6 +32,21 @@ namespace TWR.Core
         /// <summary>True while a silent room is loaded (D-168): no inner-voice trigger fires.</summary>
         public static bool Suppressed => suppression > 0;
 
+        static float nonPriorityHeldUntil = -1f;
+
+        /// <summary>True while a voice line is playing. Set by the A4 voice player (nothing sets it yet); jump scares
+        /// wait while it is true (D-238).</summary>
+        public static bool LinePlaying { get; private set; }
+
+        public static void SetLinePlaying(bool playing) => LinePlaying = playing;
+
+        /// <summary>True for a few seconds after a jump scare hit (D-238): non-priority lines (everything except fork, boss
+        /// and ending lines, D-216) must not start. The A4 voice player checks this; the trigger events are not blocked.</summary>
+        public static bool NonPriorityHeld => Time.unscaledTime < nonPriorityHeldUntil;
+
+        public static void HoldNonPriority(float seconds) =>
+            nonPriorityHeldUntil = Mathf.Max(nonPriorityHeldUntil, Time.unscaledTime + seconds);
+
         public static void PushSuppression() => suppression++;
         public static void PopSuppression() => suppression = Mathf.Max(0, suppression - 1);
 
@@ -84,6 +99,8 @@ namespace TWR.Core
         static void ResetStatics()
         {
             suppression = 0;
+            nonPriorityHeldUntil = -1f;
+            LinePlaying = false;
             SectionStarted = null;
             SectionEnded = null;
             ForkDoorSeen = null;

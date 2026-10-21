@@ -51,6 +51,8 @@ namespace TWR.EditorTools
     /// A1 (D-213 to D-227, TestSceneBuilder.Audio.cs): the audio assets are prepared with the other assets, every AudioSource
     /// made here is routed to its mixer state group, Core's ambient bed gets the RunAmbienceDriver, each content and ending
     /// scene gets its reverb zones, and the [TWR] audio validation runs at the end.
+    /// A5 (D-236 to D-239, TestSceneBuilder.Scares.cs): Core gets the ScareDirector, Section_Puzzle the "Relief" anchor and
+    /// Section_ImpossibleGeometry the "Behind you" anchor.
     /// </summary>
     public static partial class TestSceneBuilder
     {
@@ -142,6 +144,7 @@ namespace TWR.EditorTools
             Debug.Log("[TWR] Building the run scenes (R2 to R5, D-161 to D-212; audio A1, D-213 to D-227) in " + RunScenesFolder + " ...");
             EnsureFolder(RunScenesFolder);
             seekerPrefabBuiltThisPass = false;
+            scareFigureBuiltThisPass = false; // A5: the scare figure prefab is rebuilt once per pass
             reportedAudioProblems.Clear(); // A1: report each missing mixer part once per build
 
             bool built = true;
@@ -309,7 +312,7 @@ namespace TWR.EditorTools
             Assign(endings, "hudCanvas", hud.GetComponent<Canvas>());
             AssignArray(endings, "gameplayHud", GameplayHudGroups(hud));
             // RunStats and the debug overlay (F1/F2) are added by the RunManager at runtime.
-            return true;
+            return BuildScareDirector(); // A5: jump scares, stinger source + blackout volume (D-236 to D-239)
         }
 
         /// Top-most canvas: full-screen white (CanvasGroup alpha = fade) + a centre line for the end screen.
@@ -409,7 +412,7 @@ namespace TWR.EditorTools
             AddExitGate(exitLock, SectionExitCondition.MainPuzzlesSolved);
             GameObject trigger = TriggerVolume("Section Exit (puzzle.exit)", new Vector3(24.2f, 0f, -2.5f), new Vector3(2f, 3f, 3.6f), a.combat, root);
             ConfigureExit(trigger.AddComponent<SectionExit>(), RunPath.None, "puzzle.exit");
-            return true;
+            return AddReliefScare(root); // A5: Scare 1 "Relief" at the exit door (D-236)
         }
 
         // ---------- Section: combat (D-155, D-165 None, D-170 fixed spawns, D-171 health) ----------
@@ -536,7 +539,7 @@ namespace TWR.EditorTools
             // The section exit is inside the hall (east wall), so crossing the portal is required (D-164).
             BuildExitPassage(root, a, "Exit (in the hall, D-164)", "door.exit", new Vector3(HallMaxX + 0.1f, 0f, HallPortalPosition.z),
                              Vector3.right, RunPath.None, "impossible.exit", true, true, SectionExitCondition.None, a.door);
-            return true;
+            return AddBehindYouScare(root); // A5: Scare 2 "Behind you" by the return portal (D-236)
         }
 
         // ---------- Section: silent (D-168) ----------

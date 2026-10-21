@@ -30,7 +30,7 @@ namespace TWR.Audio
         public const string PlayerJump = "player.jump";
         public const string PlayerLand = "player.land";
 
-        // Stingers (D-081). Registered now, played from A5 (D-228).
+        // Stingers (D-081). Played by the ScareDirector; each ScareData names its stinger ID, so more can be added (A5, D-239).
         public const string StingerViolin = "sfx.stinger.violin";
 
         // Music (A2, D-228, D-235). Registered so every music file has an ID; the MusicDirector plays them through
@@ -62,15 +62,15 @@ namespace TWR.Audio
         };
 
         /// <summary>Played straight from the library by code: must have a clip ([TWR] error if empty, D-228).
-        /// Placeholders exist for all of them.</summary>
-        public static readonly string[] Required = { AmbienceHum, OfficePhone, OfficePrinter, OfficeKeyboard, UiClick, UiBack };
+        /// Placeholders exist for all of them except the stinger, which uses its real file (A5, D-239).</summary>
+        public static readonly string[] Required = { AmbienceHum, OfficePhone, OfficePrinter, OfficeKeyboard, UiClick, UiBack, StingerViolin };
 
         /// <summary>Played by code only when the object's own clip slot is empty (DoorData, PlayerMovementSounds), so they
         /// may stay empty until A3 ([TWR] warning if empty).</summary>
         public static readonly string[] Fallback = { DoorOpen, DoorLocked, DoorUnlock, PlayerFootstep, PlayerJump, PlayerLand };
 
-        /// <summary>Registered for later; nothing plays them yet (the stinger is played from A5, D-081, D-228). Never an error.</summary>
-        public static readonly string[] Reserved = { StingerViolin };
+        /// <summary>Registered for later; nothing plays them yet. Never an error. Empty since A5 played the stinger (D-239).</summary>
+        public static readonly string[] Reserved = new string[0];
 
         /// <summary>Music tracks (A2, D-235): filled by TWR > Audio > Build Music (A2) from Audio/Music; played by the MusicDirector
         /// via MusicData / EndingData. Empty = [TWR] warning (the music validation reports the missing files).</summary>

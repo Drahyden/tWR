@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 053bdea23bc1538438140f2d295f85a0, type: 3}
+  m_Name: Scare_Relief
+  m_EditorClassIdentifier: Assembly-CSharp::TWR.Scares.ScareData
+  id: scare.relief
+  trigger: 0
+  template: 0
+  stingerId: sfx.stinger.violin
+  stingerVolume: 1
+  musicDipDb: -80
+  ambienceDipDb: -80
+  dipAttackSeconds: 0.05
+  dipHoldSeconds: 0
+  dipReleaseSeconds: 2
+  preHitDarkSeconds: 0.6
+  figureVisibleSeconds: 0.3
+  flickerDarkSeconds: 0.12
+  removeFigureWhenUnobserved: 0
+  vanishIfCloserThan: 0
+  triggerDistance: 5
+  viewConeDegrees: 60
+  unobservedSeconds: 0
+  figureDistance: 3

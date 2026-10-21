@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cce68ed9c0e462548ab8b804a48b0262, type: 3}
+  m_Name: ScareSettings
+  m_EditorClassIdentifier: Assembly-CSharp::TWR.Scares.ScareSettings
+  scares:
+  - {fileID: 11400000, guid: 71caba3174847db4398bf5bafcb1e5f7, type: 2}
+  - {fileID: 11400000, guid: 79b29cfc75482d543baa4b7969bdc672, type: 2}
+  minSecondsBetweenScares: 120
+  voiceHoldSeconds: 3
+  maxFlashesPerSecond: 3
+  maxFlickerSeconds: 1.2
+  proximityFlickerSeconds: 0.12
+  checkInterval: 0.1
+  sightBlockers:
+    serializedVersion: 2
+    m_Bits: 257
+  figureChestHeight: 1.4
+  figurePrefab: {fileID: 1695567171145115212, guid: 1e27cb8ac3f6ef44e916a24b93776cf0, type: 3}
+  debugFigureDistance: 4

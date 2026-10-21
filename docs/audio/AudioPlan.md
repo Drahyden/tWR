@@ -151,3 +151,7 @@ Every key above gets an entry in the localization string table (English now, Spa
 4. 🟢 **D-216** Voice delivery: ~8 s global cooldown (priority lines exempt), −6 dB ducking, suppressed in silent rooms, repeat-run lines once per run.
 5. 🟢 **D-217** Overtime ending has no voice line.
 6. 🟢 **D-218** License log at `docs/audio/LICENSES.md` (settles D-083 together with the source list above).
+7. 🟢 **D-236** A5 scares: "Relief" (puzzle room, after the solve, lights out at the exit door) and "Behind you" (impossible-geometry hall, figure by the return portal when seen), once per run each.
+8. 🟢 **D-237** Stingers on SFX (2D, no noise events); Relief cuts music + hum with the lights, Behind you dips music ≈ −12 dB; ≈ 2 s recovery; code-side dip, no new snapshot.
+9. 🟢 **D-238** Rules: held during combat / voice lines, skipped if still held at section end; ≥ 120 s apart; never in silent rooms, boss arenas, endings, lobby, fork; flicker ≤ 3 flashes/s, ≈ 1 s.
+10. 🟢 **D-239** ScareData per scare (stinger ID swappable), ScareAnchor in the scene, ScareEvents.Fired, F1 Fire/Reset, [TWR] validation.
